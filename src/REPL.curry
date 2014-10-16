@@ -6,6 +6,8 @@
 --- @version June 2014
 --- --------------------------------------------------------------------------
 {-# LANGUAGE Records #-}
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module REPL where
 
 import AbstractCurry
@@ -42,6 +44,7 @@ data GoalCompile
   = GoalError                             -- error occurred
   | GoalWithoutBindings CurryProg         -- goal does not contain free vars
   | GoalWithBindings CurryProg Int String -- number of vars / new goal
+  deriving Eq
 
 --- Show an error message
 writeErrorMsg :: String -> IO ()
@@ -310,8 +313,8 @@ insertFreeVarsInMainGoal rst goal (Just prog) = case prog of
             || not (rst :> showBindings)
             || isPrtChoices (rst :> ndMode)
             || isIOType ty
-            || length freevars > 10 -- due to limited size of tuples used
-                                    -- in PrintBindings
+            || length freevars > (10 :: Int) -- due to limited size of tuples used
+                                             -- in PrintBindings
             || null whereclause
           then return (GoalWithoutBindings prog)
           else do

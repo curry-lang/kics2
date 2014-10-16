@@ -37,7 +37,7 @@ defaultOptions = { currentModule := "", traceFailure := False }
 --- otherwise only the type constructors.
 --- The potential comments in function declarations are formatted as
 --- documentation comments.
-showProg ::Bool ->  Prog -> String
+showProg :: Bool -> Prog -> String
 showProg trace (Prog m imports typedecls funcdecls opdecls) =
   intercalate "\n\n" $ filter (not . null) $
     [ showModuleHeader trace m typedecls funcdecls imports
@@ -91,7 +91,7 @@ showExports types funcs =
     getTypeName (Instance (_,name) _ _ _) = name
 
     allPublicCons :: TypeDecl -> Bool
-    allPublicCons (Type _ _ _ c) = length (filter isPublicCons c) == length c
+    allPublicCons (Type _ _ _ c) = length (filter isPublicCons c) == (length c :: Int)
       where isPublicCons (Cons _ _ vis _) = vis == Public
     allPublicCons (TypeSyn _ _ _ _)  = False
     allPublicCons (Instance _ _ _ _) = False

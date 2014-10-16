@@ -25,6 +25,8 @@
 --- @version July 2013
 --- ----------------------------------------------------------------------------
 
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module DefaultPolymorphic (defaultPolymorphic) where
 
 import FiniteMap

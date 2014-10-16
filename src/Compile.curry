@@ -5,6 +5,8 @@
 --- @version July 2012
 --- --------------------------------------------------------------------------
 {-# LANGUAGE Records #-}
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module Compile where
 
 import Char             (isSpace)

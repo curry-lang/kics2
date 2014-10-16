@@ -7,6 +7,8 @@
 --- @version January 2014
 --- --------------------------------------------------------------------------
 {-# LANGUAGE Records #-}
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module Linker
   ( ReplState (..), NonDetMode (..), MainCompile (..), loadPaths
   , setExitStatus
@@ -154,6 +156,7 @@ updateGhcOptions rst =
 
 --- Result of compiling main program
 data MainCompile = MainError | MainDet | MainNonDet
+  deriving Eq
 
 -- Create and compile the main module containing the main goal
 createAndCompileMain :: ReplState -> Bool -> String -> Maybe Int
@@ -226,6 +229,7 @@ data NonDetMode  = DFS | BFS | IDS Int | Par Int | PrDFS | PrtChoices Int
 data EvalMode    = All | One | Interactive MoreDefault -- | Count
 
 data MoreDefault = MoreYes | MoreNo | MoreAll
+  deriving Show
 
 -- Create the Main.hs program containing the call to the initial expression:
 mainModule :: ReplState -> Bool -> Bool -> Bool -> Maybe Int -> String

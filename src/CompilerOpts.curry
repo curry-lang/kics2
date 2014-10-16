@@ -5,6 +5,8 @@
 --- @version April 2014
 ------------------------------------------------------------------------------
 {-# LANGUAGE Records #-}
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module CompilerOpts
   ( Options (..), Verbosity (..), OptimLevel (..), DumpFormat (..)
   , Extension (..), defaultOptions, getCompilerOpts
@@ -43,6 +45,66 @@ type Options =
   , rcVars                :: [(String, String)] -- content of rc file
   }
 
+-- ModuleDeps.curry, line 117.35:
+--     Type error in application
+--     showStatus opts
+     
+--     Term: opts
+--     Inferred type: CompilerOpts.Options
+--     Expected type: { optHelp :: Prelude.Bool,
+--                      optVersion :: Prelude.Bool, optVerbosity :: CompilerOpts.Verbosity,
+--                      optMainVerbosity :: CompilerOpts.Verbosity,
+--                      optForce :: Prelude.Bool, optImportPaths :: [[Prelude.Char]],
+--                      optOutputSubdir :: [Prelude.Char],
+--                      optOptimization :: CompilerOpts.OptimLevel,
+--                      optExtensions :: [CompilerOpts.Extension],
+--                      optDump :: [CompilerOpts.DumpFormat], optParser :: [Prelude.Char],
+--                      optTraceFailure :: Prelude.Bool,
+--                      rcVars :: [([Prelude.Char], [Prelude.Char])] }
+--     Types { optHelp :: Prelude.Bool, optVersion :: Prelude.Bool,
+--             optVerbosity :: CompilerOpts.Verbosity,
+--             optMainVerbosity :: CompilerOpts.Verbosity,
+--             optForce :: Prelude.Bool, optImportPaths :: [[Prelude.Char]],
+--             optOutputSubdir :: [Prelude.Char],
+--             optOptimization :: CompilerOpts.OptimLevel,
+--             optExtensions :: [CompilerOpts.Extension],
+--             optDump :: [CompilerOpts.DumpFormat], optParser :: [Prelude.Char],
+--             optTraceFailure :: Prelude.Bool,
+--             rcVars :: [([Prelude.Char], [Prelude.Char])] }
+--       and CompilerOpts.Options
+--     are incompatible
+
+-- TransFunctions.curry, line 97.3:
+--     Type error in record construction
+--     { typeMap := initTypeMap, ndResult := initNDResult,
+--       hoResultType := initTypeHOResult, hoResultCons := initHOResult,
+--       hoResultFunc := initHOResult, nextID := 0, detMode := False,
+--       compOptions := defaultOptions }
+--     Inferred type: { optHelp :: Prelude.Bool,
+--                      optVersion :: Prelude.Bool, optVerbosity :: CompilerOpts.Verbosity,
+--                      optMainVerbosity :: CompilerOpts.Verbosity,
+--                      optForce :: Prelude.Bool, optImportPaths :: [[Prelude.Char]],
+--                      optOutputSubdir :: [Prelude.Char],
+--                      optOptimization :: CompilerOpts.OptimLevel,
+--                      optExtensions :: [CompilerOpts.Extension],
+--                      optDump :: [CompilerOpts.DumpFormat], optParser :: [Prelude.Char],
+--                      optTraceFailure :: Prelude.Bool,
+--                      rcVars :: [([Prelude.Char], [Prelude.Char])] }
+--     Expected type: CompilerOpts.Options
+--     Types CompilerOpts.Options
+--       and { optHelp :: Prelude.Bool, optVersion :: Prelude.Bool,
+--             optVerbosity :: CompilerOpts.Verbosity,
+--             optMainVerbosity :: CompilerOpts.Verbosity,
+--             optForce :: Prelude.Bool, optImportPaths :: [[Prelude.Char]],
+--             optOutputSubdir :: [Prelude.Char],
+--             optOptimization :: CompilerOpts.OptimLevel,
+--             optExtensions :: [CompilerOpts.Extension],
+--             optDump :: [CompilerOpts.DumpFormat], optParser :: [Prelude.Char],
+--             optTraceFailure :: Prelude.Bool,
+--             rcVars :: [([Prelude.Char], [Prelude.Char])] }
+--     are incompatible
+
+
 --- Default compiler options
 defaultOptions :: Options
 defaultOptions =
@@ -68,6 +130,7 @@ data Verbosity
   | VerbStatus   -- show own compilation status
   | VerbAnalysis -- additionally show analysis infos
   | VerbDetails  -- additionally show current transformation for each module
+  deriving (Eq,Ord)
 
 --- Description and flag of verbosities
 verbosities :: [(Verbosity, String, String)]
@@ -83,6 +146,7 @@ data OptimLevel
   = OptimNone         -- no optimization
   | OptimHigherOrder  -- higher-order optimization
   | OptimStrictSupply -- strict evaluation of supplies
+  deriving (Eq,Ord)
 
 --- Description and flag of optimization levels
 optimizations :: [(OptimLevel, String, String)]
@@ -97,6 +161,7 @@ data Extension
   | FunctionalPatterns -- functional patterns
   | NoImplicitPrelude  -- no implicit import of the prelude
   | Records            -- record syntax
+  deriving Eq
 
 --- Description and flag of language extensions
 extensions :: [(Extension, String, String)]
@@ -123,6 +188,7 @@ data DumpFormat
   | DumpFunDecls    -- dump transformed function declarations
   | DumpTypeDecls   -- dump transformed type declarations
   | DumpTranslated  -- dump abstract Haskell
+  deriving Eq
 
 --- Description and flag of dump levels
 dumpLevel :: [(DumpFormat, String, String)]
@@ -252,10 +318,10 @@ dumpDescriptions =
   toDescr (flag, name, desc) = (name , "dump " ++ desc, set flag)
   set f opts = { optDump := addFlag f (opts :> optDump) | opts }
 
-addFlag :: a -> [a] -> [a]
+addFlag :: Eq a => a -> [a] -> [a]
 addFlag o opts = nub $ o : opts
 
-removeFlag :: a -> [a] -> [a]
+removeFlag :: Eq a => a -> [a] -> [a]
 removeFlag o opts = filter (/= o) opts
 
 -- -----------------------------------------------------------------------------

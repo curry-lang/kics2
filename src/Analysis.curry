@@ -5,6 +5,9 @@
 --- @author  Michael Hanus, Björn Peemöller, Fabian Skrlac
 --- @version May 2014
 --- ----------------------------------------------------------------------------
+
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module Analysis
   ( AnalysisResult, showAnalysisResult, readAnalysisResult
   , TypeMap, initTypeMap, getTypeMap
@@ -77,7 +80,7 @@ getTypeMap ts = listToFM (<)
 
 type Analysis t a = Map a -> (t, [QName]) -> (QName, a)
 
-fullIteration :: Analysis t a -> [(t, [QName])] -> Map a -> Map a -> Map a
+fullIteration :: (Eq a, Eq t) => Analysis t a -> [(t, [QName])] -> Map a -> Map a -> Map a
 fullIteration analyze calls env start =
   let after = listToFM (<) $ map (analyze (env `plusFM` start)) calls
   in if (start `eqFM` after)
@@ -236,8 +239,8 @@ externalCons :: [(QName, ConsHOClass)]
 externalCons = [(successType, ConsFO)]
 
 consOrder :: ConsDecl -> (QName, ConsHOClass)
-consOrder (Cons qn _ _ tys) = (qn, class)
-  where class = typeToConsHOClass $ maximumTypeHOClass (map classifyHOType tys)
+consOrder (Cons qn _ _ tys) = (qn, class')
+  where class' = typeToConsHOClass $ maximumTypeHOClass (map classifyHOType tys)
 
 -- -----------------------------------------------------------------------------
 -- (first/higher)-order analysis of functions
@@ -334,10 +337,10 @@ ioType = renameQName (prelude, "IO")
 
 -- Small interface to Sets
 
-empty :: SetRBT a
+empty :: Ord a => SetRBT a
 empty = emptySetRBT (<=)
 
-unionMap :: (a -> SetRBT b) -> [a] -> SetRBT b
+unionMap :: (Ord a, Ord b) => (a -> SetRBT b) -> [a] -> SetRBT b
 unionMap f = foldr unionRBT empty . map f
 
 toList :: SetRBT a -> [a]

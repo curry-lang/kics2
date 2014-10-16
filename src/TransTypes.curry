@@ -7,6 +7,9 @@
 --- @author Michael Hanus, Bjoern Peemoeller, Fabian Reck
 --- @version January 2011
 -- ---------------------------------------------------------------------------
+
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module TransTypes (transTypes) where
 
 import qualified FlatCurry as FC
@@ -598,7 +601,7 @@ bindConsRule hoResult funcName bindArgs combine (num, (FC.Cons qn _ _ texps))
   where
     isHoCons = lookupFM hoResult qn == Just ConsHO
     rule name = (funcName,
-      simpleRule [PVar (1,"cd"), PVar (2, "i"), PComb name $ map (\i -> PVar (i, 'x':show i)) [3 .. (length texps) + 2] ]
+      simpleRule [PVar (1,"cd"), PVar (2, "i"), PComb name $ map (\i -> PVar (i, 'x':show i)) [3 .. (length texps) + (2 :: Int)] ]
         ( applyF (pre ":")
                   [ applyF (basics ":=:")
                     [ Var (2, "i")
@@ -606,8 +609,8 @@ bindConsRule hoResult funcName bindArgs combine (num, (FC.Cons qn _ _ texps))
                     ]
                   , combine [list2ac (zipWith3 bindArgs
                                         (repeat (Var (1, "cd")))
-                                        (mkIdList (length texps) (Var (2, "i")))
-                    (map (\i -> Var (i, 'x':show i)) [3 ..(length texps) + 2]))]
+                                        (mkIdList (length texps :: Int) (Var (2, "i")))
+                    (map (\i -> Var (i, 'x':show i)) [3 ..(length texps) + (2 :: Int)]))]
                   ]))
 
 -- bind i (Choice_TYPENAME j l r) = [ConstraintChoice j (bind i l) (bind i r)]
@@ -700,17 +703,17 @@ curryInstance hoResult tdecl = case tdecl of
              extConsRules (curryPre "=?=") qf
            , eqConsRules hoResult cdecls
            , catchAllPattern (curryPre "=?=")
-             -- rules for less than
-           , extConsRules (curryPre "<?=") qf
-           , ordConsRules hoResult cdecls
-           , catchAllPattern (curryPre "<?=")
+           --   -- rules for less than
+           -- , extConsRules (curryPre "<?=") qf
+           -- , ordConsRules hoResult cdecls
+           -- , catchAllPattern (curryPre "<?=")
            ]
          where
            targs = map fcy2absTVar tnums
            ctype = TCons qf (map TVar targs)
            catchAllPattern qn
-             | length cdecls > 1 = catchAllCase qn (constF (curryPre "C_False"))
-             | otherwise         = []
+             | length cdecls > (1 :: Int) = catchAllCase qn (constF (curryPre "C_False"))
+             | otherwise                  = []
   _ -> error "TransTypes.curryInstance"
 
 extConsRules :: QName -> QName -> [(QName,Rule)]

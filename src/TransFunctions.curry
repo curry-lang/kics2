@@ -6,6 +6,8 @@
 --- @version May 2014
 --- --------------------------------------------------------------------------
 {-# LANGUAGE Records #-}
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module TransFunctions ( State (..), defaultState, trProg, runIOES ) where
 
 import FiniteMap (lookupFM, plusFM, delListFromFM)
@@ -261,7 +263,7 @@ trFunc f@(Func qn _ _ _ _) =
     True  ->
       getNDClass     qn >+= \ndCl ->
       getFuncHOClass qn >+= \hoCl ->
-      liftIO (showAnalysis opts (snd qn ++ " is " ++ show (ndCl, hoCl))) >+
+      -- liftIO (showAnalysis opts (snd qn ++ " is " ++ show (ndCl, hoCl))) >+
       case ndCl of
         ND -> trNDFunc f >+= \ fn -> returnM [fn]
         D  -> case hoCl of

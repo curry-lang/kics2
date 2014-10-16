@@ -26,6 +26,7 @@
 --- @version January 2012
 ---------------------------------------------------------------------
 
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
 
 module EliminateCond (eliminateCond) where
 
