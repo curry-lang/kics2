@@ -467,6 +467,7 @@ instance ConvertCurryHaskell (PrimData a) a where -- needs FlexibleInstances
 -- since the operation IOExts.connectToCmd uses one handle for reading and
 -- writing, we implement handles either as a single handle or two handles:
 data CurryHandle = OneHandle Handle | InOutHandle Handle Handle
+  deriving Eq
 
 inputHandle :: CurryHandle -> Handle
 inputHandle (OneHandle h)     = h
