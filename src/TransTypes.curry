@@ -55,7 +55,7 @@ genTypeDeclarations hoResult tdecl = case tdecl of
                                , generableInstance  hoResult
                                , normalformInstance hoResult
                                , unifiableInstance  hoResult
-                               , curryInstance      hoResult
+                               -- , curryInstance      hoResult
                                ]
       acvis     = (fcy2absVis vis)
       targs     = map fcy2absTVar tnums
@@ -700,9 +700,9 @@ curryInstance hoResult tdecl = case tdecl of
   (FC.Type qf _ tnums cdecls)
     -> mkInstance (curryPre "Curry") [] ctype targs $ concat
            [ -- rules for equality
-             extConsRules (curryPre "=?=") qf
-           , eqConsRules hoResult cdecls
-           , catchAllPattern (curryPre "=?=")
+             -- extConsRules (curryPre "=?=") qf
+           -- , eqConsRules hoResult cdecls
+           -- , catchAllPattern (curryPre "=?=")
            --   -- rules for less than
            -- , extConsRules (curryPre "<?=") qf
            -- , ordConsRules hoResult cdecls
@@ -711,9 +711,9 @@ curryInstance hoResult tdecl = case tdecl of
          where
            targs = map fcy2absTVar tnums
            ctype = TCons qf (map TVar targs)
-           catchAllPattern qn
-             | length cdecls > (1 :: Int) = catchAllCase qn (constF (curryPre "C_False"))
-             | otherwise                  = []
+           -- catchAllPattern qn
+           --   | length cdecls > (1 :: Int) = catchAllCase qn (constF (curryPre "C_False"))
+           --   | otherwise                  = []
   _ -> error "TransTypes.curryInstance"
 
 extConsRules :: QName -> QName -> [(QName,Rule)]
