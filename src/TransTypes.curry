@@ -55,7 +55,7 @@ genTypeDeclarations hoResult tdecl = case tdecl of
                                , generableInstance  hoResult
                                , normalformInstance hoResult
                                , unifiableInstance  hoResult
-                               -- , curryInstance      hoResult
+                               , curryInstance      hoResult
                                ]
       acvis     = (fcy2absVis vis)
       targs     = map fcy2absTVar tnums
