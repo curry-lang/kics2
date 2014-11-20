@@ -6,6 +6,8 @@
 --- @version January 2013
 ----------------------------------------------------------------------
 
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module RCFile (readRC, rcValue, setRCProperty) where
 
 import Char         (toLower, isSpace)
