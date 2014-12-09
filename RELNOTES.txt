@@ -1,6 +1,16 @@
 Release Notes for KiCS2
 =======================
 
+Release notes for KiCS2 Version 0.3.3
+-------------------------------------
+
+Changes to version 0.3.2:
+
+  * Curry programs compiled with `kics2` can now be profiled using the GHC's
+    profiling capabilities. Please see the manual for additional information.
+  * Tool `data2xml` for data conversion to XML and back added.
+
+
 Release notes for KiCS2 Version 0.3.2
 -------------------------------------
 
@@ -12,7 +22,6 @@ Changes to version 0.3.1:
   * Tool `CASS`: new analysis `RequiredValues` added.
   * Optimization tool `bindingopt` for transforming Boolean equalities
     into constraint equalities added.
-  * Tool `data2xml` for data conversion to XML and back added.
 
 
 Release notes for KiCS2 Version 0.3.1

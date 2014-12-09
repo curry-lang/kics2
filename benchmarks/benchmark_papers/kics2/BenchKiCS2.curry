@@ -1,4 +1,4 @@
-{-# OPTIONS_CYMAKE -F --pgmF=../../../bin/currypp #-}
+{-# OPTIONS_CYMAKE -F --pgmF=currypp #-}
 
 -----------------------------------------------------------------------
 --- Benchmark different Curry systems with various example programs.
@@ -20,7 +20,8 @@ timeLimit = 150.0 -- seconds
 numberOfRuns = 1
 
 -- The KiCS2 systems to be benchmarked:
-kics2Systems = [KiCS2 "0.2.4", KiCS2 "0.3.0", KiCS2 "0.3.1", KiCS2 ""]
+kics2Systems = [KiCS2 "0.2.3", KiCS2 "0.2.4",
+                KiCS2 "0.3.0", KiCS2 "0.3.1", KiCS2 ""]
 
 -- Directory containing the benchmark programs:
 benchProgDir = "../../suite"
@@ -30,7 +31,25 @@ benchProgDir = "../../suite"
 -- (e.g., pakcs, kics2, mcc) and execute some benchmarks.
 
 -- The Curry systems (compilers) used in the benchmarks:
-data CurrySystem = PAKCS | MCC | KiCS2 String -- version
+data CurrySystem = PAKCS
+                 | MCC
+                 | KiCS2 String       -- version
+                 | KiCS2Local [KLOpt] -- local KiCS2 installation with options
+
+-- Options for the test of a local KiCS2 installation.
+data KLOpt = WithoutCS
+
+showKLOpt WithoutCS = "WOCS"
+
+-- expand option to appropriate set command:
+setKLOpt WithoutCS = ":set ghc -DDISABLE_CS -fforce-recomp"
+
+-- Show the name of the Curry system:
+showSystemName PAKCS             = "PAKCS"
+showSystemName MCC               = "MCC"
+showSystemName (KiCS2 version)   = "KiCS2 " ++ version
+showSystemName (KiCS2Local opts) = "KiCS2/local (" ++
+                                   unwords (map showKLOpt opts) ++ ")"
 
 -- Show the name of the Curry system as a LaTeX string (used as a label
 -- of a column of a table):
@@ -39,13 +58,23 @@ showSystemLabel MCC             = "MCC"
 showSystemLabel (KiCS2 version) =
   if null version then "KiCS2"
                   else "\\parbox{1cm}{KiCS2 " ++ version ++ "}"
+showSystemLabel (KiCS2Local opts) =
+  "\\parbox{1cm}{KiCS2 local "++ unwords (map showKLOpt opts) ++ "}"
 
--- The binary of the Curry system:
-binOfSystem PAKCS           = "/opt/pakcs/bin/pakcs"
-binOfSystem MCC             = "/opt/mcc/bin/cyc"
-binOfSystem (KiCS2 version) = "/opt/kics2/kics2"++
-                              (if null version then "" else '-':version)++
-                              "/bin/kics2"
+-- The directory containing the executables of the Curry system:
+binDirOfSystem PAKCS           = "/opt/pakcs/bin"
+binDirOfSystem MCC             = "/opt/mcc/bin"
+binDirOfSystem (KiCS2 version) = "/opt/kics2/kics2"++
+                                 (if null version then "" else '-':version)++
+                                 "/bin"
+binDirOfSystem (KiCS2Local _)  = "/net/medoc/home/mh/kics2_local/bin"
+
+-- The main executable of the Curry system:
+binOfSystem cs =
+  binDirOfSystem cs ++ '/' :
+    case cs of MCC   -> "cyc"
+               PAKCS -> "pakcs"
+               _     -> "kics2"
 
 -- Compile a program with a given Curry system:
 compileCurry :: CurrySystem -> String -> String-> String -> IO ()
@@ -61,7 +90,9 @@ compileCurry cs opts prog mainexp = system compilecmd >> done
    currybin = binOfSystem cs
 
    -- default options for PAKCS and KiCS2:
-   defopts = ":set -first :set -time"
+   defopts = ":set -first :set -time " ++
+             case cs of KiCS2Local os -> unwords (map setKLOpt os)
+                        _             -> ""
 
 -- The command to execute a compiled Curry program:
 -- (for MCC: increase heap size and set non-interative option)
@@ -71,13 +102,26 @@ runCurryCmd cs prog =
 
 -- Remove generated files:
 cleanCurry cs prog = case cs of
-  MCC   -> system ("/bin/rm -f "++prog++".icurry "++prog) >> done
-  PAKCS -> do system ("/opt/pakcs/bin/cleancurry "++prog)
-              system ("/bin/rm -f "++prog)
-              done
-  KiCS2 _ -> do system ("/opt/kics2/bin/cleancurry "++prog)
-                system ("/bin/rm -f "++prog)
-                done
+  MCC -> system ("/bin/rm -f "++prog++".icurry "++prog) >> done
+  _   -> -- PAKCS, KiCS2:
+         do system (binDirOfSystem cs ++ "/cleancurry "++prog)
+            system ("/bin/rm -f "++prog)
+            done
+
+-- Executes a benchmark (program name, compile options, main expression or "")
+-- on a given Curry system and return the output (and error if exit status
+-- is non-zero).
+benchExpResult :: CurrySystem -> (String,String,String)
+               -> Benchmark String
+benchExpResult currysystem (progname,options,mainexp) =
+  (mapBench checkError (benchCommandOutput ("./"++progname)))
+    `withPrepare` compileCurry currysystem options progname mainexp
+    `withCleanup` cleanCurry   currysystem progname
+ where
+  checkError (status,output,error) =
+    if status==0 then output
+                 else "***ERROR*** Exit status: "++show status++"\n"++
+                      output++error
 
 -- Executes a benchmark (program name, compile options, main expression or "")
 -- on a given Curry system and return the required cpu time.
@@ -104,10 +148,10 @@ benchPrograms currysystem programs =
            (runOn (benchProgram currysystem) programs)
  where
   showOpts o = if null o then ""
-               else " ("++ unwords (filter (/=":set") (words o)) ++")"
+               else " ("++ (unwords . filter (/=":set") . words) o ++")"
 
 -- Shows a floating point number.
-showF x = ``format "%.2f",x''
+showF x = ``format "%04.2f",x''
 
 -- Executes a benchmark with parallel strategies (with a KiCS2 system)
 -- and return the required elapsed time.
@@ -173,12 +217,14 @@ detBench _ = map (\p -> (p,"",""))
 
 -- Non-deterministic benchmark programs testing the computation of
 -- all values via DFS:
+nondetBenchDFS :: CurrySystem -> [(String,String,String)]
 nondetBenchDFS currysystem =
   map (\p -> (p,dfsOption currysystem,""))
       ["PermSort","PermSortPeano","Half","Last","RegExp"]
 
 -- Benchmark programs with functional patterns
 -- (all values via DFS are computed):
+funpatBenchDFS :: CurrySystem -> [(String,String,String)]
 funpatBenchDFS currysystem =
   map (\p -> (p,dfsOption currysystem,""))
       ["LastFunPats","ExpVarFunPats","ExpSimpFunPats","PaliFunPats"]
@@ -187,6 +233,7 @@ funpatBenchDFS currysystem =
 dfsOption cs = if cs `elem` [PAKCS,MCC] then "" else ":set dfs"
 
 -- Non-deterministic benchmark programs:
+nondetBench :: CurrySystem -> [(String,String,String)]
 nondetBench _ =
   "PermSort"       `withSearch` ["dfs","bfs","ids"] ++
   "PermSortPeano"  `withSearch` ["dfs","bfs","ids"] ++
@@ -199,22 +246,31 @@ nondetBench _ =
   "ExpSimpFunPats" `withSearch` ["dfs","bfs","ids"] ++
   "PaliFunPats"    `withSearch` ["dfs","bfs","ids"]
 
--- transform program into programs testing all given search strategies:
-withSearch prog = map (\s->(prog,":set "++s,""))
+bindingBench cs =
+  map (\m->("LogBindTest",dfsOption cs,m))
+      ["main1","main2","main3","main4","main5","main6"]
 
--- Non-deterministic benchmark programs where only the first solution
--- is computed (due to infinite search tree):
-nondetBenchFirst _ =
-  "NDNums" `withSearchFirst` ["bfs","ids"]
+-- transform program into programs testing all given search strategies:
+withSearch prog strats = withOptions prog (map (":set "++) strats)
 
 -- transform program into programs testing all given search strategies to
 -- compute a first solution/value:
-withSearchFirst prog = map (\s->(prog,":set "++s++" :set +first",""))
+withSearchFirst prog strats =
+  withOptions prog (map (\s->":set "++s++" :set +first") strats)
+
+-- transform program into programs running with all given options:
+withOptions prog = map (\opt->(prog,opt,""))
+
+-- Non-deterministic benchmark programs where only the first solution
+-- is computed (due to infinite search tree):
+nondetBenchFirst :: CurrySystem -> [(String,String,String)]
+nondetBenchFirst _ = "NDNums" `withSearchFirst` ["bfs","ids"]
 
 -- Parallel search benchmark programs:
 parSearchBench = ["PermSort","PermSortPeano"]
 
 -- Encapsulated search benchmarks:
+encapsBench :: CurrySystem -> [(String,String,String)]
 encapsBench _ =
   [("PermSortSearchTree",":set dfs","mainsort")
   ,("PermSortSearchTree",":set dfs","maintree")]
@@ -245,5 +301,19 @@ mainParBench system benchprogs = do
   setCurrentDirectory curdir
   return (benchResultsAsTable ("RTS Parameters" : benchprogs)
                               tabledata)
+
+-----------------------------------------------------------------------
+-- Benchmark to show some distribution information of a Curry system.
+distInfo :: CurrySystem -> IO String
+distInfo currysystem = do
+  execBench (benchExpResult currysystem ("DistInfo","","runtimeSystem"))
+
+-- Benchmark to show the distribution information of a
+-- list of Curry systems as a LaTeX table.
+distInfosAsTable :: [CurrySystem] -> IO String
+distInfosAsTable currysystems = do
+  infos <- mapIO (\cs -> distInfo cs >>= \i -> return [showSystemName cs,i])
+                 currysystems
+  return (benchResultsAsTable ["System","Info"] infos)
 
 -----------------------------------------------------------------------

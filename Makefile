@@ -5,14 +5,16 @@
 # Some information about this installation
 # ----------------------------------------
 
-# Is this a global installation (with restricted flexibility)(yes/no)?
+# Is this a global installation (with restricted flexibility) (yes/no)?
 GLOBALINSTALL   = yes
+# Should profiling be enabled (yes/no)?
+PROFILING       = yes
 # The major version number
 MAJORVERSION    = 0
 # The minor version number
 MINORVERSION    = 3
 # The revision version number
-REVISIONVERSION = 2
+REVISIONVERSION = 3
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date, extracted from the last git commit
@@ -68,6 +70,8 @@ export CLEANCURRY   = $(BINDIR)/cleancurry$(EXE_SUFFIX)
 export CURRYDOC     = $(BINDIR)/currydoc$(EXE_SUFFIX)
 # The Haskell installation info
 export INSTALLHS    = $(ROOT)/runtime/Installation.hs
+# The Curry installation info
+export INSTALLCURRY = $(ROOT)/src/Installation.curry
 # The version information for the manual
 MANUALVERSION       = $(ROOT)/docs/src/version.tex
 # Logfiles for make
@@ -134,6 +138,12 @@ export GHC_UNREGISTER = "$(GHC-PKG)" unregister --$(GHC_PKG_OPT)="$(PKGDB)"
 export CABAL_INSTALL  = "$(CABAL)" install --with-compiler="$(GHC)"       \
                         --with-hc-pkg="$(GHC-PKG)" --prefix="$(LOCALPKG)" \
                         --global --package-db="$(PKGDB)" -O2
+# Cabal profiling options
+ifeq ($(PROFILING),yes)
+export CABAL_PROFILE = -p
+else
+export CABAL_PROFILE  =
+endif
 # Additional flags passed to the runtime
 export RUNTIMEFLAGS   =
 
@@ -172,8 +182,8 @@ tools:
 # install the kernel system (binaries and libraries)
 .PHONY: kernel
 kernel: $(PWD) $(WHICH) $(PKGDB) $(CYMAKE) $(CLEANCURRY) scripts copylibs
-	$(MAKE) $(INSTALLHS) INSTALLPREFIX="$(shell $(PWD))" \
-	                     GHC="$(shell $(WHICH) "$(GHC)")"
+	$(MAKE) $(INSTALLCURRY) INSTALLPREFIX="$(shell $(PWD))" \
+	                        GHC="$(shell $(WHICH) "$(GHC)")"
 	cd src     && $(MAKE) # build compiler
 	rm -f $(CURRYSYSTEMBIN)
 	ln -s $(BINDIR)/$(CURRYSYSTEM) $(CURRYSYSTEMBIN)
@@ -193,7 +203,7 @@ copylibs:
 $(PKGDB):
 	"$(GHC-PKG)" init $@
 	$(CABAL) update
-	$(CABAL_INSTALL) $(filter-out $(GHC_LIBS),$(ALLDEPS))
+	$(CABAL_INSTALL) $(CABAL_PROFILE) $(filter-out $(GHC_LIBS),$(ALLDEPS))
 
 # create frontend binary
 $(CYMAKE): .FORCE
@@ -231,7 +241,7 @@ clean: $(CLEANCURRY)
 	cd utils       && $(MAKE) clean
 	cd www         && $(MAKE) clean
 	rm -f $(MAKELOG) $(CURRYSYSTEMBIN)
-	rm -f $(INSTALLHS)
+	rm -f $(INSTALLHS) $(INSTALLCURRY)
 
 # clean everything (including compiler binaries)
 .PHONY: cleanall
@@ -258,6 +268,9 @@ maintainer-clean: cleanall
 ##############################################################################
 
 # generate module with basic installation information
+$(INSTALLCURRY): $(INSTALLHS)
+	cp $< $@
+
 $(INSTALLHS): Makefile
 ifneq ($(shell test -x "$(GHC)" ; echo $$?), 0)
 	$(error "Executable 'ghc' not found. You may use 'make <target> GHC=<path>')
@@ -310,6 +323,13 @@ ifeq ($(GLOBALINSTALL),yes)
 	echo 'installGlobal = True' >> $@
 else
 	echo 'installGlobal = False' >> $@
+endif
+	echo "" >> $@
+	echo 'withProfiling :: Bool' >> $@
+ifeq ($(PROFILING),yes)
+	echo 'withProfiling = True' >> $@
+else
+	echo 'withProfiling = False' >> $@
 endif
 
 ##############################################################################
@@ -441,6 +461,7 @@ $(TARBALL): $(COMP) $(CYMAKE) $(MANUAL)
 	cat Makefile \
 	  | sed -e "/^# SNIP FOR DISTRIBUTION/,\$$d" \
 	  | sed 's|^GLOBALINSTALL *=.*$$|GLOBALINSTALL   = yes|' \
+	  | sed 's|^PROFILING *=.*$$|PROFILING   = no|' \
 	  | sed 's|^COMPILERDATE *:=.*$$|COMPILERDATE    = $(COMPILERDATE)|' \
 	  > $(TMPDIR)/Makefile
 	# Zip it!
@@ -463,11 +484,11 @@ bootstrap: $(COMP)
 frontend: $(CYMAKE)
 
 .PHONY: Compile
-Compile: $(PKGDB) $(INSTALLHS) scripts copylibs
+Compile: $(PKGDB) $(INSTALLCURRY) scripts copylibs
 	cd src && $(MAKE) CompileBoot
 
 .PHONY: REPL
-REPL: $(PKGDB) $(INSTALLHS) scripts copylibs
+REPL: $(PKGDB) $(INSTALLCURRY) scripts copylibs
 	cd src && $(MAKE) REPLBoot
 
 .PHONY: typeinference
@@ -479,7 +500,7 @@ typeinference:
 benchmarks:
 	cd benchmarks && $(MAKE)
 
-$(COMP): | $(INSTALLHS) $(PKGDB) $(CYMAKE) $(CLEANCURRY) scripts copylibs
+$(COMP): | $(INSTALLCURRY) $(PKGDB) $(CYMAKE) $(CLEANCURRY) scripts copylibs
 	cd src && $(MAKE) bootstrap
 
 # Peform a full bootstrap - distribution - installation - uninstallation

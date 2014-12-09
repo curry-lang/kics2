@@ -17,7 +17,7 @@ import Distribution (defaultParams, setFullPath, setQuiet, setSpecials
                     , installDir
                     )
 import FilePath     ( FilePath, dropExtension, takeExtension, takeBaseName
-                    , dropTrailingPathSeparator, (</>)
+                    , dropTrailingPathSeparator, (</>), (<.>), normalise
                     )
 import Files        (lookupFileInPath)
 import FiniteMap    (FM, emptyFM, addToFM, fmToList, lookupFM)
@@ -26,13 +26,13 @@ import FlatCurry    ( Prog (..), readFlatCurryFile, flatCurryFileName
                     )
 import Function     (second)
 import List         (intercalate, partition)
-import Maybe        (fromJust, isJust)
-import Message      (showStatus)
+import Maybe        (fromJust, isJust, isNothing)
+import Message      (showAnalysis)
+import Names        (splitIdentifiers)
 import System       (system)
 
 import CompilerOpts
 import RCFile       (rcValue)
-import Files        ()
 import SCC          (scc)
 
 type ModuleIdent = String
@@ -87,9 +87,13 @@ moduleDeps opts mEnv m = case lookupFM mEnv m of
       Just fn -> sourceDeps { optVerbosity := VerbQuiet | opts } m fn mEnv
 
 lookupModule :: Options -> String -> IO (Maybe FilePath)
-lookupModule opts m = lookupFileInPath m [".curry", ".lcurry", ".fcy"]
+lookupModule opts m = lookupFileInPath (moduleNameToFile m)
+                      [".curry", ".lcurry", ".fcy"]
                       (map dropTrailingPathSeparator importPaths)
   where importPaths = "." : opts :> optImportPaths
+
+moduleNameToFile :: String -> FilePath
+moduleNameToFile = foldr1 (</>) . splitIdentifiers
 
 sourceDeps :: Options -> ModuleIdent -> String -> SourceEnv -> IO SourceEnv
 sourceDeps opts m fn mEnv = do
@@ -117,34 +121,33 @@ preprocessFcyFile :: Options -> FilePath -> IO Prog
 preprocessFcyFile copts fcyname = do
   -- change current verbosity level to main verbosity level in order to
   -- see the status of pre-processing imported modules:
-  let opts = { optVerbosity := opts :> optMainVerbosity | copts}
-  showStatus opts $ "Pre-processing file " ++ fcyname
-  let rcbopt  = rcValue (opts :> rcVars) "bindingoptimization"
-  unless (rcbopt=="no") $ do
-    let optexec = installDir </> "currytools" </> "optimize" </> "bindingopt"
-    existsoptexec <- doesFileExist optexec
-    when existsoptexec $ do
-     let cmpverb = opts :> optVerbosity
-         verb    = if cmpverb==VerbStatus then "-v1" else
-                   if cmpverb==VerbAnalysis then "-v3" else "-v0"
-         fastopt = if rcbopt=="full" then "" else "-f"
-     let optcmd = unwords [optexec,verb,fastopt,fcyname]
-     showStatus opts $ "Executing: "++ optcmd
-     status <- system optcmd
-     when (status>0) $ do
-       putStrLn "WARNING: no binding optimization performed for file:"
-       putStrLn fcyname
+  let opts    = { optVerbosity := opts :> optMainVerbosity | copts}
+      rcbopt  = rcValue (opts :> rcVars) "bindingoptimization"
+      optexec = installDir </> "currytools" </> "optimize" </> "bindingopt"
+  existsoptexec <- doesFileExist optexec
+  when (rcbopt /= "no" && existsoptexec) $ do
+    showAnalysis opts $ "Pre-processing file " ++ fcyname
+    let verb = case opts :> optVerbosity of
+                  VerbAnalysis -> "-v1"
+                  VerbDetails  -> "-v3"
+                  _            -> "-v0"
+        fastopt = if rcbopt == "full" then "" else "-f"
+        optcmd  = unwords [optexec, verb, fastopt, fcyname]
+    showAnalysis opts $ "Executing: " ++ optcmd
+    status <- system optcmd
+    unless (status == 0) $ do
+      putStrLn "WARNING: Binding optimization failed for file:"
+      putStrLn fcyname
   readFlatCurryFile fcyname
 
 -- Parse a Curry program with the front end and return the FlatCurry file name.
 parseCurryWithOptions :: String -> FrontendParams -> IO String
 parseCurryWithOptions progname options = do
-  mbCurryFile  <- lookupFileInLoadPath (progname++".curry")
-  mbLCurryFile <- lookupFileInLoadPath (progname++".lcurry")
-  if mbCurryFile==Nothing && mbLCurryFile==Nothing
-   then done
-   else callFrontendWithParams FCY options progname
-  findFileInLoadPath (progname++".fcy")
+  mbCurryFile  <- lookupFileInLoadPath (progname <.> "curry")
+  mbLCurryFile <- lookupFileInLoadPath (progname <.> "lcurry")
+  unless (isNothing mbCurryFile && isNothing mbLCurryFile) $
+    callFrontendWithParams FCY options progname
+  liftIO normalise $ findFileInLoadPath (progname <.> "fcy")
 
 isFlatCurryFile :: FilePath -> Bool
 isFlatCurryFile fn = takeExtension fn == ".fcy"

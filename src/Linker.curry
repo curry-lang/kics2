@@ -12,7 +12,8 @@
 module Linker
   ( ReplState (..), NonDetMode (..), MainCompile (..), loadPaths
   , setExitStatus
-  , writeVerboseInfo, mainGoalFile, initReplState, createAndCompileMain
+  , writeVerboseInfo, mainGoalFile, mainModuleIdent, initReplState
+  , createAndCompileMain
   , getTimeCmd
   ) where
 
@@ -56,6 +57,7 @@ type ReplState =
   , showBindings :: Bool       -- show free variables in main goal in output?
   , showTime     :: Bool       -- show execution of main goal?
   , traceFailure :: Bool       -- trace failure in deterministic expression
+  , profile      :: Bool       -- use GHC's profiling capabilities
   , useGhci      :: Bool       -- use ghci to evaluate main goal
   , safeExec     :: Bool       -- safe execution mode without I/O actions
   , parseOpts    :: String     -- additional options for the front end
@@ -90,6 +92,7 @@ initReplState =
   , showBindings := True
   , showTime     := False
   , traceFailure := False
+  , profile      := False
   , useGhci      := False
   , safeExec     := False
   , parseOpts    := ""
@@ -116,15 +119,19 @@ setExitStatus s rst = { exitStatus := s | rst }
 mainGoalFile :: String
 mainGoalFile = "Curry_Main_Goal.curry"
 
+--- Module identifier for Main
+mainModuleIdent :: String
+mainModuleIdent = "Curry_Main_Goal"
+
 --- Show an info message for a given verbosity level
 writeVerboseInfo :: ReplState -> Int -> String -> IO ()
 writeVerboseInfo rst lvl msg =
   unless (rst :> verbose < lvl) (putStrLn msg >> hFlush stdout)
 
--- Reads the determinism infomation for the main goal file
+--- Reads the determinism infomation for the main goal file
 readInfoFile :: ReplState -> IO [((String,String),Bool)]
 readInfoFile rst = do
-  readQTermFile (funcInfoFile (rst :> outputSubdir) mainGoalFile)
+  readQTermFile (funcInfoFile (rst :> outputSubdir) mainModuleIdent mainGoalFile)
 
 getGoalInfo :: ReplState -> IO (Bool, Bool)
 getGoalInfo rst = do
@@ -140,8 +147,8 @@ getGoalInfo rst = do
                 (if isio  then "" else "not ") ++ "of IO type..."
   return (isdet, isio)
 
--- Checks whether user-defined ghc options have been changed.
-updateGhcOptions :: ReplState -> IO (ReplState,Bool)
+--- Checks whether user-defined ghc options have been changed.
+updateGhcOptions :: ReplState -> IO (ReplState, Bool)
 updateGhcOptions rst =
   if oldOpts == newOpts
     then return (rst,False)
@@ -158,7 +165,7 @@ updateGhcOptions rst =
 data MainCompile = MainError | MainDet | MainNonDet
   deriving Eq
 
--- Create and compile the main module containing the main goal
+--- Create and compile the main module containing the main goal
 createAndCompileMain :: ReplState -> Bool -> String -> Maybe Int
                      -> IO (ReplState, MainCompile)
 createAndCompileMain rst createExecutable mainExp bindings = do
@@ -195,23 +202,24 @@ ghcCall :: ReplState -> Bool -> Bool -> String -> String
 ghcCall rst useGhci recompile mainFile = unwords . filter notNull $
   [ Inst.ghcExec
   , Inst.ghcOptions
-  , if rst :> optim && not useGhci then "-O2"            else ""
-  , if useGhci                     then "--interactive"  else "--make"
-  , if rst :> verbose < 2          then "-v0"            else "-v1"
-  , if withGhcSupply               then "-package ghc"   else ""
-  , if isParSearch                 then "-threaded"      else ""
-  , if withRtsOpts                 then "-rtsopts"       else ""
-  , if recompile                   then "-fforce-recomp" else ""
+  , if rst :> optim && not useGhci then "-O2"               else ""
+  , if useGhci                     then "--interactive"     else "--make"
+  , if rst :> verbose < 2          then "-v0"               else "-v1"
+  , if withGhcSupply               then "-package ghc"      else ""
+  , if isParSearch                 then "-threaded"         else ""
+  , if withProfiling               then "-prof -fprof-auto" else ""
+  , if withRtsOpts                 then "-rtsopts"          else ""
+  , if recompile                   then "-fforce-recomp"    else ""
       -- XRelaxedPolyRec due to problem in FlatCurryShow
   , "-XMultiParamTypeClasses", "-XFlexibleInstances", "-XRelaxedPolyRec"
---   , "-cpp" -- use the C pre processor -- TODO WHY?
   , rst :> ghcOpts
   , "-i" ++ (intercalate ":" ghcImports)
   , mainFile
   ]
  where
   withGhcSupply = (rst :> idSupply) `elem` ["ghc", "ioref"]
-  withRtsOpts   = notNull (rst :> rtsOpts) || isParSearch
+  withRtsOpts   = notNull (rst :> rtsOpts) || isParSearch || withProfiling
+  withProfiling = rst :> profile
   isParSearch   = case rst :> ndMode of
     Par _ -> True
     _     -> False
@@ -224,7 +232,7 @@ ghcCall rst useGhci recompile mainFile = unwords . filter notNull $
       ] ++ map (</> rst :> outputSubdir) (loadPaths rst)
 
 --- Mode of non-deterministic evaluation of main goal
-data NonDetMode  = DFS | BFS | IDS Int | Par Int | PrDFS | PrtChoices Int
+data NonDetMode  = DFS | BFS | IDS Int | Par Int | PrDFS | PrtChoices Int | DEBUG
 
 data EvalMode    = All | One | Interactive MoreDefault -- | Count
 
@@ -271,6 +279,7 @@ mainExpr goal isdet isio isTF ndMode evalMode mbBindings
     | isdet && isTF         = "failtraceD"
     | isdet                 = "evalD"
     | otherwise             = case ndMode of
+      DEBUG        -> searchExpr $ "debugSearch"
       PrDFS        -> searchExpr $ "prdfs"
       DFS          -> searchExpr $ "printDFS" ++ searchSuffix
       BFS          -> searchExpr $ "printBFS" ++ searchSuffix
@@ -297,7 +306,7 @@ mainExpr goal isdet isio isTF ndMode evalMode mbBindings
 
 
 ---------------------------------------------------------------------------
--- Axuiliaries:
+-- Auxiliaries:
 
 -- Decorates a shell command so that timing information is shown if
 -- the corresponding option is set.
@@ -323,4 +332,3 @@ getTimeCmd rst timename cmd
     hClose hout
     hClose herr
     return dist
-

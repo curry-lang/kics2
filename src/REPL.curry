@@ -14,7 +14,7 @@ import AbstractCurry
 import Char             (isAlpha, isAlphaNum, isDigit, isSpace, toLower)
 import Directory
 import Distribution
-import FilePath         ( (</>), (<.>), dropExtension
+import FilePath         ( (</>), (<.>)
                         , splitSearchPath, splitFileName, splitExtension
                         )
 import Files            (lookupFileInPath)
@@ -74,8 +74,10 @@ defaultImportPaths rst = do
   return $ filter (/= ".") $ splitSearchPath currypath ++ splitSearchPath rclibs
 
 defaultImportPathsWith :: ReplState -> String -> IO [String]
-defaultImportPathsWith rst dirs =
-  (splitSearchPath dirs ++) `liftIO` defaultImportPaths rst
+defaultImportPathsWith rst dirs = do
+  defipath <- defaultImportPaths rst
+  adirs    <- mapIO getAbsolutePath (splitSearchPath dirs)
+  return (adirs ++ defipath)
 
 processArgsAndStart :: ReplState -> [String] -> IO ()
 processArgsAndStart rst []
@@ -158,11 +160,12 @@ evalExpression rst expr = do
   return rst''
 
 -- Check whether the main module import the module "Unsafe".
+importUnsafeModule :: ReplState -> IO Bool
 importUnsafeModule rst =
   if "Unsafe" `elem` (rst :> addMods)
   then return True
   else do
-    let fcyMainModFile = inCurrySubdir $ rst :> mainMod <.> "fcy"
+    let fcyMainModFile = flatCurryFileName (rst :> mainMod)
         frontendParams = currentFrontendParams rst
     catch (callFrontendWithParams FCY frontendParams (rst :> mainMod) >>
            readFlatCurryFile fcyMainModFile >>= \p ->
@@ -208,8 +211,9 @@ cleanMainGoalFile rst = unless keepfiles $ do
 -- Return Nothing if some error occurred during parsing.
 getAcyOfMainGoal :: ReplState -> IO (Maybe CurryProg)
 getAcyOfMainGoal rst = do
-  let mainGoalProg    = dropExtension mainGoalFile
-      acyMainGoalFile = inCurrySubdir $ mainGoalProg <.> "acy"
+  let mainGoalProg    = stripCurrySuffix mainGoalFile
+      acyMainGoalFile = --abstractCurryFileName mainGoalProg
+                         inCurrySubdir (stripCurrySuffix mainGoalProg) ++ ".acy"
       frontendParams  = currentFrontendParams rst
   prog <- catch (callFrontendWithParams ACY frontendParams mainGoalProg >>
                  tryReadACYFile acyMainGoalFile)
@@ -272,7 +276,7 @@ compileProgramWithGoal rst createExecutable goal =
   else compileProgGoal
  where
   compileProgGoal = do
-    let infoFile = funcInfoFile (rst :> outputSubdir) mainGoalFile
+    let infoFile = funcInfoFile (rst :> outputSubdir) mainModuleIdent mainGoalFile
     removeFileIfExists infoFile
     removeFileIfExists $ flatCurryFileName mainGoalFile
     writeSimpleMainGoalFile rst goal
@@ -408,15 +412,17 @@ compileCurryProgram rst curryprog = do
 --- Execute main program and show run time:
 execMain :: ReplState -> MainCompile -> String -> IO ReplState
 execMain rst _ mainexp = do -- _ was cmpstatus
-  let paropts = case rst :> ndMode of
+  let parOpts = case rst :> ndMode of
                   Par n -> "-N" ++ (if n == 0 then "" else show n)
                   _     -> ""
-      maincmd = ("." </> rst :> outputSubdir </> "Main") ++
-                (if null (rst :> rtsOpts) && null paropts
-                 then " "
-                 else " +RTS " ++ rst :> rtsOpts ++ " " ++ paropts ++ " -RTS ") ++
-                rst:>rtsArgs
-  timecmd <- getTimeCmd rst "Execution" maincmd
+      mainCall  = unwords [mainCmd, rtsParams, rst :> rtsArgs]
+      mainCmd   = "." </> rst :> outputSubdir </> "Main"
+      rtsParams = if null (rst :> rtsOpts) && null parOpts && not withProf
+                  then []
+                  else unwords ["+RTS", rst :> rtsOpts, parOpts, profOpt, "-RTS"]
+      profOpt   = if withProf then "-p" else []
+      withProf  = rst :> profile
+  timecmd <- getTimeCmd rst "Execution" mainCall
   writeVerboseInfo rst 1 $ "Evaluating expression: " ++ strip mainexp
   writeVerboseInfo rst 3 $ "Executing: " ++ timecmd
   cmdstatus <- system timecmd
@@ -498,28 +504,32 @@ processHelp rst _ = do
 processLoad :: ReplState -> String -> IO (Maybe ReplState)
 processLoad rst args = do
   rst' <- terminateSourceProgGUIs rst
-  let dirmodname = dropExtension args
+  let dirmodname = stripCurrySuffix args
   if null dirmodname
     then skipCommand "missing module name"
     else do
     let (dirname, modname) = splitFileName dirmodname
-    unless (dirname == "./") $ setCurrentDirectory dirname
-    mbf <- lookupFileInPath modname [".curry", ".lcurry"] ["."]
-    maybe (skipCommand $ "source file of module " ++ dirmodname ++ " not found")
-          (\fn ->
-              readAndProcessSourceFileOptions rst' fn >>=
-              maybe (return Nothing)
-                (\rst'' -> compileCurryProgram rst'' modname >>
-                return (Just { mainMod := modname, addMods := [] | rst'' }))
-          )
-          mbf
+    mbrst <- if (dirname == "./") then return (Just rst')
+             else do putStrLn $ "Changing working directory to "++dirname
+                     processCd rst' dirname
+    maybe (return Nothing)
+     (\rst2 ->
+       (lookupFileInPath modname [".curry", ".lcurry"] ["."]) >>=
+       maybe (skipCommand $ "source file of module "++dirmodname++" not found")
+             (\fn ->
+                 readAndProcessSourceFileOptions rst2 fn >>=
+                 maybe (return Nothing)
+                   (\rst3 -> compileCurryProgram rst3 modname >>
+                   return (Just { mainMod := modname, addMods := [] | rst3 }))
+             ))
+     mbrst
 
 --- Process :reload command
 processReload :: ReplState -> String -> IO (Maybe ReplState)
 processReload rst args
   | rst :> mainMod == rst :> preludeName
   = skipCommand "no program loaded!"
-  | null (dropExtension args)
+  | null (stripCurrySuffix args)
   = compileCurryProgram rst (rst :> mainMod) >> return (Just rst)
   | otherwise
   = skipCommand "superfluous argument"
@@ -530,20 +540,27 @@ processAdd rst args
   | null args = skipCommand "Missing module name"
   | otherwise = Just `liftIO` foldIO add rst (words args)
   where
-    add rst' m = do
-      let mdl = dropExtension m
-      mbf <- lookupFileInPath mdl [".curry", ".lcurry"] (loadPaths rst')
-      case mbf of
-        Nothing -> do
-          writeErrorMsg $ "Source file of module '" ++ mdl ++ "' not found"
-          return rst'
-        Just _  -> return { addMods := insert mdl (rst' :> addMods) | rst'}
+    add rst' m = let mdl = stripCurrySuffix m in
+      if validModuleName mdl
+      then do
+        mbf <- lookupFileInPath mdl [".curry", ".lcurry"] (loadPaths rst')
+        case mbf of
+          Nothing -> do
+            writeErrorMsg $ "Source file of module '" ++ mdl ++ "' not found"
+            return rst'
+          Just _  -> return { addMods := insert mdl (rst' :> addMods) | rst'}
+      else do writeErrorMsg $ "Illegal module name (ignored): " ++ mdl
+              return rst'
 
     insert m []        = [m]
     insert m ms@(n:ns)
       | m < n     = m : ms
       | m == n    = ms
       | otherwise = n : insert m ns
+
+--- Is a string a valid module name?
+validModuleName :: String -> Bool
+validModuleName = all (\c -> isAlphaNum c || c == '_')
 
 --- Process expression evaluation
 processEval :: ReplState -> String -> IO (Maybe ReplState)
@@ -558,9 +575,10 @@ processType rst args = do
 --- Process :cd command
 processCd :: ReplState -> String -> IO (Maybe ReplState)
 processCd rst args = do
-  exists <- doesDirectoryExist args
-  if exists then setCurrentDirectory args >> return (Just rst)
-            else skipCommand "directory does not exist"
+  dirname <- getAbsolutePath args
+  exists  <- doesDirectoryExist dirname
+  if exists then setCurrentDirectory dirname >> return (Just rst)
+            else skipCommand $ "directory does not exist"
 
 --- Process :programs command
 processPrograms :: ReplState -> String -> IO (Maybe ReplState)
@@ -569,9 +587,8 @@ processPrograms rst _ = printAllLoadPathPrograms rst >> return (Just rst)
 --- Process :edit command
 processEdit :: ReplState -> String -> IO (Maybe ReplState)
 processEdit rst args = do
-  let modname = if null args then rst :> mainMod else dropExtension args
-  mbf <- lookupFileInPath modname [".curry", ".lcurry"]
-                          ("." : rst :> importPaths)
+  modname <- getModuleName rst args
+  mbf <- lookupFileInPath modname [".curry", ".lcurry"] (loadPaths rst)
   editenv <- getEnviron "EDITOR"
   let editcmd  = rcValue (rst :> rcvars) "editcommand"
       editprog = if null editcmd then editenv else editcmd
@@ -592,10 +609,21 @@ processSource rst args
   | otherwise   = showFunctionInModule rst mod (tail dotfun)
   where (mod, dotfun) = break (== '.') args
 
+--- Extract a module name, possibly prefixed by a path, from an argument,
+--- or return the current module name if the argument is the empty string.
+getModuleName :: ReplState -> String -> IO String
+getModuleName rst args =
+  if null args
+  then return (rst :> mainMod)
+  else let (dirname, mname) = splitFileName (stripCurrySuffix args)
+        in if dirname == "./"
+           then return mname
+           else getAbsolutePath (stripCurrySuffix args)
+
 --- Process :show command
 processShow :: ReplState -> String -> IO (Maybe ReplState)
 processShow rst args = do
-  let modname = if null args then rst :> mainMod else dropExtension args
+  modname <- getModuleName rst args
   mbf <- lookupFileInPath modname [".curry", ".lcurry"] (loadPaths rst)
   case mbf of
     Nothing -> skipCommand "source file not found"
@@ -607,20 +635,20 @@ processShow rst args = do
 
 processInterface :: ReplState -> String -> IO (Maybe ReplState)
 processInterface rst args = do
-  let modname  = if null args then rst :> mainMod else dropExtension args
-      toolexec = "currytools" </> "genint" </> "GenInt"
+  modname <- getModuleName rst args
+  let toolexec = "currytools" </> "genint" </> "GenInt"
   callTool rst toolexec ("-int " ++ modname)
 
 processBrowse :: ReplState -> String -> IO (Maybe ReplState)
 processBrowse rst args
-  | notNull $ dropExtension args = skipCommand "superfluous argument"
-  | otherwise                  = do
+  | notNull $ stripCurrySuffix args = skipCommand "superfluous argument"
+  | otherwise                       = do
       let toolexec = "currytools" </> "browser" </> "BrowserGUI"
       callTool rst toolexec (rst :> mainMod)
 
 processUsedImports :: ReplState -> String -> IO (Maybe ReplState)
 processUsedImports rst args = do
-  let modname  = if null args then rst :> mainMod else dropExtension args
+  let modname  = if null args then rst :> mainMod else stripCurrySuffix args
       toolexec = "currytools" </> "importcalls" </> "ImportCalls"
   callTool rst toolexec modname
 
@@ -676,6 +704,7 @@ replOptions =
   , ("bfs"          , \r _ -> return (Just { ndMode       := BFS   | r }))
   , ("dfs"          , \r _ -> return (Just { ndMode       := DFS   | r }))
   , ("prdfs"        , \r _ -> return (Just { ndMode       := PrDFS | r }))
+  , ("debugsearch"  , \r _ -> return (Just { ndMode       := DEBUG | r }))
   , ("choices"      , setOptionNDMode PrtChoices 10                      )
   , ("ids"          , setOptionNDMode IDS        100                     )
   , ("parallel"     , setOptionNDMode Par        0                       )
@@ -698,6 +727,8 @@ replOptions =
   , ("-time"        , \r _ -> return (Just { showTime     := False | r }))
   , ("+trace"       , \r _ -> return (Just { traceFailure := True  | r }))
   , ("-trace"       , \r _ -> return (Just { traceFailure := False | r }))
+  , ("+profile"     , \r _ -> return (Just { profile      := True  | r }))
+  , ("-profile"     , \r _ -> return (Just { profile      := False | r }))
   , ("+ghci"        , \r _ -> return (Just { useGhci      := True  | r }))
   , ("-ghci"        , setNoGhci                                          )
   , ("safe"         , \r _ -> return (Just { safeExec     := True  | r }))
@@ -747,7 +778,7 @@ setOptionSupply rst args
  where allSupplies = ["integer", "ghc", "ioref", "pureio", "giants"]
 
 printOptions :: ReplState -> IO ()
-printOptions rst = putStrLn $ unlines
+printOptions rst = putStrLn $ unlines $ filter notNull
   [ "Options for ':set' command:"
   , "path <paths>    - set additional search paths for imported modules"
   , "prdfs           - set search mode to primitive depth-first search"
@@ -757,7 +788,9 @@ printOptions rst = putStrLn $ unlines
   , "parallel [<n>]  - set search mode to parallel search with <n> threads"
   , "choices [<n>]   - set search mode to print the choice structure as a tree"
   , "                  (up to level <n>)"
-  , ifLocal "supply <I>      - set idsupply implementation (ghc|giants|integer|ioref|pureio)"
+  , "debugsearch     - set search mode to print debugging information"
+  , ifLocal
+    "supply <I>      - set idsupply implementation (ghc|giants|integer|ioref|pureio)"
   , "v<n>            - verbosity level"
   , "                    0: quiet (errors and warnings only)"
   , "                    1: frontend status messages (default)"
@@ -771,6 +804,8 @@ printOptions rst = putStrLn $ unlines
   , "+/-bindings     - show bindings of free variables in initial goal"
   , "+/-time         - show compilation and execution time"
   , "+/-trace        - trace failure in deterministic expression"
+  , ifProfiling
+    "+/-profile      - compile with GHC's profiling capabilities"
   , "+/-ghci         - use ghci instead of ghc to evaluate main expression"
   , "safe            - safe execution mode without I/O actions"
   , "prelude <name>  - name of the standard prelude"
@@ -786,37 +821,43 @@ printOptions rst = putStrLn $ unlines
 ifLocal :: String -> String
 ifLocal s = if Inst.installGlobal then "" else s
 
+ifProfiling :: String -> String
+ifProfiling s = if Inst.withProfiling then s else ""
+
 showCurrentOptions :: ReplState -> String
-showCurrentOptions rst = "\nCurrent settings:\n"++
-  "import paths      : " ++
-     intercalate ":" ("." : rst :> importPaths) ++ "\n" ++
-  "search mode       : " ++
-      (case (rst :> ndMode) of
-         PrDFS         -> "primitive non-monadic depth-first search"
-         PrtChoices d  -> "show choice tree structure up to level " ++ show d
-         DFS           -> "depth-first search"
-         BFS           -> "breadth-first search"
-         IDS d         -> "iterative deepening (initial depth: "++show d++")"
-         Par s         -> "parallel search with "++show s++" threads"
-      ) ++ "\n" ++
-  "idsupply          : " ++ rst :> idSupply ++ "\n" ++
-  "prelude           : " ++ rst :> preludeName ++ "\n" ++
-  "parser options    : " ++ rst :> parseOpts ++ "\n" ++
-  "compiler options  : " ++ rst :> cmpOpts ++ "\n" ++
-  "ghc options       : " ++ rst :> ghcOpts ++ "\n" ++
-  "run-time options  : " ++ rst :> rtsOpts ++ "\n" ++
-  "run-time arguments: " ++ rst :> rtsArgs ++ "\n" ++
-  "verbosity         : " ++ show (rst :> verbose) ++ "\n" ++
-  "prompt            : " ++ show (rst :> prompt)  ++ "\n" ++
-  showOnOff (rst :> interactive ) ++ "interactive " ++
-  showOnOff (rst :> firstSol    ) ++ "first "       ++
-  showOnOff (rst :> optim       ) ++ "optimize "    ++
-  showOnOff (rst :> showBindings) ++ "bindings "    ++
-  showOnOff (rst :> showTime    ) ++ "time "        ++
-  showOnOff (rst :> traceFailure) ++ "trace "       ++
-  showOnOff (rst :> useGhci     ) ++ "ghci "
- where
-   showOnOff b = if b then "+" else "-"
+showCurrentOptions rst = intercalate "\n" $ filter notNull
+  [ "\nCurrent settings:"
+  , "import paths      : " ++ intercalate ":" ("." : rst :> importPaths)
+  , "search mode       : " ++ case (rst :> ndMode) of
+      PrDFS         -> "primitive non-monadic depth-first search"
+      DEBUG         -> "debugging information for search"
+      PrtChoices d  -> "show choice tree structure up to level " ++ show d
+      DFS           -> "depth-first search"
+      BFS           -> "breadth-first search"
+      IDS d         -> "iterative deepening (initial depth: " ++ show d ++ ")"
+      Par s         -> "parallel search with " ++ show s ++ " threads"
+  , ifLocal $
+    "idsupply          : " ++ rst :> idSupply
+  , "prelude           : " ++ rst :> preludeName
+  , "parser options    : " ++ rst :> parseOpts
+  , "compiler options  : " ++ rst :> cmpOpts
+  , "ghc options       : " ++ rst :> ghcOpts
+  , "run-time options  : " ++ rst :> rtsOpts
+  , "run-time arguments: " ++ rst :> rtsArgs
+  , "verbosity         : " ++ show (rst :> verbose)
+  , "prompt            : " ++ show (rst :> prompt)
+  , unwords $ filter notNull
+    [               showOnOff (rst :> interactive ) ++ "interactive"
+    ,               showOnOff (rst :> firstSol    ) ++ "first"
+    ,               showOnOff (rst :> optim       ) ++ "optimize"
+    ,               showOnOff (rst :> showBindings) ++ "bindings"
+    ,               showOnOff (rst :> showTime    ) ++ "time"
+    ,               showOnOff (rst :> traceFailure) ++ "trace"
+    , ifProfiling $ showOnOff (rst :> profile     ) ++ "profile"
+    ,               showOnOff (rst :> useGhci     ) ++ "ghci"
+    ]
+  ]
+ where showOnOff b = if b then "+" else "-"
 
 printHelpOnCommands :: IO ()
 printHelpOnCommands = putStrLn $ unlines
@@ -829,14 +870,14 @@ printHelpOnCommands = putStrLn $ unlines
   , ":programs          - show names of all Curry programs available in load path"
   , ":cd <dir>          - change current directory to <dir>"
   , ":edit              - load source of currently loaded module into editor"
-  , ":edit <mod>        - load source of module <m> into editor"
+  , ":edit <m>          - load source of module <m> into editor"
   , ":show              - show currently loaded source program"
-  , ":show <mod>        - show source of module <m>"
+  , ":show <m>          - show source of module <m>"
   , ":source <f>        - show source of (visible!) function <f>"
   , ":source <m>.<f>    - show source of function <f> in module <m>"
   , ":browse            - browse program and its imported modules"
   , ":interface         - show interface of currently loaded module"
-  , ":interface <mod>   - show interface of module <mod>"
+  , ":interface <m>     - show interface of module <m>"
   , ":usedimports       - show all used imported functions/constructors"
   , ":set <option>      - set an option"
   , ":set               - see help on options and current options"

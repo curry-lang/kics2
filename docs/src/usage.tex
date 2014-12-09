@@ -147,8 +147,10 @@ configuration file \ccode{.kics2rc}
 its value is used as an editor command, otherwise
 the environment variable \ccode{EDITOR} is used as the editor program.
 
-\item[\fbox{\code{:edit $file$}}]\pindex{:edit}
-Load file $file$ into a text editor which is defined
+\item[\fbox{\code{:edit $m$}}]\pindex{:edit}
+Load the source text of module $m$ (which must be accessible
+via the current load path if no path specification is given)
+into a text editor which is defined
 as in the command \ccode{:edit}.
 
 \item[\fbox{\code{:show}}]\pindex{:show}
@@ -161,7 +163,7 @@ otherwise the command \ccode{cat} is used.
 
 \item[\fbox{\code{:show $m$}}]\pindex{:show}
 Show the source text of module $m$ which must be accessible
-via the current load path.
+via the current load path if no path specification is given.
 
 \item[\fbox{\code{:source $f$}}]\pindex{:source}
 Show the source code of function $f$ (which must be visible
@@ -238,6 +240,16 @@ are currently supported:
 for loading modules to $path$.
 Note that this search path is only used for loading modules
 inside this invocation of \CYS.
+
+The path is a list of directories separated by \ccode{:}.
+The prefix \ccode{\char126} is replaced by the home directory as
+in the following example:
+\begin{curry}
+:set path aux:~/tests
+\end{curry}
+Relative directory names are replaced by absolute ones
+so that the path is independent of later changes of the
+current working directory.
 
 \item[\fbox{\code{bfs}}]\pindex{bfs}
 Set the search mode to evaluate non-deterministic expressions
@@ -370,6 +382,24 @@ Turn on/off the time mode. If the time mode is on,
 the cpu time and the elapsed time
 of the computation is always printed together with the result
 of an evaluation.
+
+\item[\fbox{\code{+/-trace}}]\pindex{trace}
+Turn on/off the trace mode. If the trace mode is on,
+it is possible to trace the sources of failing computations.
+
+\item[\fbox{\code{+/-profile}}]\pindex{profile}
+(only available when configured during installation, see Section~\ref{sec-install})
+Turn on/off the profile mode. If the profile mode is on,
+expressions as well as programs are compiled with GHC's profiling
+capabilities enabled. For expressions, evaluation will automatically
+generate a file \code{Main.prof} containing the profiling information
+of the evaluation.
+For compiled programs, the profiling has to be manually activated
+using runtime options when executed:
+\begin{curry}
+kics2 :set +profile :load MyProgram.curry :save :quit
+./MyProgram +RTS -p -RTS [additional arguments]
+\end{curry}
 
 \item[\fbox{\code{+/-ghci}}]\pindex{ghci}
 Turn on/off the ghci mode.
@@ -592,7 +622,7 @@ in directory \ccode{\cyshome/tools/emacs} which also contains
 the sources of the Curry mode and a short description about
 the use of this mode.
 
-%%% Local Variables: 
+%%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "manual"
-%%% End: 
+%%% End:
