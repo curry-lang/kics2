@@ -93,8 +93,8 @@ solve (x++[Blue ]++y++[White]++z) = solve (x++[White]++y++[Blue]++z)
 solve flag | isDutchFlag flag = flag
  where isDutchFlag (uni Red ++ uni White ++ uni Blue) = True
        --isDutchFlag flag | uni Red ++ uni White ++ uni Blue =:<= flag = True
-       uni _ = []
-       uni color = color : uni color
+uni _     = []
+uni color = color : uni color
 
 test8 = assertEqual "Dutch Flag"
                     (someValue (solve [White,Red,White,Blue,Red,Blue,White]))
@@ -140,15 +140,15 @@ test14 = assertValues "test14" (pair (0,0)) [True]
 -- This call should fail due to an occure check
 -- However, an occure check is not yet implemented
 -- test15 = assertValues "test15"  (pair (x, S x)) []
---   where x free 
+--   where x free
 
 test16 = assertValues "test16" (pair (x,failed)) []
-  where x free 
+  where x free
 
 f x | g (const 0 y) y =:<= x = True where y free
 
 test17 = assertValues "test17" (f (x,failed)) [True]
-  where x free 
+  where x free
 
 h x | g (id y) y =:<= x = True where y free
 
