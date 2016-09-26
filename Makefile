@@ -7,6 +7,7 @@
 
 # Is this a global installation (with restricted flexibility) (yes/no)?
 GLOBALINSTALL   = yes
+
 # Should profiling be enabled (yes/no)?
 PROFILING       = yes
 # The major version number
@@ -50,6 +51,66 @@ export INSTALLPREFIX = $(ROOT)
 export LOCALPKG      = $(INSTALLPREFIX)/pkg
 # The path to the package database
 export PKGDB         = $(LOCALPKG)/kics2.conf.d
+
+# GHC and CABAL configuration
+# ---------------------------
+
+# The path to the Glasgow Haskell Compiler and Cabal
+export GHC     := $(shell which ghc)
+export GHC-PKG := $(shell dirname "$(GHC)")/ghc-pkg
+export CABAL    = cabal
+
+# Libraries installed with GHC
+GHC_LIBS := $(shell "$(GHC-PKG)" list --global --simple-output --names-only)
+# Packages used by the compiler
+GHC_PKGS  = $(foreach pkg,$(ALLDEPS),-package $(pkg))
+
+# Standard options for compiling target programs with ghc.
+# Uses our own package db and explicitly exposes the packages
+# to avoid conflicts with globally installed ones.
+export GHC_OPTS       = -no-user-$(GHC_PKG_OPT) -$(GHC_PKG_OPT) "$(PKGDB)" \
+                        -hide-all-packages $(GHC_PKGS)
+# Command to unregister a package
+export GHC_UNREGISTER = "$(GHC-PKG)" unregister --$(GHC_PKG_OPT)="$(PKGDB)"
+# Command to install missing packages using cabal
+export CABAL_INSTALL  = "$(CABAL)" install --with-compiler="$(GHC)"       \
+                        --with-hc-pkg="$(GHC-PKG)" --prefix="$(LOCALPKG)" \
+                        --global --package-db="$(PKGDB)" \
+                        --ghc-options="$(GHC_OPTIMIZATIONS)"
+# Cabal profiling options
+ifeq ($(PROFILING),yes)
+export CABAL_PROFILE = -p
+else
+export CABAL_PROFILE  =
+endif
+# Additional flags passed to the runtime
+export RUNTIMEFLAGS   =
+
+# extract GHC version
+GHC_MAJOR := $(shell "$(GHC)" --numeric-version | cut -d. -f1)
+GHC_MINOR := $(shell "$(GHC)" --numeric-version | cut -d. -f2)
+
+# Because of an API change in GHC 7.6,
+# we need to distinguish GHC < 7.6 and GHC >= 7.6.
+# GHC 7.6 renamed the option "package-conf" to "package-db".
+# package-db (>= 7.6) or package-conf (< 7.6)?
+ifeq ($(shell test $(GHC_MAJOR) -gt 7 -o \( $(GHC_MAJOR) -eq 7 -a $(GHC_MINOR) -ge 6 \) ; echo $$?),0)
+GHC_PKG_OPT = package-db
+else
+GHC_PKG_OPT = package-conf
+endif
+
+# Since the compilation of some of the compiler sources and
+# libraries (e.g. FiniteMap.curry) does not terminate when
+# using the GHC in version 8.0.1 with optimization option -O2,
+# we explicitly deactivate the strictness analysis of the GHC
+# when installing KICS2 with a GHC 8.0.1 or higher.
+# With this optimization deactivated everything seems to be ok.
+ifeq ($(shell test $(GHC_MAJOR) -ge 8 ; echo $$?),0)
+export GHC_OPTIMIZATIONS = -O2 -fno-strictness
+else
+export GHC_OPTIMIZATIONS = -O2
+endif
 
 # Special files and binaries used in this installation
 # ----------------------------------------------------
@@ -96,56 +157,6 @@ export SYSTEMDEPS  = unix
 endif
 # All dependencies. Note that "sort" also removes duplicates.
 export ALLDEPS     = $(sort $(RUNTIMEDEPS) $(LIBDEPS) $(SYSTEMDEPS))
-
-# GHC and CABAL configuration
-# ---------------------------
-
-# The path to the Glasgow Haskell Compiler and Cabal
-export GHC     := $(shell which ghc)
-export GHC-PKG := $(shell dirname "$(GHC)")/ghc-pkg
-export CABAL    = cabal
-
-# Because of an API change in GHC 7.6,
-# we need to distinguish GHC < 7.6 and GHC >= 7.6.
-# GHC 7.6 renamed the option "package-conf" to "package-db".
-
-# extract GHC version
-GHC_MAJOR := $(shell "$(GHC)" --numeric-version | cut -d. -f1)
-GHC_MINOR := $(shell "$(GHC)" --numeric-version | cut -d. -f2)
-# Is the GHC version >= 7.6 ?
-GHC_GEQ_76 = $(shell test $(GHC_MAJOR) -gt 7 -o \( $(GHC_MAJOR) -eq 7 \
-              -a $(GHC_MINOR) -ge 6 \) ; echo $$?)
-# package-db (>= 7.6) or package-conf (< 7.6)?
-ifeq ($(GHC_GEQ_76),0)
-GHC_PKG_OPT = package-db
-else
-GHC_PKG_OPT = package-conf
-endif
-
-# Libraries installed with GHC
-GHC_LIBS := $(shell "$(GHC-PKG)" list --global --simple-output --names-only)
-# Packages used by the compiler
-GHC_PKGS  = $(foreach pkg,$(ALLDEPS),-package $(pkg))
-
-# Standard options for compiling target programs with ghc.
-# Uses our own package db and explicitly exposes the packages
-# to avoid conflicts with globally installed ones.
-export GHC_OPTS       = -no-user-$(GHC_PKG_OPT) -$(GHC_PKG_OPT) "$(PKGDB)" \
-                        -hide-all-packages $(GHC_PKGS)
-# Command to unregister a package
-export GHC_UNREGISTER = "$(GHC-PKG)" unregister --$(GHC_PKG_OPT)="$(PKGDB)"
-# Command to install missing packages using cabal
-export CABAL_INSTALL  = "$(CABAL)" install --with-compiler="$(GHC)"       \
-                        --with-hc-pkg="$(GHC-PKG)" --prefix="$(LOCALPKG)" \
-                        --global --package-db="$(PKGDB)" -O2
-# Cabal profiling options
-ifeq ($(PROFILING),yes)
-export CABAL_PROFILE = -p
-else
-export CABAL_PROFILE  =
-endif
-# Additional flags passed to the runtime
-export RUNTIMEFLAGS   =
 
 ########################################################################
 # The targets
@@ -324,6 +335,9 @@ ifeq ($(GLOBALINSTALL),yes)
 else
 	echo 'ghcOptions = "$(subst ",\",$(GHC_OPTS))"' >> $@
 endif
+	echo "" >> $@
+	echo 'ghcOptimizations :: String' >> $@
+	echo 'ghcOptimizations = "$(GHC_OPTIMIZATIONS)"' >> $@
 	echo "" >> $@
 	echo 'installGlobal :: Bool' >> $@
 ifeq ($(GLOBALINSTALL),yes)

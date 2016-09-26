@@ -45,6 +45,9 @@ ghcExec external
 ghcOptions :: String
 ghcOptions external
 
+ghcOptimizations :: String
+ghcOptimizations external
+
 installGlobal :: Bool
 installGlobal external
 

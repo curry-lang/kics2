@@ -210,12 +210,12 @@ ghcCall :: ReplState -> Bool -> Bool -> String -> String
 ghcCall rst useGhci recompile mainFile = unwords . filter notNull $
   [ Inst.ghcExec
   , Inst.ghcOptions
-  , if optim rst && not useGhci then "-O2"               else ""
-  , if useGhci                  then "--interactive"     else "--make"
-  , if verbose rst < 2          then "-v0"               else "-v1"
-  , if withGhcSupply            then "-package ghc"      else ""
-  , if isParSearch              then "-threaded"         else ""
-  , if withProfiling            then "-prof -fprof-auto" else ""
+  , if optim rst && not useGhci then Inst.ghcOptimizations else ""
+  , if useGhci                  then "--interactive"       else "--make"
+  , if verbose rst < 2          then "-v0"                 else "-v1"
+  , if withGhcSupply            then "-package ghc"        else ""
+  , if isParSearch              then "-threaded"           else ""
+  , if withProfiling            then "-prof -fprof-auto"   else ""
   , if withRtsOpts
     then "-rtsopts -with-rtsopts=\"" ++
          unwords [rtsOpts rst, parOpts, profOpt] ++ "\""

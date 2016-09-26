@@ -36,6 +36,9 @@ external_d_C_ghcExec _ _ = toCurry I.ghcExec
 external_d_C_ghcOptions :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_ghcOptions _ _ = toCurry I.ghcOptions
 
+external_d_C_ghcOptimizations :: Cover -> ConstStore -> Curry_Prelude.C_String
+external_d_C_ghcOptimizations _ _ = toCurry I.ghcOptimizations
+
 external_d_C_installGlobal :: Cover -> ConstStore -> Curry_Prelude.C_Bool
 external_d_C_installGlobal _ _ = toCurry I.installGlobal
 
