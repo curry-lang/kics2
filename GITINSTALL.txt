@@ -29,6 +29,11 @@ Then, each future update can be obtained by the executing
     git pull
     git submodule update
 
+You also need the profiling libraries of Haskell in order to
+install the GIT version of KiCS2. Hence, if you have not already done,
+install the packages `haskell-platform-prof` or `ghc-prof`
+which contain these profiling libraries.
+
 Due to the fact that the KiCS2 compiler and interactive environment
 is implemented in Curry, you need an executable Curry compiler
 to install KiCS2 via bootstrapping.
