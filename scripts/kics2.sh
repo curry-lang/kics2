@@ -5,6 +5,13 @@
 # The installation directory of KiCS2
 KICS2HOME=`echo KICS2HOME must be defined here!`
 
+# check whether first argument is a tool and, if yes, exec the tool
+KICS2TOOL="$KICS2HOME/bin/kics2-"$1
+if [ -x "$KICS2TOOL" ] ; then
+  shift
+  exec "$KICS2TOOL" ${1+"$@"}
+fi
+
 # Add KiCS2 bin directory to path so that currypp can be found:
 PATH=$PATH:$KICS2HOME/bin
 export PATH
