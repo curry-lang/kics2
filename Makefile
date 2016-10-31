@@ -2,8 +2,13 @@
 # Makefile for KiCS2 compiler suite
 ########################################################################
 
-# Some information about this installation
-# ----------------------------------------
+# Some parameters for this installation
+# --------------------------------------
+#
+# If the parameter CURRYFRONTEND is set to an executable,
+# this executable will be used as the front end for PAKCS.
+# Otherwise, the front end will be compiled from the sources
+# in subdir "frontend".
 
 # Is this a global installation (with restricted flexibility) (yes/no)?
 GLOBALINSTALL   = yes
@@ -39,6 +44,10 @@ endif
 export ROOT          = $(CURDIR)
 # binary directory and executables
 export BINDIR        = $(ROOT)/bin
+# Directory where the front end is located
+export FRONTENDDIR   = $(ROOT)/frontend
+# Directory where the sources of the standard libraries are located
+export LIBSRCDIR     = $(ROOT)/lib-trunk
 # Directory where the libraries are located
 export LIBDIR        = $(ROOT)/lib
 # Directory where the libraries are located
@@ -124,7 +133,7 @@ export REPL_OPTS    = :set v2 :set -ghci
 # The standard name of the interactive Curry system in then bin dirctory:
 export CURRYSYSTEMBIN = $(BINDIR)/curry
 # The frontend binary
-export CYMAKE       = $(BINDIR)/cymake$(EXE_SUFFIX)
+export CYMAKE       = $(BINDIR)/$(CURRYSYSTEM)-cymake$(EXE_SUFFIX)
 # The cleancurry binary
 export CLEANCURRY   = $(BINDIR)/cleancurry$(EXE_SUFFIX)
 # The currydoc binary
@@ -192,7 +201,7 @@ tools: $(CURRYSYSTEMBIN)
 
 # install the kernel system (binaries and libraries)
 .PHONY: kernel
-kernel: $(PWD) $(WHICH) $(PKGDB) $(CYMAKE) $(CLEANCURRY) scripts copylibs
+kernel: $(PWD) $(WHICH) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs
 	$(MAKE) $(INSTALLHS) INSTALLPREFIX="$(shell $(PWD))" \
 	                     GHC="$(shell $(WHICH) "$(GHC)")"
 	cd src && $(MAKE) # build compiler
@@ -211,7 +220,7 @@ $(CURRYSYSTEMBIN): $(BINDIR)/$(CURRYSYSTEM)
 # install the library sources from the trunk directory:
 .PHONY: copylibs
 copylibs:
-	@if [ -d lib-trunk ] ; then cd lib-trunk && $(MAKE) -f Makefile.$(CURRYSYSTEM).install ; fi
+	@if [ -d $(LIBSRCDIR) ] ; then cd $(LIBSRCDIR) && $(MAKE) -f Makefile.$(CURRYSYSTEM).install ; fi
 
 # create package database
 $(PKGDB):
@@ -219,9 +228,18 @@ $(PKGDB):
 	$(CABAL) update
 	$(CABAL_INSTALL) $(CABAL_PROFILE) $(filter-out $(GHC_LIBS),$(ALLDEPS))
 
-# create frontend binary
-$(CYMAKE): .FORCE
-	cd frontend && $(MAKE)
+# install front end (from environment variable CURRYFRONTEND or sources):
+.PHONY: frontend
+frontend:
+	rm -f $(BINDIR)/cymake$(EXE_SUFFIX)
+	rm -f $(CYMAKE)
+ifeq ($(shell test -x "$(CURRYFRONTEND)" ; echo $$?),0)
+	ln -s $(CURRYFRONTEND) $(CYMAKE)
+else
+	cd $(FRONTENDDIR) && $(MAKE)
+	ln -s $(FRONTENDDIR)/bin/cymake$(EXE_SUFFIX) $(CYMAKE)
+endif
+	ln -s $(CYMAKE) $(BINDIR)/cymake$(EXE_SUFFIX) # for backward compat.
 
 .PHONY: scripts
 scripts: $(PWD)
@@ -269,7 +287,7 @@ cleanall: clean
 	cd scripts    && $(MAKE) cleanall
 	cd src        && $(MAKE) cleanall
 	cd utils      && $(MAKE) cleanall
-	rm -rf $(LOCALBIN) $(CYMAKE) $(LOCALPKG)
+	rm -rf $(LOCALBIN) $(CYMAKE) $(BINDIR)/cymake$(EXE_SUFFIX) $(LOCALPKG)
 	rm -f  $(CLEANCURRY)
 
 .PHONY: maintainer-clean
@@ -277,7 +295,7 @@ maintainer-clean: cleanall
 	rm -rf $(BINDIR)
 	rm -rf $(LIBDIR)
 	cd currytools && git clean -fdX
-	cd lib-trunk  && git clean -fdX
+	cd $(LIBSRCDIR)  && git clean -fdX
 
 .PHONY: .FORCE
 .FORCE:
@@ -442,13 +460,13 @@ cleandist:
 	cd currytools              && rm -rf .git .gitignore
 	cd frontend/curry-base     && rm -rf .git .gitignore dist
 	cd frontend/curry-frontend && rm -rf .git .gitignore dist
-	rm -rf lib-trunk
+	rm -rf $(LIBSRCDIR)
 	cd utils                   && $(MAKE) cleanall
 	rm -rf $(BINDIR)
 	rm -rf $(DEV_DIRS)
 	rm -rf $(LOCALPKG)
 
-$(TARBALL): $(COMP) $(CYMAKE) $(MANUAL)
+$(TARBALL): $(COMP) frontend $(MANUAL)
 	rm -rf $(DISTDIR)
 	# clone current git repository
 	git clone . $(DISTDIR)
@@ -492,9 +510,6 @@ $(TARBALL): $(COMP) $(CYMAKE) $(MANUAL)
 .PHONY: bootstrap
 bootstrap: $(COMP)
 
-.PHONY: frontend
-frontend: $(CYMAKE)
-
 .PHONY: Compile
 Compile: $(PKGDB) $(INSTALLHS) scripts copylibs
 	cd src && $(MAKE) CompileBoot
@@ -508,7 +523,7 @@ REPL: $(PKGDB) $(INSTALLHS) scripts copylibs
 benchmarks:
 	cd benchmarks && $(MAKE)
 
-$(COMP): | $(INSTALLHS) $(PKGDB) $(CYMAKE) $(CLEANCURRY) scripts copylibs
+$(COMP): | $(INSTALLHS) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs
 	cd src && $(MAKE) bootstrap
 
 # Peform a full bootstrap - distribution - installation - uninstallation

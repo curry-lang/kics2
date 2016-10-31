@@ -2,6 +2,11 @@
 # Installation of frontend
 ##############################################################################
 
+# binary directory and executables
+export BINDIR=$(CURDIR)/bin
+# The frontend binary
+export CYMAKE = $(BINDIR)/cymake$(EXE_SUFFIX)
+
 # Retrieve all Haskell modules as dependencies for cymake
 DEPS := $(shell find curry-base/src/ curry-frontend/src/ -type f)
 
@@ -34,3 +39,4 @@ clean:
 cleanall:
 	cd curry-base     && rm -rf dist/
 	cd curry-frontend && rm -rf dist/
+	rm -f $(CYMAKE)   && rm -rf bin
