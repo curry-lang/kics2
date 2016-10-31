@@ -26,6 +26,9 @@ Changes to version 0.5.0:
     to transform contracts (specifications, pre/postconditions)
     into run-time assertions.
   * New partial evaluator (command "peval") added to `currytools`.
+  * New tool Curry2Verify (to translate Curry programs into Agda programs)
+    added to `currytools`.
+  * Names of tool executables changed to `kics2 toolname`.
 
 
 Release notes for KiCS2 Version 0.5.0

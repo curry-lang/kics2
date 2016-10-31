@@ -231,6 +231,7 @@ $(PKGDB):
 # install front end (from environment variable CURRYFRONTEND or sources):
 .PHONY: frontend
 frontend:
+	mkdir -p $(BINDIR)
 	rm -f $(BINDIR)/cymake$(EXE_SUFFIX)
 	rm -f $(CYMAKE)
 ifeq ($(shell test -x "$(CURRYFRONTEND)" ; echo $$?),0)
