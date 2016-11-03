@@ -665,7 +665,7 @@ processShow rst args = do
 processInterface :: ReplState -> String -> IO (Maybe ReplState)
 processInterface rst args = do
   modname <- getModuleName rst args
-  let toolexec = "currytools" </> "browser" </> "GenInt"
+  let toolexec = "currytools" </> "browser" </> "ShowFlatCurry"
   callTool rst toolexec ("-int " ++ modname)
 
 processBrowse :: ReplState -> String -> IO (Maybe ReplState)
