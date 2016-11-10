@@ -60,6 +60,7 @@ www/submitform
 # documentation
 lib/CDOC
 lib/TEXDOC
+docs/CurryStyleGuide.html
 docs/INSTALL.html
 docs/GITINSTALL.html
 docs/RELNOTES.html

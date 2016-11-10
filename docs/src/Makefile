@@ -1,7 +1,8 @@
 # To format the KiCS2 User Manual and other documents
 
 HTMLFILES = $(DOCDIR)/markdown_syntax.html $(DOCDIR)/INSTALL.html \
-            $(DOCDIR)/GITINSTALL.html $(DOCDIR)/RELNOTES.html
+            $(DOCDIR)/GITINSTALL.html $(DOCDIR)/RELNOTES.html \
+            $(DOCDIR)/CurryStyleGuide.html
 
 MANUAL = $(DOCDIR)/Manual.pdf
 
@@ -60,3 +61,8 @@ $(DOCDIR)/GITINSTALL.html: $(ROOT)/GITINSTALL.txt
 # format release notes as HTML page
 $(DOCDIR)/RELNOTES.html: $(ROOT)/RELNOTES.txt
 	$(REPL) :add Markdown :eval 'readFile "$<" >>= writeFile "$@" . markdownText2CompleteHTML "KiCS2 Release Notes"' :q
+
+# format Curry style guide as HTML page
+$(DOCDIR)/CurryStyleGuide.html: $(ROOT)/currytools/casc/Docs/curry-style-guide.md
+	cd $(ROOT)/currytools/casc/Docs && $(MAKE)
+	cp $< $@
