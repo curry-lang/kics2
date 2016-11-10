@@ -240,7 +240,6 @@ else
 	cd $(FRONTENDDIR) && $(MAKE)
 	ln -s $(FRONTENDDIR)/bin/cymake$(EXE_SUFFIX) $(CYMAKE)
 endif
-	ln -s $(CYMAKE) $(BINDIR)/cymake$(EXE_SUFFIX) # for backward compat.
 
 .PHONY: scripts
 scripts: $(PWD)
