@@ -65,4 +65,5 @@ $(DOCDIR)/RELNOTES.html: $(ROOT)/RELNOTES.txt
 # format Curry style guide as HTML page
 $(DOCDIR)/CurryStyleGuide.html: $(ROOT)/currytools/casc/Docs/curry-style-guide.md
 	cd $(ROOT)/currytools/casc/Docs && $(MAKE)
-	cp $< $@
+	@if [ -f "../../currytools/casc/Docs/curry-style-guide.html" ] ; then cp ../../currytools/casc/Docs/curry-style-guide.html $@ ; fi
+
