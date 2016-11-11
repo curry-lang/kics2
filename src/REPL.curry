@@ -105,15 +105,59 @@ processArgsAndStart rst (arg:args)
   | otherwise
   = writeErrorMsg ("unknown command: " ++ unwords (arg:args)) >> printHelp
  where
-  printHelp = do
-    putStrLn "Usage: kics2 [--noreadline] [-Dprop=val] <list of commands>\n"
-    printHelpOnCommands
+  printHelp = printHelpOnInteractive >> printHelpOnTools
 
 --- May a `String` be a REPL command?
 isCommand :: String -> Bool
 isCommand s = case s of
   ':' : _ -> True
   _       -> False
+
+printHelpOnInteractive :: IO ()
+printHelpOnInteractive = putStrLn $ unlines
+  [ "Invoke interactive environment:"
+  , ""
+  , "    kics2 [--noreadline] [-Dprop=val] <commands>"
+  , ""
+  , "with:"
+  , ""
+  , "--noreadline : do not use input line editing via command `rlwrap'"
+  , "-Dprop=val   : define kics2rc property `prop' as `val'"
+  , "<commands>   : list of commands of the KiCS2 environment"
+  , "               (run `kics2 :h :q' to see the list of all commands)"
+  , ""
+  ]
+
+printHelpOnTools :: IO ()
+printHelpOnTools = putStrLn $ unlines
+  [ "Invoke some tool:"
+  , ""
+  , "    kics2 <tool> <tool specific options>"
+  , ""
+  , "where <tool> is one of:"
+  , ""
+  , "addtypes  : add missing signature to top-level operations"
+  , "analyze   : analyze various properties (via CASS)"
+  , "browse    : browse and analyze"
+  , "check     : check properties"
+  , "createmake: create make file for main module"
+  , "cymake    : Curry front end"
+  , "data2xml  : generate XML bindings"
+  , "doc       : generate documentation for Curry programs"
+  , "erd2cdbi  : create database code for ER model and Database.CDBI libraries"
+  , "erd2curry : create database code for ER model"
+  , "makecgi   : translate Curry HTML program into CGI program"
+  , "peval     : partially evaluate a program"
+  , "pp        : Curry preprocessor"
+  , "spiceup   : create web application via Spicey"
+  , "style     : check style of source programs"
+  , "test      : test assertions (no longer supported)"
+  , "verify    : translate Curry module to Agda for property verification"
+  , ""
+  , "To get more help about the usage of a tool, type"
+  , ""
+  , "    kics2 <tool> -h"
+  ]
 
 --- Retrieve the KiCS2 banner
 getBanner :: IO String
