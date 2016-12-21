@@ -133,7 +133,7 @@ export REPL_OPTS    = :set v2 :set -ghci
 # The standard name of the interactive Curry system in then bin dirctory:
 export CURRYSYSTEMBIN = $(BINDIR)/curry
 # The frontend binary
-export CYMAKE       = $(BINDIR)/$(CURRYSYSTEM)-cymake$(EXE_SUFFIX)
+export CYMAKE       = $(BINDIR)/$(CURRYSYSTEM)-frontend$(EXE_SUFFIX)
 # The cleancurry binary
 export CLEANCURRY   = $(BINDIR)/cleancurry$(EXE_SUFFIX)
 # The currydoc binary
@@ -232,14 +232,16 @@ $(PKGDB):
 .PHONY: frontend
 frontend:
 	mkdir -p $(BINDIR)
-	rm -f $(BINDIR)/cymake$(EXE_SUFFIX)
 	rm -f $(CYMAKE)
 ifeq ($(shell test -x "$(CURRYFRONTEND)" ; echo $$?),0)
 	ln -s $(CURRYFRONTEND) $(CYMAKE)
 else
 	cd $(FRONTENDDIR) && $(MAKE)
-	ln -s $(FRONTENDDIR)/bin/cymake$(EXE_SUFFIX) $(CYMAKE)
+	ln -s $(FRONTENDDIR)/bin/curry-frontend$(EXE_SUFFIX) $(CYMAKE)
 endif
+	# for backward compatibility:
+	rm -f $(BINDIR)/$(CURRYSYSTEM)-cymake$(EXE_SUFFIX)
+	ln -s $(CYMAKE) $(BINDIR)/$(CURRYSYSTEM)-cymake$(EXE_SUFFIX)
 
 .PHONY: scripts
 scripts: $(PWD)

@@ -5,9 +5,9 @@
 # binary directory and executables
 export BINDIR=$(CURDIR)/bin
 # The frontend binary
-export CYMAKE = $(BINDIR)/cymake$(EXE_SUFFIX)
+export CYMAKE = $(BINDIR)/curry-frontend$(EXE_SUFFIX)
 
-# Retrieve all Haskell modules as dependencies for cymake
+# Retrieve all Haskell modules as dependencies for the Curry front end
 DEPS := $(shell find curry-base/src/ curry-frontend/src/ -type f)
 
 # install the sources of the front end from its repository
