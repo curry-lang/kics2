@@ -215,7 +215,7 @@ endif
 
 $(CURRYSYSTEMBIN): $(BINDIR)/$(CURRYSYSTEM)
 	rm -f $@
-	ln -s $< $@
+	cd $(BINDIR) && ln -s $(CURRYSYSTEM) $(notdir $@)
 
 # install the library sources from the trunk directory:
 .PHONY: copylibs
@@ -239,9 +239,6 @@ else
 	cd $(FRONTENDDIR) && $(MAKE)
 	ln -s $(FRONTENDDIR)/bin/curry-frontend$(EXE_SUFFIX) $(CYMAKE)
 endif
-	# for backward compatibility:
-	rm -f $(BINDIR)/$(CURRYSYSTEM)-cymake$(EXE_SUFFIX)
-	ln -s $(CYMAKE) $(BINDIR)/$(CURRYSYSTEM)-cymake$(EXE_SUFFIX)
 
 .PHONY: scripts
 scripts: $(PWD)

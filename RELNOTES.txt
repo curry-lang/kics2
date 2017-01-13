@@ -29,6 +29,10 @@ Changes to version 0.5.0:
   * New tool Curry2Verify (to translate Curry programs into Agda programs)
     added to `currytools`.
   * Names of tool executables changed to `kics2 toolname`.
+  * Name of Curry parser `cymake` changed to `kics2 frontend`.
+  * Tool `kics2 analysis` (CASS): option `--all` added.
+  * Tool `pakcs analysis` (CASS): analysis `Functional` added and
+    analysis `Deterministic` modified so that it considers encapsulated search.
 
 
 Release notes for KiCS2 Version 0.5.0
