@@ -237,7 +237,7 @@ ifeq ($(shell test -x "$(CURRYFRONTEND)" ; echo $$?),0)
 	ln -s $(CURRYFRONTEND) $(CYMAKE)
 else
 	cd $(FRONTENDDIR) && $(MAKE)
-	ln -s $(FRONTENDDIR)/bin/curry-frontend$(EXE_SUFFIX) $(CYMAKE)
+	cd $(BINDIR) && ln -s ../frontend/bin/curry-frontend$(EXE_SUFFIX) $(notdir $(CYMAKE))
 endif
 
 .PHONY: scripts
@@ -286,7 +286,7 @@ cleanall: clean
 	cd scripts    && $(MAKE) cleanall
 	cd src        && $(MAKE) cleanall
 	cd utils      && $(MAKE) cleanall
-	rm -rf $(LOCALBIN) $(CYMAKE) $(BINDIR)/cymake$(EXE_SUFFIX) $(LOCALPKG)
+	rm -rf $(LOCALBIN) $(CYMAKE) $(LOCALPKG)
 	rm -f  $(CLEANCURRY)
 
 .PHONY: maintainer-clean
