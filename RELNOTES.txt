@@ -7,13 +7,17 @@ Release notes for KiCS2 Version 0.5.1
 Changes to version 0.5.0:
 
   * Library `Database.ERD...` added (formerly part of ER currytools).
+  * Library `IOExts` uses system commands
+    `lockfile-create` and `lockfile-remove` instead of `lockfile`
+    for internal file synchronization in order to remove dependency
+    on package `procmail`.
   * Library `Nat` for Peano numbers added.
   * Libraries `Rewriting.*` for term rewriting in Curry extended
     to deal with rewriting strategies, narrowing strategies,
     critical pairs, definitional trees.
   * Library `Sort`: ...Sort operations renamed to ...SortBy and
     ...Sort operations with standard ordering added.
-  * Library `State` implementation the state monad added.
+  * Library `State` with an implementation of the state monad added.
   * Library `Test.EasyCheck` split into two modules to have less
     import dependencies when putting properties into a module.
   * Library `Test.Prop` added as a clone of `Test.EasyCheck` which defines
@@ -31,8 +35,11 @@ Changes to version 0.5.0:
   * Names of tool executables changed to `kics2 toolname`.
   * Name of Curry parser `cymake` changed to `kics2 frontend`.
   * Tool `kics2 analysis` (CASS): option `--all` added.
-  * Tool `pakcs analysis` (CASS): analysis `Functional` added and
+  * Tool `kics2 analysis` (CASS): analysis `Functional` added and
     analysis `Deterministic` modified so that it considers encapsulated search.
+  * Tool `kics2 analysis` (CASS): simple termination analysis `Terminating`
+    added.
+  * Tool `kics2 analysis` (CASS): analysis `TypesInValues` added.
 
 
 Release notes for KiCS2 Version 0.5.0
