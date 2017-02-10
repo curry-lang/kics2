@@ -32,14 +32,16 @@ Changes to version 0.5.0:
   * New partial evaluator (command "peval") added to `currytools`.
   * New tool Curry2Verify (to translate Curry programs into Agda programs)
     added to `currytools`.
-  * Names of tool executables changed to `kics2 toolname`.
-  * Name of Curry parser `cymake` changed to `kics2 frontend`.
-  * Tool `kics2 analysis` (CASS): option `--all` added.
-  * Tool `kics2 analysis` (CASS): analysis `Functional` added and
+  * Names of tool executables changed to `kics2 toolname` or `curry toolname`.
+  * Name of Curry parser `cymake` changed to `curry frontend`.
+  * Tool `curry analysis` (CASS): option `--all` added.
+  * Tool `curry analysis` (CASS): analysis `Functional` added and
     analysis `Deterministic` modified so that it considers encapsulated search.
-  * Tool `kics2 analysis` (CASS): simple termination analysis `Terminating`
+  * Tool `curry analysis` (CASS): simple termination analysis `Terminating`
     added.
-  * Tool `kics2 analysis` (CASS): analysis `TypesInValues` added.
+  * Tool `curry analysis` (CASS): analysis `TypesInValues` added.
+  * Tool `curry check` supports also testing with float arguments.
+  * Run-time parameters passed to KiCS2 must be separated by `--`.
 
 
 Release notes for KiCS2 Version 0.5.0

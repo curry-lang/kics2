@@ -53,13 +53,16 @@ main :: IO ()
 main = do
   rcFileDefs <- readRC
   args       <- getArgs
-  let (mainargs,defargs) = extractRCArgs args
-      rcDefs             = updateRCDefs rcFileDefs defargs
-      furtherRcDefs      = filter (\da -> fst da `notElem` map fst rcFileDefs)
-                                  defargs
-      rst = initReplState { kics2Home = Inst.installDir
-                          , rcvars    = rcDefs
-                          }
+  let (nodefargs,defargs) = extractRCArgs args
+      (mainargs,rtargs)   = break (=="--") nodefargs
+      rcDefs              = updateRCDefs rcFileDefs defargs
+      furtherRcDefs       = filter (\da -> fst da `notElem` map fst rcFileDefs)
+                                   defargs
+      rst = initReplState
+              { kics2Home = Inst.installDir
+              , rcvars    = rcDefs
+              , rtsArgs   = if null rtargs then "" else unwords (tail rtargs)
+              }
   ipath  <- defaultImportPaths rst
   if null furtherRcDefs
    then processArgsAndStart

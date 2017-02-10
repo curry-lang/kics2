@@ -11,8 +11,8 @@ which is automatically invoked by the interactive environment.
 \label{sec:invoke-kics2}
 
 To start \CYS, execute the command
-\ccode{kics2}\pindex{kics2}
-(this is a shell script stored in
+\ccode{kics2}\pindex{kics2} or \ccode{curry}\pindex{curry}
+(these are shell scripts stored in
 \code{\cyshome/bin} where \cyshome is the installation directory
 of \CYS).
 When the system is ready (i.e., when the prompt \ccode{Prelude>} occurs),
@@ -56,6 +56,22 @@ Overwrite values defined in the configuration file \ccode{.kics2rc}
 where \code{name} is a property defined in the configuration file
 and \code{val} its new value.
 \end{description}
+%
+One can also invoke \CYS with some run-time arguments
+that can be accessed inside a Curry program
+by the I/O operation \code{getArgs}
+(see library \code{System} (Section~\ref{Library:System}).
+These run-time arguments must be written at the end after
+the separator \ccode{--}.
+For instance, if \CYS is invoked by
+\begin{curry}
+kics2 :load Mod -- first and second
+\end{curry}
+then a call to the I/O operation \code{getArgs}
+returns the list value
+\begin{curry}
+["first","and","second"]
+\end{curry}
 
 
 \subsection{Commands of \CYS}
