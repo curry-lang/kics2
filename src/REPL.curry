@@ -99,6 +99,8 @@ processArgsAndStart rst (arg:args)
   | null      arg = processArgsAndStart rst args
   | arg == "-V" || arg == "--version"
   = getBanner >>= putStrLn >> cleanUpAndExitRepl rst
+  | arg == "--compiler-name"
+  = putStrLn "kics2" >> cleanUpAndExitRepl rst
   | arg == "--numeric-version"
   = putStrLn numericVersion >> cleanUpAndExitRepl rst
   | arg == "-h" || arg == "--help" || arg == "-?"
@@ -128,6 +130,7 @@ printHelpOnInteractive = putStrLn $ unlines
   , ""
   , "-h|--help|-?      : show this message and quit"
   , "-V|--version      : show version and quit"
+  , "--compiler-name   : show just the compiler name `kics2' and quit"
   , "--numeric-version : show just the version number and quit"
   , "--noreadline      : do not use input line editing via command `rlwrap'"
   , "-Dprop=val        : define kics2rc property `prop' as `val'"
