@@ -188,7 +188,8 @@ WHICH               = utils/which$(EXE_SUFFIX)
 # -------------------------------------------------
 
 # Dependencies for the kics2 runtime system
-export RUNTIMEDEPS = base containers ghc mtl parallel-tree-search tree-monad
+export RUNTIMEDEPS = base containers ghc mtl parallel-tree-search tree-monad \
+	             directory
 # Dependencies for the kics2 libraries
 export LIBDEPS     = base directory network old-time parallel-tree-search \
                      process time
