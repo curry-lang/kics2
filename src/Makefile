@@ -85,7 +85,9 @@ ifeq ($(shell test -x "$(KICS2)" ; echo $$?),0)
 	mv Compile $(COMP)
 else
 	mv $(INSTALLCURRY) $(INSTALLCURRY).bak
-	cp $(INSTALLHS) $(INSTALLCURRY)
+	cat $(INSTALLHS) | \
+	  sed "s|^import System.Directory|import Directory|" | \
+	  sed "s|^import System.IO.Unsafe|import Unsafe|" > $(INSTALLCURRY)
 	pakcs $(CURRY_OPTS) :load Compile :save :quit || (mv $(INSTALLCURRY).bak $(INSTALLCURRY) ; exit 1)
 	mv $(INSTALLCURRY).bak $(INSTALLCURRY)
 	mv Compile $(COMP)
