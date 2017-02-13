@@ -1,8 +1,14 @@
 #!/bin/sh
 # Compile a Curry program (using the HTML library) into a cgi script
 
-# The installation directory of KiCS2
-KICS2HOME=`echo KICS2HOME must be defined here!`
+KICS2BUILDDIR=`echo KICS2HOME must be defined here!`
+KICS2INSTALLDIR=
+# Define the main directory where KICS2 is installed:
+if [ -d "$KICS2INSTALLDIR" ] ; then
+  KICS2HOME=$KICS2INSTALLDIR
+else
+  KICS2HOME=$KICS2BUILDDIR
+fi
 export KICS2HOME
 
 # Standard suffix that will be added to the main script:

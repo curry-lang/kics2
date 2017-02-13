@@ -21,7 +21,8 @@ cleanall:
 
 $(BINDIR)/%: %.sh
 	mkdir -p $(@D)
-	sed "s|^KICS2HOME=.*$$|KICS2HOME=$(ROOT)|" < $< > $@
+	cat $< | sed "s|^KICS2BUILDDIR=.*$$|KICS2BUILDDIR=$(ROOT)|" | \
+	 sed "s|^KICS2INSTALLDIR=.*$$|KICS2INSTALLDIR=$(KICS2INSTALLDIR)|" > $@
 	chmod 755 $@
 
 $(BINDIR)/%.bat: %.bat

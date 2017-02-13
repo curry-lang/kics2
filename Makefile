@@ -6,9 +6,24 @@
 # --------------------------------------
 #
 # If the parameter CURRYFRONTEND is set to an executable,
-# this executable will be used as the front end for PAKCS.
+# this executable will be used as the front end for KiCS2.
 # Otherwise, the front end will be compiled from the sources
 # in subdir "frontend".
+
+# Is this an installation for a distribution (Debian) package (yes|no)?
+# In case of "yes":
+# - nothing will be stored during the installation in the home directory
+# - the documentation will not be built (since this takes a lot of time)
+export DISTPKGINSTALL = no
+
+# In case of an installation as a (Debian) package, the variable
+# KICS2INSTALLDIR should be set to the location where it is finally
+# placed after the build (e.g., /usr/lib/kics2). It is required that
+# during the build, this directory does not exist, otherwise
+# the build fails. If this variable is set and the installed system will
+# be moved to this location after the build, it will be
+# used as the root directory for all generated components of the system.
+export KICS2INSTALLDIR =
 
 # Is this a global installation (with restricted flexibility) (yes/no)?
 GLOBALINSTALL   = yes
@@ -23,8 +38,12 @@ MINORVERSION    = 5
 REVISIONVERSION = 1
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
-# The version date, extracted from the last git commit
-COMPILERDATE   := $(shell git log -1 --format="%ci" | cut -c-10)
+# The version date:
+ifeq ($(DISTPKGINSTALL),yes)
+COMPILERDATE := $(shell date "+%Y-%m-%d")
+else
+COMPILERDATE := $(shell git log -1 --format="%ci" | cut -c-10)
+endif
 # The installation date, set to the current date
 INSTALLDATE    := $(shell date)
 # The name of the Curry system, needed for installation of currytools
@@ -39,6 +58,15 @@ endif
 
 # Paths used in this installation
 # -------------------------------
+
+# Directories of the sources of the standard libraries and tools
+ifeq ($(DISTPKGINSTALL),yes)
+export CURRYLIBSDIR  = $(error "CURRYLIBSDIR is undefined!")
+export CURRYTOOLSDIR = $(error "CURRYTOOLSDIR is undefined!")
+else
+export CURRYLIBSDIR  = $(ROOT)/lib-trunk
+export CURRYTOOLSDIR = # not used
+endif
 
 # root directory of the installation
 export ROOT          = $(CURDIR)
@@ -57,9 +85,11 @@ export LOCALBIN      = $(BINDIR)/.local
 # installation prefix, may be overwritten
 export INSTALLPREFIX = $(ROOT)
 # Directory where local package installations are stored
-export LOCALPKG      = $(INSTALLPREFIX)/pkg
+export LOCALPKG   = $(INSTALLPREFIX)/pkg
 # The path to the package database
 export PKGDB         = $(LOCALPKG)/kics2.conf.d
+# The local path (from the ROOT) to the package database
+export LOCALPKGDB    = pkg/kics2.conf.d
 
 # GHC and CABAL configuration
 # ---------------------------
@@ -79,6 +109,10 @@ GHC_PKGS  = $(foreach pkg,$(ALLDEPS),-package $(pkg))
 # to avoid conflicts with globally installed ones.
 export GHC_OPTS       = -no-user-$(GHC_PKG_OPT) -$(GHC_PKG_OPT) "$(PKGDB)" \
                         -hide-all-packages $(GHC_PKGS)
+# the same for inclusion into INSTALLHS
+export GHC_OPTS_INST  = -no-user-$(GHC_PKG_OPT) -$(GHC_PKG_OPT) \""++installDir++"/$(LOCALPKGDB)\" \
+                        -hide-all-packages $(GHC_PKGS)
+
 # Command to unregister a package
 export GHC_UNREGISTER = "$(GHC-PKG)" unregister --$(GHC_PKG_OPT)="$(PKGDB)"
 # Command to install missing packages using cabal
@@ -174,21 +208,38 @@ export ALLDEPS     = $(sort $(RUNTIMEDEPS) $(LIBDEPS) $(SYSTEMDEPS))
 # main (default) target - starts installation with logging
 .PHONY: all
 all:
+ifeq ($(DISTPKGINSTALL),yes)
+	$(MAKE) install
+	# if we build a package, we compile all libraries at the end
+	# so that their intermediate files are up to date:
+	$(REPL) $(REPL_OPTS) :load AllLibraries :eval "3*13+3" :quit
+else
 	@rm -f ${MAKELOG}
 	@echo "Make started at `date`" > ${MAKELOG}
 	$(MAKE) install 2>&1 | tee -a ${MAKELOG}
 	@echo "Make finished at `date`" >> ${MAKELOG}
 	@echo "Make process logged in file ${MAKELOG}"
+endif
+
+# Check whether the value of KICS2INSTALLDIR, if defined, is a non-existing
+# directory
+.PHONY: checkinstalldir
+checkinstalldir:
+	@if [ -n "$(KICS2INSTALLDIR)" -a -d "$(KICS2INSTALLDIR)" ] ; then \
+	  echo "ERROR: Variable KICS2INSTALLDIR points to an existing directory!" && exit 1 ; \
+	fi
 
 # install the complete system
-.PHONY: install
+.PHONY: checkinstalldir install
 install: kernel tools manual
 	chmod -R go+rX .
 
 # remove files from user's home directory
 .PHONY: uninstall
 uninstall:
+ifeq ($(DISTPKGINSTALL),no)
 	rm -rf $(HOME)/.kics2rc $(HOME)/.kics2rc.bak $(HOME)/.kics2i_history
+endif
 	@echo "Just remove this directory to finish uninstallation."
 
 # install additional tools
@@ -199,9 +250,14 @@ tools: $(CURRYSYSTEMBIN)
 	cd cpns       && $(MAKE) # Curry Port Name Server demon
 	cd www        && $(MAKE) # scripts for dynamic web pages
 
+# compile analysis tool only:
+.PHONY: CASS
+CASS:
+	cd currytools && $(MAKE) CASS
+
 # install the kernel system (binaries and libraries)
 .PHONY: kernel
-kernel: $(PWD) $(WHICH) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs
+kernel: $(PWD) $(WHICH) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs copytools
 	$(MAKE) $(INSTALLHS) INSTALLPREFIX="$(shell $(PWD))" \
 	                     GHC="$(shell $(WHICH) "$(GHC)")"
 	cd src && $(MAKE) # build compiler
@@ -220,7 +276,22 @@ $(CURRYSYSTEMBIN): $(BINDIR)/$(CURRYSYSTEM)
 # install the library sources from the trunk directory:
 .PHONY: copylibs
 copylibs:
-	@if [ -d $(LIBSRCDIR) ] ; then cd $(LIBSRCDIR) && $(MAKE) -f Makefile.$(CURRYSYSTEM).install ; fi
+	@if [ -d $(CURRYLIBSDIR) ] ; then cd $(CURRYLIBSDIR) && $(MAKE) -f Makefile.$(CURRYSYSTEM).install ; fi
+
+# if the directory `currytools` is not present, copy it from the sources:
+# (only necessary for the installation of a (Debian) packages, otherwise
+# `currytools` is a submodule of the repository)
+.PHONY: copytools
+copytools:
+ifeq ($(DISTPKGINSTALL),yes)
+	@if [ ! -f currytools/Makefile ] ; then $(MAKE) forcecopytools ; fi
+endif
+
+.PHONY: forcecopytools
+forcecopytools:
+	mkdir -p currytools
+	# Copying currytools from $(CURRYTOOLSDIR)
+	cp -pr $(CURRYTOOLSDIR)/* currytools
 
 # create package database
 $(PKGDB):
@@ -252,13 +323,27 @@ $(CLEANCURRY): utils/cleancurry$(EXE_SUFFIX)
 utils/%: .FORCE
 	cd utils && $(MAKE) $(@F)
 
+########################################################################
+# Testing: run test suites to check the installation
+#
+ifeq ($(DISTPKGINSTALL),yes)
+# for a package installation, we run the tests in verbose mode:
+export RUNTESTPARAMS=-v
+else
+export RUNTESTPARAMS=
+endif
+
 # run the test suite to check the installation
 .PHONY: runtest
 runtest: testsuite/doTest
 	#cd testsuite  && ./doTest --nogui
-	cd testsuite2 && ./test.sh
-	cd lib && ./test.sh
-	cd currytools && $(MAKE) runtest
+	cd testsuite2 && ./test.sh $(RUNTESTPARAMS)
+	cd lib && ./test.sh $(RUNTESTPARAMS)
+	cd currytools && $(MAKE) runtest $(RUNTESTPARAMS)
+
+########################################################################
+# Cleaning:
+#
 
 .PHONY: clean
 clean: $(CLEANCURRY)
@@ -294,7 +379,9 @@ maintainer-clean: cleanall
 	rm -rf $(BINDIR)
 	rm -rf $(LIBDIR)
 	cd currytools && git clean -fdX
-	cd $(LIBSRCDIR)  && git clean -fdX
+ifeq ($(DISTPKGINSTALL),no)
+	cd $(CURRYLIBSDIR)  && git clean -fdX
+endif
 
 .PHONY: .FORCE
 .FORCE:
@@ -302,6 +389,12 @@ maintainer-clean: cleanall
 ##############################################################################
 # Building the compiler itself
 ##############################################################################
+
+ifeq ($(GLOBALINSTALL),yes)
+GLOBALPKGS = -package kics2-runtime -package kics2-libraries -package kics2-libraries-trace
+else
+GLOBALPKGS =
+endif
 
 # generate Haskell module with basic installation information.
 # This information is used for building the compiler itself as well as the
@@ -312,12 +405,21 @@ ifneq ($(shell test -x "$(GHC)" ; echo $$?), 0)
 endif
 	echo "-- This file is automatically generated, do not change it!" > $@
 	echo "module Installation where" >> $@
+	echo "import System.Directory (doesDirectoryExist)" >> $@
+	echo "import System.IO.Unsafe (unsafePerformIO)" >> $@
 	echo "" >> $@
 	echo 'compilerName :: String' >> $@
 	echo 'compilerName = "KiCS2 Curry -> Haskell Compiler"' >> $@
 	echo "" >> $@
 	echo 'installDir :: String' >> $@
-	echo 'installDir = "$(INSTALLPREFIX)"' >> $@
+	#echo 'installDir = "$(INSTALLPREFIX)"' >> $@
+	echo 'installDir = if null pkgInstallDir then buildDir else if unsafePerformIO (doesDirectoryExist pkgInstallDir) then pkgInstallDir else buildDir' >> $@
+	echo "" >> $@
+	echo 'buildDir :: String' >> $@
+	echo 'buildDir = "$(INSTALLPREFIX)"' >> $@
+	echo "" >> $@
+	echo 'pkgInstallDir :: String' >> $@
+	echo 'pkgInstallDir = "$(KICS2INSTALLDIR)"' >> $@
 	echo "" >> $@
 	echo 'majorVersion :: Int' >> $@
 	echo 'majorVersion = $(MAJORVERSION)' >> $@
@@ -347,11 +449,7 @@ endif
 	echo 'ghcExec = "\"$(GHC)\""' >> $@
 	echo "" >> $@
 	echo 'ghcOptions :: String' >> $@
-ifeq ($(GLOBALINSTALL),yes)
-	echo 'ghcOptions = "$(subst ",\",$(GHC_OPTS)) -package kics2-runtime -package kics2-libraries -package kics2-libraries-trace"' >> $@
-else
-	echo 'ghcOptions = "$(subst ",\",$(GHC_OPTS))"' >> $@
-endif
+	echo 'ghcOptions = "$(GHC_OPTS_INST) $(GLOBALPKGS)"' >> $@
 	echo "" >> $@
 	echo 'ghcOptimizations :: String' >> $@
 	echo 'ghcOptimizations = "$(GHC_OPTIMIZATIONS)"' >> $@
@@ -401,7 +499,7 @@ $(MANUAL):
 manual:
 	$(MAKE) $(CURRYDOC)
 	# generate manual, if necessary:
-	@if [ -d docs/src ] ; then \
+	@if [ -d docs/src -a $(DISTPKGINSTALL) = "no" ] ; then \
 	  $(MAKE) ${MANUALVERSION} && cd docs/src && $(MAKE) install ; \
 	fi
 
@@ -459,7 +557,7 @@ cleandist:
 	cd currytools              && rm -rf .git .gitignore
 	cd frontend/curry-base     && rm -rf .git .gitignore dist
 	cd frontend/curry-frontend && rm -rf .git .gitignore dist
-	rm -rf $(LIBSRCDIR)
+	rm -rf $(CURRYLIBSDIR)
 	cd utils                   && $(MAKE) cleanall
 	rm -rf $(BINDIR)
 	rm -rf $(DEV_DIRS)

@@ -2,8 +2,15 @@
 
 # Start interactive read-eval-print loop for KiCS2
 
-# The installation directory of KiCS2
-KICS2HOME=`echo KICS2HOME must be defined here!`
+KICS2BUILDDIR=`echo KICS2HOME must be defined here!`
+KICS2INSTALLDIR=
+# Define the main directory where KICS2 is installed:
+if [ -d "$KICS2INSTALLDIR" ] ; then
+  KICS2HOME=$KICS2INSTALLDIR
+else
+  KICS2HOME=$KICS2BUILDDIR
+fi
+export KICS2HOME
 
 # check whether first argument is a tool and, if yes, exec the tool
 KICS2TOOL="$KICS2HOME/bin/kics2-"$1
