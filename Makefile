@@ -113,12 +113,26 @@ export GHC_OPTS       = -no-user-$(GHC_PKG_OPT) -$(GHC_PKG_OPT) "$(PKGDB)" \
 export GHC_OPTS_INST  = -no-user-$(GHC_PKG_OPT) -$(GHC_PKG_OPT) \""++installDir++"/$(LOCALPKGDB)\" \
                         -hide-all-packages $(GHC_PKGS)
 
+# extract CABAL version
+CABAL_MAJOR := $(shell "$(CABAL)" --numeric-version | cut -d. -f1)
+CABAL_MINOR := $(shell "$(CABAL)" --numeric-version | cut -d. -f2)
+
+# Since CABAL 1.22, it is possible to create relocatable packages
+# with the option "--enable-relocatable".
+# With relocatable packages, we can generate a relocatable distribution
+# of KiCS2 when the variable KICS2INSTALLDIR is set.
+ifeq ($(shell test $(CABAL_MAJOR) -gt 1 -o \( $(CABAL_MAJOR) -eq 1 -a $(CABAL_MINOR) -ge 22 \) ; echo $$?),0)
+CABAL_REL_OPT = --enable-relocatable
+else
+CABAL_REL_OPT = 
+endif
+
 # Command to unregister a package
 export GHC_UNREGISTER = "$(GHC-PKG)" unregister --$(GHC_PKG_OPT)="$(PKGDB)"
 # Command to install missing packages using cabal
 export CABAL_INSTALL  = "$(CABAL)" install --with-compiler="$(GHC)"       \
                         --with-hc-pkg="$(GHC-PKG)" --prefix="$(LOCALPKG)" \
-                        --global --package-db="$(PKGDB)" \
+                        --global --package-db="$(PKGDB)" $(CABAL_REL_OPT) \
                         --ghc-options="$(GHC_OPTIMIZATIONS)"
 # Cabal profiling options
 ifeq ($(PROFILING),yes)

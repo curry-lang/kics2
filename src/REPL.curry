@@ -99,6 +99,8 @@ processArgsAndStart rst (arg:args)
   | null      arg = processArgsAndStart rst args
   | arg == "-V" || arg == "--version"
   = getBanner >>= putStrLn >> cleanUpAndExitRepl rst
+  | arg == "--numeric-version"
+  = putStrLn numericVersion >> cleanUpAndExitRepl rst
   | arg == "-h" || arg == "--help" || arg == "-?"
   = printHelp >> cleanUpAndExitRepl rst
   | isCommand arg = do
@@ -120,14 +122,17 @@ printHelpOnInteractive :: IO ()
 printHelpOnInteractive = putStrLn $ unlines
   [ "Invoke interactive environment:"
   , ""
-  , "    kics2 [--noreadline] [-Dprop=val] <commands>"
+  , "    kics2 <options> <commands>"
   , ""
-  , "with:"
+  , "with options:"
   , ""
-  , "--noreadline : do not use input line editing via command `rlwrap'"
-  , "-Dprop=val   : define kics2rc property `prop' as `val'"
-  , "<commands>   : list of commands of the KiCS2 environment"
-  , "               (run `kics2 :h :q' to see the list of all commands)"
+  , "-h|--help|-?      : show this message and quit"
+  , "-V|--version      : show version and quit"
+  , "--numeric-version : show just the version number and quit"
+  , "--noreadline      : do not use input line editing via command `rlwrap'"
+  , "-Dprop=val        : define kics2rc property `prop' as `val'"
+  , "<commands>        : list of commands of the KiCS2 environment"
+  , "                    (run `kics2 :h :q' to see the list of all commands)"
   , ""
   ]
 
@@ -167,11 +172,14 @@ getBanner :: IO String
 getBanner = do
   logo <- readFile $ Inst.installDir </> "include" </> "logo" <.> "txt"
   return (logo ++ version)
- where version = "Version "
-              ++ show Inst.majorVersion ++ "." ++ show Inst.minorVersion
-              ++ "." ++ show Inst.revisionVersion
-              ++ " of " ++ Inst.compilerDate
+ where version = "Version " ++ numericVersion ++ " of " ++ Inst.compilerDate
               ++ " (installed at " ++ Inst.installDate ++ ")"
+
+--- Show numeric version number
+numericVersion :: String
+numericVersion =
+  intercalate "."
+    (map show [Inst.majorVersion, Inst.minorVersion, Inst.revisionVersion])
 
 -- ---------------------------------------------------------------------------
 
