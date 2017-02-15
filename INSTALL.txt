@@ -7,8 +7,8 @@ Installation Instructions
 KiCS2 compiles [Curry programs](http://www.curry-language.org)
 into [Haskell programs](http://www.haskell.org/).
 This distribution runs on Unix-based platforms
-and has been developed and tested under Linux (Ubuntu).
-However, it should also run under similar platforms like SunOS or Mac OS X.
+and has been developed and tested under Linux (Debian/Ubuntu).
+However, it should also run on similar platforms like Mac OS X or SunOS.
 Furthermore, the installation of the KiCS2 kernel
 has been successfully tested on a Windows 7 together with
 [MinGW] (see below for detailed instructions).
@@ -82,6 +82,20 @@ experimenting with different versions of GHC or Cabal,
 you can specify one or both of them by
 
     make install GHC=/path/to/ghc CABAL=/path/to/cabal
+
+If you want to install the system at a location different from
+the build location, you have to specify the intended installation
+location at built-time with the parameter `KICS2INSTALLDIR`.
+Furthermore, the final installation location must not exist
+during built time. For instance, to built KiCS2 at some local directory
+and move it later to `/opt/kics2`, you can do it by
+
+    make KICS2INSTALLDIR=/opt/kics2
+    ...
+    mv /path/to/kics2 /opt/kics2
+
+Note that this cross installation is possible only with Cabal
+versions 1.22 and higher (which support relocatable packages).
 
 
 Windows Installation
