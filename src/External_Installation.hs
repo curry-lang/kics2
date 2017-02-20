@@ -34,7 +34,7 @@ external_d_C_ghcExec :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_ghcExec _ _ = toCurry I.ghcExec
 
 external_d_C_ghcLocalOptions :: Cover -> ConstStore -> Curry_Prelude.C_String
-external_d_C_ghcLocalOptions _ _ = toCurry I.ghcOptions
+external_d_C_ghcLocalOptions _ _ = toCurry I.ghcLocalOptions
 
 external_d_C_ghcOptions :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_ghcOptions _ _ = toCurry I.ghcOptions
