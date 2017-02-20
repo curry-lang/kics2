@@ -32,7 +32,8 @@ warnoverlapping=yes
 editcommand=
 
 # System command to show the source file of a Curry program
-showcommand=cat
+# (if not defined, the value of the environment variable PAGER or "cat" is used)
+showcommand=
 
 # System command to view dot graph specifications that come from stdin
 # (e.g., used in the Curry browser and the erd2curry tools)

@@ -203,7 +203,9 @@ If the variable \code{showcommand} is set in the
 configuration file \ccode{.kics2rc}
 (see Section~\ref{sec-customization}),
 its value is used as a command to show the source text,
-otherwise the command \ccode{cat} is used.
+otherwise the environment variable \code{PAGER} (or 
+\ccode{cat}, if \code{PAGER} is undefined)
+is used to show the source text.
 
 \item[\fbox{\code{:show $m$}}]\pindex{:show}
 Show the source text of module $m$ which must be accessible

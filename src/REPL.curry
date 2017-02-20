@@ -715,8 +715,12 @@ processShow rst args = do
   case mbf of
     Nothing -> skipCommand "source file not found"
     Just fn -> do
-      let showcmd = rcValue (rcvars rst) "showcommand"
-      system $ (if null showcmd then "cat" else showcmd) ++ ' ' : fn
+      pager <- getEnviron "PAGER"
+      let rcshowcmd = rcValue (rcvars rst) "showcommand"
+          showprog  = if not (null rcshowcmd)
+                        then rcshowcmd
+                        else (if null pager then "cat" else pager)
+      system $ showprog ++ ' ' : fn
       putStrLn ""
       return (Just rst)
 
@@ -729,7 +733,8 @@ processInterface rst args = do
 processBrowse :: ReplState -> String -> IO (Maybe ReplState)
 processBrowse rst args
   | notNull $ stripCurrySuffix args = skipCommand "superfluous argument"
-  | otherwise                       = do
+  | otherwise                       = checkForWish $ do
+      writeVerboseInfo rst 1 "Starting Curry Browser in separate window..."
       let toolexec = "currytools" </> "browser" </> "BrowserGUI"
       callTool rst toolexec (mainMod rst)
 
@@ -995,7 +1000,7 @@ printAllLoadPathPrograms rst = mapIO_ printDirPrograms (loadPaths rst)
 -- Showing source code of functions via SourcProgGUI tool.
 -- If necessary, open a new connection and remember it in the repl state.
 showFunctionInModule :: ReplState -> String -> String -> IO (Maybe ReplState)
-showFunctionInModule rst mod fun = do
+showFunctionInModule rst mod fun = checkForWish $ do
   let mbh      = lookup mod (sourceguis rst)
       toolexec = "currytools" </> "browser" </> "SourceProgGUI"
       spgui    = kics2Home rst </> toolexec
@@ -1003,6 +1008,9 @@ showFunctionInModule rst mod fun = do
   if not spgexists
    then errorMissingTool toolexec
    else do
+    writeVerboseInfo rst 1 $
+      "Showing source code of function '" ++ mod ++ "." ++ fun ++
+      "' in separate window..."
     (rst',h') <- maybe (do h <- connectToCommand (spgui++" "++mod)
                            return (rst {sourceguis = (mod,(fun,h))
                                               : sourceguis rst }, h))
@@ -1045,6 +1053,22 @@ errorMissingTool :: String -> IO (Maybe ReplState)
 errorMissingTool cmd = skipCommand $
      Inst.installDir ++ '/' : cmd ++ " not found\n"
   ++ "Possible solution: run \"cd " ++ Inst.installDir ++" && make install\""
+
+-- Check whether some system command is available. If it is not available,
+-- skip the command with the given error message, otherwise continue with
+-- the last argument.
+checkForCommand :: String -> String -> IO (Maybe ReplState)
+                -> IO (Maybe ReplState)
+checkForCommand cmd errmsg continue = do
+  excmd <- system $ "which " ++ cmd ++ " > /dev/null"
+  if (excmd>0) then skipCommand errmsg
+               else continue
+
+-- Check whether the windowing shell "wish" is available.
+checkForWish :: IO (Maybe ReplState) -> IO (Maybe ReplState)
+checkForWish =
+  checkForCommand "wish"
+    "Windowing shell `wish' not found. Please install package `tk'!"
 
 -- ---------------------------------------------------------------------------
 -- Read KiCS2 options in a Curry source file
