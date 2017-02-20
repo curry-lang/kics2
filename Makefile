@@ -463,8 +463,12 @@ endif
 	echo 'ghcExec :: String' >> $@
 	echo 'ghcExec = "\"$(GHC)\""' >> $@
 	echo "" >> $@
+	echo '-- GHC options for using local libraries and not cabal packages:' >> $@
+	echo 'ghcLocalOptions :: String' >> $@
+	echo 'ghcLocalOptions = "$(GHC_OPTS_INST)"' >> $@
+	echo "" >> $@
 	echo 'ghcOptions :: String' >> $@
-	echo 'ghcOptions = "$(GHC_OPTS_INST) $(GLOBALPKGS)"' >> $@
+	echo 'ghcOptions = ghcLocalOptions ++ " $(GLOBALPKGS)"' >> $@
 	echo "" >> $@
 	echo 'ghcOptimizations :: String' >> $@
 	echo 'ghcOptimizations = "$(GHC_OPTIMIZATIONS)"' >> $@

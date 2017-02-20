@@ -42,6 +42,10 @@ runtimeMinor external
 ghcExec :: String
 ghcExec external
 
+-- GHC options for using local libraries and not cabal packages:
+ghcLocalOptions :: String
+ghcLocalOptions external
+
 ghcOptions :: String
 ghcOptions external
 
