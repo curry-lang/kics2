@@ -6,6 +6,9 @@ Release notes for KiCS2 Version 0.5.1
 
 Changes to version 0.5.0:
 
+  * Option `local` added to switch to local compilation mode (for
+    locally installed systems). This replaces the old setting in the
+    Makefile for global/local installations.
   * Library `Database.ERD...` added (formerly part of ER currytools).
   * Library `IOExts` uses system commands
     `lockfile-create` and `lockfile-remove` instead of `lockfile`

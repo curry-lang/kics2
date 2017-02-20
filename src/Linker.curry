@@ -4,7 +4,7 @@
 --- and compiling this main file together with all compiled Curry modules.
 ---
 --- @author Michael Hanus, Bjoern Peemoeller
---- @version October 2015
+--- @version February 2017
 --- --------------------------------------------------------------------------
 module Linker
   ( ReplState (..), NonDetMode (..), MainCompile (..), loadPaths
@@ -33,7 +33,7 @@ import Utils         (notNull, strip)
 data ReplState = ReplState
   { kics2Home    :: String     -- installation directory of the system
   , rcvars       :: [(String, String)] -- content of rc file
-  , idSupply     :: String     -- IDSupply implementation (ioref, integer or ghc)
+  , idSupply     :: String     -- IDSupply implementation (ghc|ioref|integer)
   , verbose      :: Int        -- verbosity level:
                                -- 0 = errors and warnings
                                -- 1 = show frontend compilation status
@@ -42,6 +42,7 @@ data ReplState = ReplState
                                -- 4 = show analysis information
   , importPaths  :: [String]   -- additional directories to search for imports
   , libPaths     :: [String]   -- directories containg the standard libraries
+  , localCompile :: Bool       -- use local libraries instead of cabal pkgs?
   , preludeName  :: String     -- the name of the standard prelude
   , outputSubdir :: String
   , mainMod      :: String     -- name of main module
@@ -73,10 +74,11 @@ initReplState :: ReplState
 initReplState = ReplState
   { kics2Home    = ""
   , rcvars       = []
-  , idSupply     = "ioref"
+  , idSupply     = "ghc"
   , verbose      = 1
   , importPaths  = []
   , libPaths     = map (Inst.installDir </>) ["lib"]
+  , localCompile = False
   , preludeName  = "Prelude"
   , outputSubdir = ".curry" </> "kics2"
   , mainMod      = "Prelude"
@@ -209,7 +211,7 @@ compileModuleWithGHC rst modname = do
 ghcCall :: ReplState -> Bool -> Bool -> String -> String
 ghcCall rst useGhci recompile mainFile = unwords . filter notNull $
   [ Inst.ghcExec
-  , Inst.ghcOptions
+  , if localCompile rst then Inst.ghcLocalOptions else Inst.ghcOptions
   , if optim rst && not useGhci then Inst.ghcOptimizations else ""
   , if useGhci                  then "--interactive"       else "--make"
   , if verbose rst < 2          then "-v0"                 else "-v1"
@@ -238,12 +240,12 @@ ghcCall rst useGhci recompile mainFile = unwords . filter notNull $
                     Par n -> "-N" ++ (if n == 0 then "" else show n)
                     _     -> ""
   ghcImports
-    | Inst.installGlobal
-    = map (</> outputSubdir rst) ("." : importPaths rst)
-    | otherwise
+    | localCompile rst
     = [ kics2Home rst </> "runtime"
       , kics2Home rst </> "runtime" </> "idsupply" ++ idSupply rst
       ] ++ map (</> outputSubdir rst) (loadPaths rst)
+    | otherwise
+    = map (</> outputSubdir rst) ("." : importPaths rst)
 
 --- Mode of non-deterministic evaluation of main goal
 data NonDetMode  = DFS | BFS | IDS Int | Par Int | PrDFS | PrtChoices Int | DEBUG

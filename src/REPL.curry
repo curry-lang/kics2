@@ -3,7 +3,7 @@
 --- It implements the Read-Eval-Print loop for KiCS2
 ---
 --- @author Michael Hanus, Bjoern Peemoeller
---- @version August 2016
+--- @version February 2017
 --- --------------------------------------------------------------------------
 module REPL where
 
@@ -781,13 +781,15 @@ processSetOption rst option
       [(_,act)]    -> act rst (strip args)
       _            -> skipCommand $ "ambiguous option: ':" ++ option ++ "'"
  where (opt, args)  = break (==' ') option
-       matched      = filter (isPrefixOf (map toLower opt) . fst) availOptions
+       matched      = filter (isPrefixOf (map toLower opt) . fst)
+                             (availOptions rst)
 
 -- In a global installation, the option for setting the identifier supply
 -- is not available:
-availOptions :: [(String, ReplState -> String -> IO (Maybe ReplState))]
-availOptions = filter installOpts replOptions
-  where installOpts (opt, _) = not Inst.installGlobal
+availOptions :: ReplState
+             -> [(String, ReplState -> String -> IO (Maybe ReplState))]
+availOptions rst = filter installOpts replOptions
+  where installOpts (opt, _) = localCompile rst
                                || opt `notElem` ["supply"]
 
 replOptions :: [(String, ReplState -> String -> IO (Maybe ReplState))]
@@ -821,6 +823,8 @@ replOptions =
   , ("-trace"       , \r _ -> return (Just r { traceFailure = False }))
   , ("+profile"     , \r _ -> return (Just r { profile      = True  }))
   , ("-profile"     , \r _ -> return (Just r { profile      = False }))
+  , ("+local"       , \r _ -> return (Just r { localCompile = True  }))
+  , ("-local"       , \r _ -> return (Just r { localCompile = False }))
   , ("+ghci"        , \r _ -> return (Just r { useGhci      = True  }))
   , ("-ghci"        , setNoGhci                                       )
   , ("safe"         , \r _ -> return (Just r { safeExec     = True  }))
@@ -881,7 +885,7 @@ printOptions rst = putStrLn $ unlines $ filter notNull
   , "choices [<n>]   - set search mode to print the choice structure as a tree"
   , "                  (up to level <n>)"
   , "debugsearch     - set search mode to print debugging information"
-  , ifLocal
+  , ifLocal rst
     "supply <I>      - set idsupply implementation (ghc|giants|integer|ioref|pureio)"
   , "v<n>            - verbosity level"
   , "                    0: quiet (errors and warnings only)"
@@ -898,6 +902,7 @@ printOptions rst = putStrLn $ unlines $ filter notNull
   , "+/-trace        - trace failure in deterministic expression"
   , ifProfiling
     "+/-profile      - compile with GHC's profiling capabilities"
+  , "+/-local        - use local libraries instead of cabal packages"
   , "+/-ghci         - use ghci instead of ghc to evaluate main expression"
   , "safe            - safe execution mode without I/O actions"
   , "prelude <name>  - name of the standard prelude"
@@ -909,9 +914,9 @@ printOptions rst = putStrLn $ unlines $ filter notNull
   , showCurrentOptions rst
   ]
 
--- Hide string if the current installation is global:
-ifLocal :: String -> String
-ifLocal s = if Inst.installGlobal then "" else s
+-- Show string if the local compilation/linking mode is used:
+ifLocal :: ReplState -> String -> String
+ifLocal rst s = if localCompile rst then s else ""
 
 ifProfiling :: String -> String
 ifProfiling s = if Inst.withProfiling then s else ""
@@ -928,7 +933,7 @@ showCurrentOptions rst = intercalate "\n" $ filter notNull
       BFS           -> "breadth-first search"
       IDS d         -> "iterative deepening (initial depth: " ++ show d ++ ")"
       Par s         -> "parallel search with " ++ show s ++ " threads"
-  , ifLocal $
+  , ifLocal rst $
     "idsupply          : " ++ idSupply rst
   , "prelude           : " ++ preludeName rst
   , "parser options    : " ++ parseOpts rst
@@ -946,6 +951,7 @@ showCurrentOptions rst = intercalate "\n" $ filter notNull
     ,               showOnOff (showTime rst)     ++ "time"
     ,               showOnOff (traceFailure rst) ++ "trace"
     , ifProfiling $ showOnOff (profile rst)      ++ "profile"
+    ,               showOnOff (localCompile rst) ++ "local"
     ,               showOnOff (useGhci rst)      ++ "ghci"
     ]
   ]
