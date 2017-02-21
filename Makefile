@@ -4,32 +4,36 @@
 
 # Some parameters for this installation
 # --------------------------------------
-#
+# (these parameters might be passed to `make`)
+
 # If the parameter CURRYFRONTEND is set to an executable,
 # this executable will be used as the front end for KiCS2.
 # Otherwise, the front end will be compiled from the sources
 # in subdir "frontend".
+export CURRYFRONTEND =
 
 # Is this an installation for a distribution (Debian) package (yes|no)?
 # In case of "yes":
 # - nothing will be stored during the installation in the home directory
 # - the documentation will not be built (since this takes a lot of time)
+# - the paramters CURRYLIBSDIR and CURRYTOOLSDIR must be defined and
+#   refer to the directories containing the Curry system libraries and tools
 export DISTPKGINSTALL = no
 
-# In case of an installation as a (Debian) package, the variable
-# KICS2INSTALLDIR should be set to the location where it is finally
-# placed after the build (e.g., /usr/lib/kics2). It is required that
-# during the build, this directory does not exist, otherwise
-# the build fails. If this variable is set and the installed system will
-# be moved to this location after the build, it will be
+# In order to build the system in a place different from the place of
+# the final installation (e.g., when building it as a (Debian) package),
+# the variable KICS2INSTALLDIR should be set to the location where it
+# will be finally installed after the build (e.g., /usr/lib/kics2).
+# It is required that during the build, this directory does not exist,
+# otherwise the build fails. If this variable is set and the
+# installed system will be moved to this location after the build, it will be
 # used as the root directory for all generated components of the system.
 export KICS2INSTALLDIR =
 
-# Is this a global installation (with restricted flexibility) (yes/no)?
-GLOBALINSTALL   = yes
-
 # Should profiling be enabled (yes/no)?
 PROFILING       = yes
+
+########################################################################
 # The major version number
 MAJORVERSION    = 0
 # The minor version number
@@ -179,7 +183,7 @@ export REPL         = $(LOCALBIN)/kics2i$(EXE_SUFFIX)
 # The default options for the REPL, used for libraries and tools
 export REPL_OPTS    = :set v2 :set -ghci
 # The standard name of the interactive Curry system in then bin dirctory:
-export CURRYSYSTEMBIN = $(BINDIR)/curry
+export BINCURRY     = $(BINDIR)/curry
 # The frontend binary
 export CYMAKE       = $(BINDIR)/$(CURRYSYSTEM)-frontend$(EXE_SUFFIX)
 # The cleancurry binary
@@ -259,7 +263,7 @@ endif
 
 # install additional tools
 .PHONY: tools
-tools: $(CURRYSYSTEMBIN)
+tools: $(BINCURRY)
 	cd currytools && $(MAKE) # shared tools
 	cd tools      && $(MAKE) # compiler specific tools
 	cd cpns       && $(MAKE) # Curry Port Name Server demon
@@ -272,19 +276,27 @@ CASS:
 
 # install the kernel system (binaries and libraries)
 .PHONY: kernel
-kernel: $(PWD) $(WHICH) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs copytools
+kernel:
+	$(MAKE) kernelbins
+	$(MAKE) kernellibs
+
+# install the kernel system binaries (compiler and REPL)
+.PHONY: kernelbins
+kernelbins: $(PWD) $(WHICH) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs copytools
 	$(MAKE) $(INSTALLHS) INSTALLPREFIX="$(shell $(PWD))" \
 	                     GHC="$(shell $(WHICH) "$(GHC)")"
 	cd src && $(MAKE) # build compiler
-	$(MAKE) $(CURRYSYSTEMBIN)
-ifeq ($(GLOBALINSTALL),yes)
+	$(MAKE) $(BINCURRY)
+
+# install the libraries of the kernel system (i.e., compile and package them)
+.PHONY: kernellibs
+kernellibs: $(PKGDB)
 	cd lib     && $(MAKE) unregister
 	cd runtime && $(MAKE) unregister
 	cd runtime && $(MAKE)
 	cd lib     && $(MAKE)
-endif
 
-$(CURRYSYSTEMBIN): $(BINDIR)/$(CURRYSYSTEM)
+$(BINCURRY): $(BINDIR)/$(CURRYSYSTEM)
 	rm -f $@
 	cd $(BINDIR) && ln -s $(CURRYSYSTEM) $(notdir $@)
 
@@ -373,7 +385,7 @@ clean: $(CLEANCURRY)
 	cd tools       && $(MAKE) clean
 	cd utils       && $(MAKE) clean
 	cd www         && $(MAKE) clean
-	rm -f $(MAKELOG) $(CURRYSYSTEMBIN)
+	rm -f $(MAKELOG) $(BINCURRY)
 	rm -f $(INSTALLHS)
 
 # clean everything (including compiler and tool binaries)
@@ -423,7 +435,6 @@ endif
 	echo 'compilerName = "KiCS2 Curry -> Haskell Compiler"' >> $@
 	echo "" >> $@
 	echo 'installDir :: String' >> $@
-	#echo 'installDir = "$(INSTALLPREFIX)"' >> $@
 	echo 'installDir = if null pkgInstallDir then buildDir else if unsafePerformIO (doesDirectoryExist pkgInstallDir) then pkgInstallDir else buildDir' >> $@
 	echo "" >> $@
 	echo 'buildDir :: String' >> $@
@@ -491,7 +502,7 @@ libdoc: $(CURRYDOC)
 .PHONY: currydoc
 currydoc: $(CURRYDOC)
 
-$(CURRYDOC): $(CURRYSYSTEMBIN)
+$(CURRYDOC): $(BINCURRY)
 	cd currytools && $(MAKE) currydoc
 
 ##############################################################################
@@ -597,7 +608,6 @@ $(TARBALL): $(COMP) frontend $(MANUAL)
 	# update Makefile
 	cat Makefile \
 	  | sed -e "/^# SNIP FOR DISTRIBUTION/,\$$d" \
-	  | sed 's|^GLOBALINSTALL *=.*$$|GLOBALINSTALL   = yes|' \
 	  | sed 's|^PROFILING *=.*$$|PROFILING   = no|' \
 	  | sed 's|^COMPILERDATE *:=.*$$|COMPILERDATE    = $(COMPILERDATE)|' \
 	  > $(DISTDIR)/Makefile
