@@ -4,7 +4,7 @@
 --- file `ROOT/runtime/Installation.hs` which is automatically generated.
 ---
 --- @author  Michael Hanus, Bjoern Peemoeller, Fabian Skrlac
---- @version September 2014
+--- @version February 2017
 --- --------------------------------------------------------------------------
 
 module Installation where
@@ -51,9 +51,6 @@ ghcOptions external
 
 ghcOptimizations :: String
 ghcOptimizations external
-
-installGlobal :: Bool
-installGlobal external
 
 withProfiling :: Bool
 withProfiling external
