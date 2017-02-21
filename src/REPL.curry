@@ -823,7 +823,7 @@ replOptions =
   , ("-trace"       , \r _ -> return (Just r { traceFailure = False }))
   , ("+profile"     , \r _ -> return (Just r { profile      = True  }))
   , ("-profile"     , \r _ -> return (Just r { profile      = False }))
-  , ("+local"       , \r _ -> return (Just r { localCompile = True  }))
+  , ("+local"       , setLocalMode                                    )
   , ("-local"       , \r _ -> return (Just r { localCompile = False }))
   , ("+ghci"        , \r _ -> return (Just r { useGhci      = True  }))
   , ("-ghci"        , setNoGhci                                       )
@@ -835,6 +835,21 @@ replOptions =
   , ("rts"          , \r a -> return (Just r { rtsOpts      = a     }))
   , ("args"         , \r a -> return (Just r { rtsArgs      = a     }))
   ]
+
+-- Try to set the local compilation mode.
+-- If the lib directory is not writable, a warning is issued and the
+-- local mode is not set.
+setLocalMode :: ReplState -> String -> IO (Maybe ReplState)
+setLocalMode rst _ = do
+  pid <- getPID
+  let libdir = installDir </> "lib"
+      testfile = libdir </> "xxx" ++ show pid
+  catch (do writeFile testfile ""
+            removeFile testfile
+            return $ Just rst { localCompile = True })
+        (\_ -> do putStrLn "Cannot switch to local compilation mode:"
+                  putStrLn $ "No write permission on `" ++ libdir ++ "'"
+                  return Nothing )
 
 setPrompt :: ReplState -> String -> IO (Maybe ReplState)
 setPrompt rst p
