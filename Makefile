@@ -40,6 +40,8 @@ MAJORVERSION    = 0
 MINORVERSION    = 5
 # The revision version number
 REVISIONVERSION = 1
+# The build version number (if >0, then it is a pre-release)
+BUILDVERSION=4
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -451,6 +453,9 @@ endif
 	echo "" >> $@
 	echo 'revisionVersion :: Int' >> $@
 	echo 'revisionVersion = $(REVISIONVERSION)' >> $@
+	echo "" >> $@
+	echo 'buildVersion :: Int' >> $@
+	echo 'buildVersion = $(BUILDVERSION)' >> $@
 	echo "" >> $@
 	echo 'compilerDate :: String' >> $@
 	echo 'compilerDate = "$(COMPILERDATE)"' >> $@

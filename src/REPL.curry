@@ -175,10 +175,14 @@ getBanner :: IO String
 getBanner = do
   logo <- readFile $ Inst.installDir </> "include" </> "logo" <.> "txt"
   return (logo ++ version)
- where version = "Version " ++ numericVersion ++ " of " ++ Inst.compilerDate
-              ++ " (installed at " ++ Inst.installDate ++ ")"
+ where
+  version =
+    "Version " ++ numericVersion ++
+    (if Inst.buildVersion == 0 then "" else "-b" ++ show Inst.buildVersion) ++
+    " of " ++ Inst.compilerDate ++
+    " (installed at " ++ Inst.installDate ++ ")"
 
---- Show numeric version number
+--- Show numeric version number (without build version)
 numericVersion :: String
 numericVersion =
   intercalate "."

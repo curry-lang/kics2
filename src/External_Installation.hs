@@ -15,6 +15,9 @@ external_d_C_minorVersion _ _ = toCurry I.minorVersion
 external_d_C_revisionVersion :: Cover -> ConstStore -> Curry_Prelude.C_Int
 external_d_C_revisionVersion _ _ = toCurry I.revisionVersion
 
+external_d_C_buildVersion :: Cover -> ConstStore -> Curry_Prelude.C_Int
+external_d_C_buildVersion _ _ = toCurry I.buildVersion
+
 external_d_C_compilerDate :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_compilerDate _ _ = toCurry I.compilerDate
 

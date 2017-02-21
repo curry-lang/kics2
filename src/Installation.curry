@@ -24,6 +24,9 @@ minorVersion external
 revisionVersion :: Int
 revisionVersion external
 
+buildVersion :: Int
+buildVersion external
+
 compilerDate :: String
 compilerDate external
 
