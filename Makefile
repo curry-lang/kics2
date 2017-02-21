@@ -405,11 +405,7 @@ endif
 # Building the compiler itself
 ##############################################################################
 
-ifeq ($(GLOBALINSTALL),yes)
 GLOBALPKGS = -package kics2-runtime -package kics2-libraries -package kics2-libraries-trace
-else
-GLOBALPKGS =
-endif
 
 # generate Haskell module with basic installation information.
 # This information is used for building the compiler itself as well as the
@@ -472,13 +468,6 @@ endif
 	echo "" >> $@
 	echo 'ghcOptimizations :: String' >> $@
 	echo 'ghcOptimizations = "$(GHC_OPTIMIZATIONS)"' >> $@
-	echo "" >> $@
-	echo 'installGlobal :: Bool' >> $@
-ifeq ($(GLOBALINSTALL),yes)
-	echo 'installGlobal = True' >> $@
-else
-	echo 'installGlobal = False' >> $@
-endif
 	echo "" >> $@
 	echo 'withProfiling :: Bool' >> $@
 ifeq ($(PROFILING),yes)
