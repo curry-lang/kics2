@@ -9,7 +9,7 @@ from the developer's repository, you have to clone the
 [git repository](https://git-ps.informatik.uni-kiel.de/curry/kics2),
 e.g., by the shell command
 
-    git clone git://git-ps.informatik.uni-kiel.de/curry/kics2.git
+    git clone https://git.ps.informatik.uni-kiel.de/curry/kics2.git
 
 This creates a new directory `kics2` containing the current version.
 Go into this directory by
