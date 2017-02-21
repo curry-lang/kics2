@@ -21,7 +21,8 @@ numberOfRuns = 1
 
 -- The KiCS2 systems to be benchmarked:
 kics2Systems = [KiCS2 "0.2.3", KiCS2 "0.2.4",
-                KiCS2 "0.3.0", KiCS2 "0.3.1", KiCS2 "0.3.3", KiCS2 "0.4.0",
+                KiCS2 "0.3.0", KiCS2 "0.3.3", KiCS2 "0.4.0",
+                KiCS2 "ghc-8.0.1", KiCS2 "no-strictness",
                 KiCS2 ""]
 
 -- Directory containing the benchmark programs:
