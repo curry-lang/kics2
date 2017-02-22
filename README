@@ -29,12 +29,6 @@ This directory contains:
   A directory containing various executables
   to execute the components of KiCS2.
 
-`cpns`:
-  This directory contains scripts and executables for the
-  Curry Port Name Server (CPNS) which is responsible for managing the
-  symbolic names assigned to the named sockets on a local machine
-  (see library `NamedSocket` for more details).
-
 `currytools`:
   This directory contains various tools for Curry
   (see the README there for a more detailed description).
@@ -89,12 +83,6 @@ This directory contains:
 `utils`:
   This directory contains some utilities, in particular,
   for installing KiCS2 on Windows operating systems.
-
-`www`:
-  This directory contains scripts and executables for the
-  event handler server that is required to execute dynamic web
-  pages implemented with the libraries HTML or WUI.
-
 
 -------------------------------------------------------------
 

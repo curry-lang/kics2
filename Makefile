@@ -252,7 +252,10 @@ checkinstalldir:
 
 # install the complete system
 .PHONY: checkinstalldir install
-install: kernel tools manual
+install:
+	$(MAKE) kernel
+	$(MAKE) tools
+	$(MAKE) manual
 	chmod -R go+rX .
 
 # remove files from user's home directory
@@ -268,8 +271,6 @@ endif
 tools: $(BINCURRY)
 	cd currytools && $(MAKE) # shared tools
 	cd tools      && $(MAKE) # compiler specific tools
-	cd cpns       && $(MAKE) # Curry Port Name Server demon
-	cd www        && $(MAKE) # scripts for dynamic web pages
 
 # compile analysis tool only:
 .PHONY: CASS
@@ -377,16 +378,14 @@ runtest: testsuite/doTest
 .PHONY: clean
 clean: $(CLEANCURRY)
 	-cd benchmarks && $(MAKE) clean
-	cd cpns        && $(MAKE) clean
 	cd currytools  && $(MAKE) clean
 	-cd docs/src   && $(MAKE) clean
-	-cd frontend    && $(MAKE) clean
+	-cd frontend   && $(MAKE) clean
 	-cd lib        && $(MAKE) clean
 	cd runtime     && $(MAKE) clean
 	cd src         && $(MAKE) clean
 	cd tools       && $(MAKE) clean
 	cd utils       && $(MAKE) clean
-	cd www         && $(MAKE) clean
 	rm -f $(MAKELOG) $(BINCURRY)
 	rm -f $(INSTALLHS)
 
