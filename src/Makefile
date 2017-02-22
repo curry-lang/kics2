@@ -32,35 +32,54 @@ all: CompileBoot updateInstallInfo REPLBoot
 
 .PHONY: bootstrap
 bootstrap:
-	${MAKE} clean
+	$(MAKE) clean
 
 	# Create kics2 via PAKCS or other KiCS2 (stage 1)
 	@echo "Compiling stage 1"
-	${MAKE} CompileInitial
-	cp ${COMP} ${LOCALBIN}/stage1
+	$(MAKE) CompileInitial
+	cp $(COMP) $(LOCALBIN)/stage1
 	$(CLEANCURRY) -r
 
 	# Create kics2 via kics2 (stage 2)
 	@echo "Compiling stage 2"
 ifeq ($(shell test -x "$(KICS2)" ; echo $$?),0)
-	${MAKE} CompileBoot
+	$(MAKE) CompileBoot
 else
 	# Compile in several steps to avoid memory overflow with PAKCS:
-	${MAKE} $(SUBDIR)/Curry_ModuleDeps.hs
-	${MAKE} $(SUBDIR)/Curry_TransTypes.hs
-	${MAKE} $(SUBDIR)/Curry_TransFunctions.hs
-	${MAKE} CompileBoot
+	$(MAKE) $(SUBDIR)/Curry_ModuleDeps.hs
+	$(MAKE) $(SUBDIR)/Curry_TransTypes.hs
+	$(MAKE) $(SUBDIR)/Curry_TransFunctions.hs
+	$(MAKE) CompileBoot
 endif
-	cp ${COMP} ${LOCALBIN}/stage2
+	cp $(COMP) $(LOCALBIN)/stage2
 	$(CLEANCURRY) -r
 
 	# Create kics2 via kics2 (stage 3)
 	@echo "Compiling stage 3"
-	${MAKE} CompileBoot
-	cp ${COMP} ${LOCALBIN}/stage3
+	$(MAKE) CompileBoot
+	cp $(COMP) $(LOCALBIN)/stage3
 
 	@echo "Compiling REPL"
-	${MAKE} REPLBoot
+	$(MAKE) REPLBoot
+
+# faster bootstrap where stage 3 is omitted
+.PHONY: fastbootstrap
+fastbootstrap:
+	if [ ! -x "$(KICS2)" ] ; then echo "KICS2 is required for fastbootstrap!" && exit 1 ; fi
+
+	$(MAKE) clean
+
+	# Create kics2 via KiCS2 (stage 1)
+	@echo "Compiling stage 1"
+	$(MAKE) CompileInitial
+	$(CLEANCURRY) -r
+
+	# Create kics2 via kics2 (stage 2)
+	@echo "Compiling stage 2"
+	$(MAKE) CompileBoot
+
+	@echo "Compiling REPL"
+	$(MAKE) REPLBoot
 
 # clean all intermediate files of the compiler bootstrapping
 .PHONY: clean
@@ -81,7 +100,9 @@ cleanall: clean
 CompileInitial: Compile.curry
 	mkdir -p $(LOCALBIN)
 ifeq ($(shell test -x "$(KICS2)" ; echo $$?),0)
-	$(KICS2) $(CURRY_OPTS) :set parser -Wall :set v2 :load Compile :save :quit
+	# to support bootstrapping with a simple KiCS2 bootstrap compiler,
+	# we already use in this phase our own (runtime) libraries:
+	$(KICS2) $(CURRY_OPTS) :set +local :set ghc "$(GHC_INCL)" :set path $(LIBDIR) :set parser -Wall :set v2 :load Compile :save :quit
 	mv Compile $(COMP)
 else
 	mv $(INSTALLCURRY) $(INSTALLCURRY).bak

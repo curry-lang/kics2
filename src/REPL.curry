@@ -848,12 +848,10 @@ setLocalMode rst _ = do
   pid <- getPID
   let libdir = installDir </> "lib"
       testfile = libdir </> "xxx" ++ show pid
-  catch (do writeFile testfile ""
-            removeFile testfile
-            return $ Just rst { localCompile = True })
-        (\_ -> do putStrLn "Cannot switch to local compilation mode:"
-                  putStrLn $ "No write permission on `" ++ libdir ++ "'"
-                  return Nothing )
+  catch (writeFile testfile "" >> removeFile testfile)
+        (\_-> do putStrLn $ "Warning: no write permission on `" ++ libdir ++ "'"
+                 putStrLn "Local compilation mode may not work!")
+  return $ Just rst { localCompile = True }
 
 setPrompt :: ReplState -> String -> IO (Maybe ReplState)
 setPrompt rst p

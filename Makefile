@@ -41,7 +41,7 @@ MINORVERSION    = 5
 # The revision version number
 REVISIONVERSION = 1
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION=4
+BUILDVERSION=5
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -380,7 +380,7 @@ clean: $(CLEANCURRY)
 	cd cpns        && $(MAKE) clean
 	cd currytools  && $(MAKE) clean
 	-cd docs/src   && $(MAKE) clean
-	cd frontend    && $(MAKE) clean
+	-cd frontend    && $(MAKE) clean
 	-cd lib        && $(MAKE) clean
 	cd runtime     && $(MAKE) clean
 	cd src         && $(MAKE) clean
@@ -395,7 +395,7 @@ clean: $(CLEANCURRY)
 cleanall: clean
 	cd currytools && $(MAKE) uninstall
 	-cd docs/src  && $(MAKE) cleanall
-	cd frontend   && $(MAKE) cleanall
+	-cd frontend  && $(MAKE) cleanall
 	-cd lib       && $(MAKE) cleanall
 	cd scripts    && $(MAKE) cleanall
 	cd src        && $(MAKE) cleanall
@@ -629,6 +629,10 @@ $(TARBALL): $(COMP) frontend $(MANUAL)
 # bootstrap the compiler
 .PHONY: bootstrap
 bootstrap: $(COMP)
+
+.PHONY: fastbootstrap
+fastbootstrap: | $(INSTALLHS) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs
+	cd src && $(MAKE) fastbootstrap
 
 .PHONY: Compile
 Compile: $(PKGDB) $(INSTALLHS) scripts copylibs
