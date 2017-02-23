@@ -6,6 +6,7 @@ Release notes for KiCS2 Version 0.5.1
 
 Changes to version 0.5.0:
 
+  * Makefiles changed so that parallel build (make -j) is possible.
   * Option `local` added to switch to local compilation mode (for
     locally installed systems). This replaces the old setting in the
     Makefile for global/local installations.
