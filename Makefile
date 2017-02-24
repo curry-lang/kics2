@@ -282,6 +282,8 @@ CASS:
 kernel:
 	$(MAKE) kernelbins
 	$(MAKE) kernellibs
+	# compile code optimization tools:
+	@cd currytools/optimize && $(MAKE)
 
 # build the kernel system binaries (compiler and REPL)
 .PHONY: kernelbins
