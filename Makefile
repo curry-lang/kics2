@@ -230,14 +230,14 @@ export ALLDEPS     = $(sort $(RUNTIMEDEPS) $(LIBDEPS) $(SYSTEMDEPS))
 .PHONY: all
 all:
 ifeq ($(DISTPKGINSTALL),yes)
-	$(MAKE) install
+	$(MAKE) build
 	# if we build a package, we compile all libraries at the end
 	# so that their intermediate files are up to date:
 	$(REPL) $(REPL_OPTS) :load AllLibraries :eval "3*13+3" :quit
 else
 	@rm -f ${MAKELOG}
 	@echo "Make started at `date`" > ${MAKELOG}
-	$(MAKE) install 2>&1 | tee -a ${MAKELOG}
+	$(MAKE) build 2>&1 | tee -a ${MAKELOG}
 	@echo "Make finished at `date`" >> ${MAKELOG}
 	@echo "Make process logged in file ${MAKELOG}"
 endif
@@ -250,9 +250,9 @@ checkinstalldir:
 	  echo "ERROR: Variable KICS2INSTALLDIR points to an existing directory!" && exit 1 ; \
 	fi
 
-# install the complete system
-.PHONY: checkinstalldir install
-install:
+# build the complete system
+.PHONY: build
+build:
 	$(MAKE) kernel
 	$(MAKE) tools
 	$(MAKE) manual
@@ -277,13 +277,13 @@ tools: $(BINCURRY)
 CASS:
 	cd currytools && $(MAKE) CASS
 
-# install the kernel system (binaries and libraries)
+# build the kernel system (binaries and libraries)
 .PHONY: kernel
 kernel:
 	$(MAKE) kernelbins
 	$(MAKE) kernellibs
 
-# install the kernel system binaries (compiler and REPL)
+# build the kernel system binaries (compiler and REPL)
 .PHONY: kernelbins
 kernelbins: $(PWD) $(WHICH) $(PKGDB) frontend $(CLEANCURRY) scripts copylibs copytools
 	$(MAKE) $(INSTALLHS) INSTALLPREFIX="$(shell $(PWD))" \
@@ -565,7 +565,7 @@ publish: $(TARBALL)
 testdist: $(TARBALL)
 	rm -rf $(DISTDIR)
 	tar xzfv $(TARBALL)
-	cd $(DISTDIR) && $(MAKE) install
+	cd $(DISTDIR) && $(MAKE) build
 	cd $(DISTDIR) && $(MAKE) runtest
 	rm -rf $(DISTDIR)
 	@echo "Integration test successfully completed."
@@ -641,7 +641,7 @@ Compile: $(PKGDB) $(INSTALLHS) scripts copylibs
 REPL: $(PKGDB) $(INSTALLHS) scripts copylibs
 	cd src && $(MAKE) REPLBoot
 
-# install the benchmark system
+# build the benchmark system
 .PHONY: benchmarks
 benchmarks:
 	cd benchmarks && $(MAKE)
