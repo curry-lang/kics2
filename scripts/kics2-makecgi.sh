@@ -174,14 +174,14 @@ fi
 # stop old server, if necessary:
 if [ -f $CGISERVEREXEC ] ; then
   echo "Stop old version of the server '$CGISERVEREXEC'..."
-  $KICS2HOME/www/Registry stopscript "$CGISERVEREXEC"
+  $KICS2HOME/currytools/www/Registry stopscript "$CGISERVEREXEC"
 fi
 
-SUBMITFORM="$KICS2HOME/www/submitform"
+SUBMITFORM="$KICS2HOME/currytools/www/SubmitForm"
 # copy executable from KiCS2 system (if required):
 if [ $STANDALONE = yes ] ; then
-  cp -p "$SUBMITFORM" $CGIFILEPATHNAME/submitform
-  SUBMITFORM="./submitform"
+  cp -p "$SUBMITFORM" $CGIFILEPATHNAME/SubmitForm
+  SUBMITFORM="./SubmitForm"
 fi
 
 # generate cgi script:
