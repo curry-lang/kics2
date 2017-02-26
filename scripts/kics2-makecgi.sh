@@ -5,11 +5,10 @@ KICS2BUILDDIR=`echo KICS2HOME must be defined here!`
 KICS2INSTALLDIR=
 # Define the main directory where KICS2 is installed:
 if [ -d "$KICS2INSTALLDIR" ] ; then
-  KICS2HOME=$KICS2INSTALLDIR
+  CURRYROOT=$KICS2INSTALLDIR
 else
-  KICS2HOME=$KICS2BUILDDIR
+  CURRYROOT=$KICS2BUILDDIR
 fi
-export KICS2HOME
 
 # Standard suffix that will be added to the main script:
 CGISUFFIX="_CGIMAIN_$$"
@@ -19,6 +18,8 @@ MAINCALL="main_cgi_9999_$$"
 
 ERROR=
 HELP=no
+CURRYDOPTIONS=
+CURRYOPTIONS=":set -time :set -interactive"
 COMPACT=no
 DEBUG=no
 DEBUGFILE=
@@ -35,6 +36,7 @@ ARGS=
 while [ $# -gt 0 -a -z "$ERROR" ]; do
   case $1 in
    -help | -h | -\? ) HELP=yes ;;
+   -D*              ) CURRYDOPTIONS="$CURRYDOPTIONS $1" ;;
    -compact         ) COMPACT=yes ;;
    -debug           ) DEBUG=yes ;;
    -debugfile       ) shift ; DEBUGFILE=$1 ;;
@@ -76,11 +78,12 @@ if [ $# != 1 -a $# != 3 ] ; then
   echo "<curry>    : name of the Curry program (without suffix) containing the script"
   echo
   echo "FURTHER OPTIONS:"
-  #echo "-compact   : reduce size of generated cgi program by deleting unused functions"
-  #echo "-debug     : include code for showing failures"
-  #echo "             (= PAKCS options '+printfail/+allfails')"
-  #echo "-debugfile f: include code for storing failure trace in file f"
-  #echo "             (= PAKCS options '+consfail file:f')"
+  echo '-Dname=val : define kics2rc property "name" as "val"'
+  echo "-compact   : reduce size of generated cgi program by deleting unused functions"
+  echo "-debug     : include code for showing failures"
+  echo "             (= PAKCS options '+printfail/+allfails')"
+  echo "-debugfile f: include code for storing failure trace in file f"
+  echo "             (= PAKCS options '+consfail file:f')"
   echo "-ulimit <l>: set 'ulimit <l>' when executing the cgi program"
   echo "             (default: '-t 120')"
   echo "-servertimeout <ms>: set the timeout for the cgi server process to"
@@ -101,8 +104,8 @@ if [ $# != 1 -a $# != 3 ] ; then
 fi
 
 # Definitions for WUI/JavaScript generation:
-WUIJS_PREPROCESSOR=$KICS2HOME/currytools/curry2js/Curry2JS
-WUIJS_DEFAULT_JS=$KICS2HOME/include/wui_prims.js
+WUIJS_PREPROCESSOR=$CURRYROOT/currytools/curry2js/Curry2JS
+WUIJS_DEFAULT_JS=$CURRYROOT/include/wui_prims.js
 
 # remove possible suffix:
 PROG=`expr $1 : '\(.*\)\.lcurry' \| $1`
@@ -145,7 +148,6 @@ if [ $WUIJS = no ] ; then
 else
   CGIBASE=`expr $CGIPROG : '\(.*\)\.cgi' \| $CGIPROG`
   JSFILE=$CGIBASE\_wui.js
-  echo $WUIJS_PREPROCESSOR -wui -o $JSFILE $PROG $WUIMODULES
   $WUIJS_PREPROCESSOR -wui -o $JSFILE $PROG $WUIMODULES
   if [ $? != 0 ] ; then
     rm -f $MAINCURRY
@@ -160,13 +162,12 @@ fi
 
 # compile main module:
 echo "Generating saved state for initial expression: $MAIN"
-$KICS2HOME/bin/kics2 :l $MAINMOD :save $MAINCALL :q
-STATE=$MAINMOD
+$CURRYROOT/bin/curry $CURRYDOPTIONS $CURRYOPTIONS :l $MAINMOD :save $MAINCALL :q
 
-# now the file $STATE should contain the executable computing the HTML form:
-if test ! -f $STATE ; then
+# now the file $MAINMOD should contain the executable computing the HTML form:
+if test ! -f $MAINMOD ; then
   echo "Error occurred, generation aborted."
-  $KICS2HOME/bin/cleancurry $MAINMOD
+  $CURRYROOT/bin/cleancurry $MAINMOD
   rm -f $MAINMOD.curry
   exit 1
 fi
@@ -174,11 +175,11 @@ fi
 # stop old server, if necessary:
 if [ -f $CGISERVEREXEC ] ; then
   echo "Stop old version of the server '$CGISERVEREXEC'..."
-  $KICS2HOME/currytools/www/Registry stopscript "$CGISERVEREXEC"
+  $CURRYROOT/currytools/www/Registry stopscript "$CGISERVEREXEC"
 fi
 
-SUBMITFORM="$KICS2HOME/currytools/www/SubmitForm"
-# copy executable from KiCS2 system (if required):
+SUBMITFORM="$CURRYROOT/currytools/www/SubmitForm"
+# copy executable from the Curry system (if required):
 if [ $STANDALONE = yes ] ; then
   cp -p "$SUBMITFORM" $CGIFILEPATHNAME/SubmitForm
   SUBMITFORM="./SubmitForm"
@@ -195,7 +196,7 @@ echo "$SUBMITFORM $SERVERTIMEOUT $LOADBALANCE \"$CGIPROG\" \"$CGIKEY\" \"$CGISER
 chmod 755 $CGIFILE
 
 # move compiled executable to final position:
-mv $STATE $CGISERVEREXEC
+mv $MAINMOD $CGISERVEREXEC
 chmod 755 $CGISERVEREXEC
 if test -n "$ULIMIT" ; then
   echo "#!/bin/sh" > $CGISERVERCMD
@@ -204,7 +205,7 @@ if test -n "$ULIMIT" ; then
   chmod 755 $CGISERVERCMD
 fi
 
-$KICS2HOME/bin/cleancurry $MAINMOD
+$CURRYROOT/bin/cleancurry $MAINMOD
 rm -f $MAINMOD.curry
 
 echo "`date`: cgi script compiled" > $CGIFILE.log
