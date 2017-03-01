@@ -41,7 +41,7 @@ MINORVERSION    = 5
 # The revision version number
 REVISIONVERSION = 1
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION=5
+BUILDVERSION=6
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -131,6 +131,10 @@ ifeq ($(shell test $(CABAL_MAJOR) -gt 1 -o \( $(CABAL_MAJOR) -eq 1 -a $(CABAL_MI
 CABAL_REL_OPT = --enable-relocatable
 else
 CABAL_REL_OPT = 
+endif
+# CABAL on Windows does not support the option "--enable-relocatable":
+ifdef WINDOWS
+CABAL_REL_OPT =
 endif
 
 # Command to unregister a package

@@ -485,7 +485,7 @@ compileCurryProgram rst curryprog = do
     -- pass current value of "bindingoptimization" property to compiler:
     [ "-Dbindingoptimization=" ++ rcValue (rcvars rst) "bindingoptimization"
     , "-v" ++ show (transVerbose (verbose rst))
-    , "-i" ++ intercalate ":" (loadPaths rst)
+    , "-i" ++ intercalate [searchPathSeparator] (loadPaths rst)
     ] ++
     (if null (parseOpts rst)
     then []
@@ -941,7 +941,8 @@ ifProfiling s = if Inst.withProfiling then s else ""
 showCurrentOptions :: ReplState -> String
 showCurrentOptions rst = intercalate "\n" $ filter notNull
   [ "\nCurrent settings:"
-  , "import paths      : " ++ intercalate ":" ("." : importPaths rst)
+  , "import paths      : " ++ intercalate [searchPathSeparator]
+                                          ("." : importPaths rst)
   , "search mode       : " ++ case (ndMode rst) of
       PrDFS         -> "primitive non-monadic depth-first search"
       DEBUG         -> "debugging information for search"
