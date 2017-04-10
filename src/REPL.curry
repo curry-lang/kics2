@@ -602,7 +602,7 @@ processLoad rst args = do
                      processCd rst' dirname
     maybe (return Nothing)
      (\rst2 ->
-       (lookupModuleSourceInLoadPath modname) >>=
+       lookupModuleSource (loadPaths rst2) modname >>=
        maybe (skipCommand $ "source file of module "++dirmodname++" not found")
              (\ (_,fn) ->
                  readAndProcessSourceFileOptions rst2 fn >>=

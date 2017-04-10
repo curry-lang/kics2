@@ -63,7 +63,7 @@ $(DOCDIR)/RELNOTES.html: $(ROOT)/RELNOTES.txt
 	$(REPL) :add Markdown :eval 'readFile "$<" >>= writeFile "$@" . markdownText2CompleteHTML "KiCS2 Release Notes"' :q
 
 # format Curry style guide as HTML page
-$(DOCDIR)/CurryStyleGuide.html: $(ROOT)/currytools/casc/Docs/curry-style-guide.md
-	cd $(ROOT)/currytools/casc/Docs && $(MAKE)
-	@if [ -f "../../currytools/casc/Docs/curry-style-guide.html" ] ; then cp ../../currytools/casc/Docs/curry-style-guide.html $@ ; fi
+$(DOCDIR)/CurryStyleGuide.html: tooldocs/casc/curry-style-guide.md
+	cd tooldocs/casc && $(MAKE)
+	@if [ -f "tooldocs/casc/curry-style-guide.html" ] ; then cp tooldocs/casc/curry-style-guide.html $@ ; fi
 

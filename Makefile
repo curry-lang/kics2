@@ -39,9 +39,9 @@ MAJORVERSION    = 0
 # The minor version number
 MINORVERSION    = 5
 # The revision version number
-REVISIONVERSION = 1
+REVISIONVERSION = 2
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION=0
+BUILDVERSION=1
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -194,8 +194,6 @@ export BINCURRY     = $(BINDIR)/curry
 export CYMAKE       = $(BINDIR)/$(CURRYSYSTEM)-frontend$(EXE_SUFFIX)
 # The cleancurry binary
 export CLEANCURRY   = $(BINDIR)/cleancurry$(EXE_SUFFIX)
-# The currydoc binary
-export CURRYDOC     = $(BINDIR)/currydoc$(EXE_SUFFIX)
 # The Haskell installation info
 export INSTALLHS    = $(ROOT)/runtime/Installation.hs
 # The Curry installation info
@@ -498,22 +496,16 @@ else
 endif
 
 ##############################################################################
-# Create documentation for system libraries:
+# Create HTML documentation for system libraries:
 ##############################################################################
 
 .PHONY: libdoc
-libdoc: $(CURRYDOC)
+libdoc:
 	@rm -f ${MAKELOG}
 	@echo "Make libdoc started at `date`" > ${MAKELOG}
-	@cd lib && $(MAKE) doc 2>&1 | tee -a ../${MAKELOG}
+	@cd lib && $(MAKE) htmldoc 2>&1 | tee -a ../${MAKELOG}
 	@echo "Make libdoc finished at `date`" >> ${MAKELOG}
 	@echo "Make libdoc process logged in file ${MAKELOG}"
-
-.PHONY: currydoc
-currydoc: $(CURRYDOC)
-
-$(CURRYDOC): $(BINCURRY)
-	cd currytools && $(MAKE) currydoc
 
 ##############################################################################
 # Create the KiCS2 manual
@@ -526,7 +518,6 @@ $(MANUAL):
 
 .PHONY: manual
 manual:
-	$(MAKE) $(CURRYDOC)
 	# generate manual, if necessary:
 	@if [ -d docs/src -a $(DISTPKGINSTALL) = "no" ] ; then \
 	  $(MAKE) ${MANUALVERSION} && cd docs/src && $(MAKE) install ; \

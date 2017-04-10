@@ -1,0 +1,414 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Björn Peemöller, Michael Hanus" />
+  <meta name="date" content="2016-10-06" />
+  <title>Curry Style Guide</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <style type="text/css">
+  
+    /* Set a different font size so the page doesn't look too much
+       like plain HTML */
+    body {
+      font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+      font-size: 100%;
+    }
+  
+    /* Add a rounded border and some padding to code examples */
+    pre {
+      padding: 10px;
+      border-radius: 5px;
+    }
+  
+    code {
+      padding: 2px;
+    }
+  
+    /* Title and section borders */
+    h1.title {
+      border-bottom: 1px solid lightgray;
+    }
+  
+    h1:not(.title) {
+      border-bottom: 1px dotted gray;
+      margin-top: 40px;
+    }
+  
+    /* If the screen resolution is bigger than 1000px, display the navigation
+       left of the content in a fixed container */
+    @media screen and (min-width: 1000px) {
+      body {
+        padding-left: 355px;
+      }
+  
+      #TOC {
+        width: 340px;
+        position: fixed;
+        bottom: 0;
+        top: 0;
+        left: 0;
+        margin-right: 10px;
+        overflow-y: auto;
+        background-color: #F9F9F9;
+  
+        -webkit-box-shadow: 3px 0px 10px 0px rgba(184,184,184,1);
+        -moz-box-shadow: 3px 0px 10px 0px rgba(184,184,184,1);
+        box-shadow: 3px 0px 10px 0px rgba(184,184,184,1);
+      }
+    }
+  
+    /* Remove the list bullets from the navigation */
+    #TOC ul {
+      list-style-type: none;
+    }
+  
+    .sourceCode { background-color: #F0F0F0 ; }
+    blockquote {
+      background: #f9f9f9;
+      border-left: 10px solid #ccc;
+      margin: 1.5em 10px;
+      padding: 0.5em 10px;
+      quotes: "\201C""\201D""\2018""\2019";
+      font-style: italic;
+    }
+    blockquote:before {
+      color: #ccc;
+      content: open-quote;
+      font-size: 4em;
+      line-height: 0.1em;
+      margin-right: 0.25em;
+      vertical-align: -0.4em;
+    }
+  
+    blockquote p {
+      display: inline;
+    }
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">Curry Style Guide</h1>
+<h2 class="author">Björn Peemöller, Michael Hanus</h2>
+<h3 class="date">October 06, 2016</h3>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#general-formatting"><span class="toc-section-number">1</span> General Formatting</a><ul>
+<li><a href="#line-length"><span class="toc-section-number">1.1</span> Line Length</a></li>
+<li><a href="#indentation"><span class="toc-section-number">1.2</span> Indentation</a></li>
+<li><a href="#local-definitions"><span class="toc-section-number">1.3</span> Local Definitions</a></li>
+<li><a href="#blank-lines"><span class="toc-section-number">1.4</span> Blank Lines</a></li>
+<li><a href="#spaces"><span class="toc-section-number">1.5</span> Spaces</a></li>
+</ul></li>
+<li><a href="#formatting-of-specific-language-constructs"><span class="toc-section-number">2</span> Formatting of Specific Language Constructs</a><ul>
+<li><a href="#module-header"><span class="toc-section-number">2.1</span> Module Header</a></li>
+<li><a href="#import-declarations"><span class="toc-section-number">2.2</span> Import Declarations</a></li>
+<li><a href="#data-declarations"><span class="toc-section-number">2.3</span> <code>data</code> Declarations</a></li>
+<li><a href="#type-signatures"><span class="toc-section-number">2.4</span> Type Signatures</a></li>
+<li><a href="#argument-patterns"><span class="toc-section-number">2.5</span> Argument Patterns</a></li>
+<li><a href="#guards"><span class="toc-section-number">2.6</span> Guards</a></li>
+<li><a href="#if-then-else"><span class="toc-section-number">2.7</span> <code>if-then-else</code></a></li>
+<li><a href="#case-expressions"><span class="toc-section-number">2.8</span> <code>case</code> Expressions</a></li>
+<li><a href="#let-expressions"><span class="toc-section-number">2.9</span> <code>let</code> Expressions</a></li>
+<li><a href="#do-blocks"><span class="toc-section-number">2.10</span> <code>do</code> Blocks</a></li>
+<li><a href="#listtuple-definitions"><span class="toc-section-number">2.11</span> List/Tuple Definitions</a></li>
+<li><a href="#brackets"><span class="toc-section-number">2.12</span> Brackets</a></li>
+</ul></li>
+<li><a href="#comments"><span class="toc-section-number">3</span> Comments</a><ul>
+<li><a href="#language"><span class="toc-section-number">3.1</span> Language</a></li>
+<li><a href="#top-level-declarations"><span class="toc-section-number">3.2</span> Top-Level Declarations</a></li>
+<li><a href="#end-of-line-comments"><span class="toc-section-number">3.3</span> End-of-Line Comments</a></li>
+</ul></li>
+<li><a href="#naming"><span class="toc-section-number">4</span> Naming</a></li>
+<li><a href="#compiler-warnings"><span class="toc-section-number">5</span> Compiler Warnings</a></li>
+</ul>
+</div>
+<p>This document contains a description of the preferred style for writing Curry programs. The described style is oriented to the <a href="https://github.com/tibbe/haskell-style-guide">Haskell Style Guide von Johan Tibell</a>, but it has been adapted in various points.</p>
+<p>In principle, this style guide is a guideline from which one can deviate <em>if there are good reasons for it</em>.</p>
+<h1 id="general-formatting"><span class="header-section-number">1</span> General Formatting</h1>
+<h2 id="line-length"><span class="header-section-number">1.1</span> Line Length</h2>
+<p>The maximum line length is <em>80 characters</em>.</p>
+<h2 id="indentation"><span class="header-section-number">1.2</span> Indentation</h2>
+<p>Tabulator stops are not allowed in source programs, since the actual indentation space of a tabulator stop might influence the semantics of the program. Instead, use blanks for indentation. Code blocks should be intended with <em>2 spaces</em>. Most text editors can be configured so that tabs are automatically replaced by (at most) two spaces.</p>
+<h2 id="local-definitions"><span class="header-section-number">1.3</span> Local Definitions</h2>
+<p>The keyword <code class="sourceCode curry"><span class="kw">where</span></code> is indented by <em>one space</em> and the subsequent local definitions by a further space. Hence, the local definitions are intended, as other code blocks, by <em>2 spaces</em>. If there is only one short local definition, it can be written directly after the keyword <code class="sourceCode curry"><span class="kw">where</span></code>. Several local value definitions should be aligned at the equality symbol if they have a comparable number of parameters. Local definitions should be aligned like top-level definitions (see below):</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  line <span class="ot">&lt;-</span> <span class="fu">getLine</span>
+  <span class="fu">putStrLn</span> <span class="fu">$</span> answer line
+ <span class="kw">where</span>
+  answer s <span class="fu">=</span> <span class="st">&quot;Your input: &quot;</span> <span class="fu">++</span> s
+
+f y <span class="fu">=</span> x <span class="fu">+</span> y
+ <span class="kw">where</span> x <span class="fu">=</span> <span class="dv">1</span>
+
+g x <span class="fu">=</span> x <span class="fu">+</span> val1 <span class="fu">+</span> secondVal
+ <span class="kw">where</span>
+  val1      <span class="fu">=</span> <span class="dv">1</span>
+  secondVal <span class="fu">=</span> <span class="kw">if</span> isZero x <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">2</span>
+
+  <span class="co">-- local operation</span>
+  isZero x <span class="fu">|</span> x <span class="fu">==</span> <span class="dv">0</span>    <span class="fu">=</span> <span class="kw">True</span>
+           <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> <span class="kw">False</span></code></pre>
+<h2 id="blank-lines"><span class="header-section-number">1.4</span> Blank Lines</h2>
+<p>There should be one blank line between two top-level definitions. There are no blank lines between type signature and the defining rules. Similarly, comments of top-level definitions are not separated from the actual definition with a blank line.</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="co">-- f increments the argument by one</span>
+<span class="ot">f ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
+f x <span class="fu">=</span> x <span class="fu">+</span> <span class="dv">1</span>
+
+<span class="co">-- fInv decrements the argument by one</span>
+fInv x <span class="fu">=</span> x <span class="fu">-</span> <span class="dv">1</span></code></pre>
+<h2 id="spaces"><span class="header-section-number">1.5</span> Spaces</h2>
+<p>Binary operators, like <code class="sourceCode curry">(<span class="fu">++</span>)</code>, are surrounded with a single space on either side.</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="co">-- bad</span>
+<span class="st">&quot;Not&quot;</span><span class="fu">++</span><span class="st">&quot;good&quot;</span>
+
+<span class="co">-- good</span>
+<span class="st">&quot;Very&quot;</span> <span class="fu">++</span> <span class="st">&quot;good&quot;</span></code></pre>
+<p>It is allowed to omit the surrounding spaces from simple infix operators, like <code class="sourceCode curry">(<span class="fu">+</span>)</code>, or the infix list constructor <code class="sourceCode curry">(<span class="fu">:</span>)</code>. However, this is not required.</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">f n <span class="fu">=</span> n <span class="fu">*</span> (n<span class="dv">+1</span>) <span class="fu">/</span> <span class="dv">2</span>
+
+<span class="fu">head</span> (x<span class="fu">:</span>_) <span class="fu">=</span> x</code></pre>
+<p>Similarly to written texts, a space follows a comma, but there is no space in front of the comma:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">aList  <span class="fu">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]
+aTuple <span class="fu">=</span> (<span class="kw">True</span>, <span class="st">&quot;True&quot;</span>, <span class="dv">1</span>)</code></pre>
+<p>One <em>can</em> put a space after a lambda, in particular, if there is non-variable pattern after a lambda. If there is a variable after a lambda, one can omit the space:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="fu">map</span> (<span class="fu">\</span> (_<span class="fu">:</span>_) <span class="ot">-&gt;</span> <span class="kw">True</span>)
+<span class="fu">map</span> (<span class="fu">\</span> x <span class="ot">-&gt;</span> x <span class="fu">+</span> <span class="dv">1</span>)
+<span class="fu">map</span> (<span class="fu">\</span>x <span class="ot">-&gt;</span> x <span class="fu">+</span> <span class="dv">1</span>)</code></pre>
+<h1 id="formatting-of-specific-language-constructs"><span class="header-section-number">2</span> Formatting of Specific Language Constructs</h1>
+<h2 id="module-header"><span class="header-section-number">2.1</span> Module Header</h2>
+<p>If the export list fits into one line, it can be written as follows:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">module</span> <span class="dt">Set</span> (<span class="dt">Set</span>, empty) <span class="kw">where</span></code></pre>
+<p>Longer export lists should be aligned as follows:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">module</span> <span class="dt">Data.Set</span>
+  ( <span class="dt">Set</span>
+  , empty
+  , singleton
+  , member
+  ) <span class="kw">where</span></code></pre>
+<p>Optional, one can also put several names into line:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">module</span> <span class="dt">Data.Set</span>
+  ( <span class="dt">Set</span>, empty, singleton
+  , member, union, intersect
+  ) <span class="kw">where</span></code></pre>
+<p>If there are types exported with constructors, one should separate the type name and the constructors with a blank:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">module</span> <span class="dt">Tree</span> (<span class="dt">Tree</span> (<span class="ot">..</span>), <span class="dt">BinTree</span> (<span class="dt">Leaf</span>, <span class="dt">Branch</span>)) <span class="kw">where</span></code></pre>
+<h2 id="import-declarations"><span class="header-section-number">2.2</span> Import Declarations</h2>
+<p>The list of imported modules should be ordered in the following three categories:</p>
+<ol style="list-style-type: decimal">
+<li>Standard library modules, e.g., <code class="sourceCode curry"><span class="dt">List</span></code>, <code class="sourceCode curry"><span class="dt">IO</span></code></li>
+<li>Third party libraries (often not used)</li>
+<li>Other local modules (developed with the current application)</li>
+</ol>
+<p>The list of imports in each category should be sorted alphabetically. With the exception of the prelude, all used entities from imported modules should be explicitly or <code class="sourceCode curry">qualified</code> imported. If the list of imported entities is long, one can omit this general rule.</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">import           </span><span class="dt">List</span>        (isInfixOf)
+<span class="kw">import qualified</span> <span class="dt">Set</span>  <span class="kw">as</span> <span class="dt">Set</span>
+
+<span class="kw">import </span><span class="dt">SecondParty.Module1</span> (fun)
+<span class="kw">import </span><span class="dt">ThirdParty.Module1</span>  ((<span class="fu">$$$</span>))
+
+<span class="kw">import </span><span class="dt">MyUtilsModule</span> <span class="co">-- import everything</span></code></pre>
+<h2 id="data-declarations"><span class="header-section-number">2.3</span> <code>data</code> Declarations</h2>
+<p>The constructors of a <code class="sourceCode curry"><span class="kw">data</span></code> declaration should be vertically aligned:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">data</span> <span class="dt">Tree</span> a <span class="fu">=</span>
+    <span class="dt">Leaf</span>
+  <span class="fu">|</span> <span class="dt">Branch</span> a (<span class="dt">Tree</span> a) (<span class="dt">Tree</span> a)</code></pre>
+<p>If there are only a few constructors that fits into one line, one can write the <code class="sourceCode curry"><span class="kw">data</span></code> declaration as follows:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">data</span> <span class="dt">Bit</span> <span class="fu">=</span> <span class="dt">Zero</span> <span class="fu">|</span> <span class="dt">One</span></code></pre>
+<p>Records (<code class="sourceCode curry"><span class="kw">data</span></code> declarations with named selectors) should be vertically aligned as follows:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">Person</span>
+    {<span class="ot"> firstName ::</span> <span class="dt">String</span>
+    ,<span class="ot"> lastName  ::</span> <span class="dt">String</span>
+    ,<span class="ot"> age       ::</span> <span class="dt">Int</span>
+    }</code></pre>
+<h2 id="type-signatures"><span class="header-section-number">2.4</span> Type Signatures</h2>
+<p>In type signatures one should put a blank before and after the function arrow <code class="sourceCode curry"><span class="ot">-&gt;</span></code>.</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="fu">map</span> <span class="ot">::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</code></pre>
+<p>The type signature should be written in one line if it fits. If the type signature is long or if one want to put a comment after the individual types, one should align the function arrows:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="ot">uncurry10 ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> d <span class="ot">-&gt;</span> e <span class="ot">-&gt;</span> f <span class="ot">-&gt;</span> g <span class="ot">-&gt;</span> h <span class="ot">-&gt;</span> i <span class="ot">-&gt;</span> j <span class="ot">-&gt;</span> k)
+          <span class="ot">-&gt;</span> (a, b, c, d, e, f, g, h, i, j)
+          <span class="ot">-&gt;</span> k
+
+<span class="ot">area ::</span> <span class="dt">Int</span> <span class="co">-- width</span>
+     <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="co">-- height</span>
+     <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="co">-- area</span></code></pre>
+<h2 id="argument-patterns"><span class="header-section-number">2.5</span> Argument Patterns</h2>
+<p>If an operation is defined by several rules, one should vertically align the parameters with the same position:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="fu">and</span> <span class="kw">True</span> <span class="kw">True</span> <span class="fu">=</span> <span class="kw">True</span>
+<span class="fu">and</span> _    _    <span class="fu">=</span> <span class="kw">False</span></code></pre>
+<p>The equal signs <code class="sourceCode curry"><span class="fu">=</span></code> should also be aligned.</p>
+<h2 id="guards"><span class="header-section-number">2.6</span> Guards</h2>
+<p>Guards should immediately follow the patterns or they should be indented in the following line. In any case, they should be vertically aligned:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">f x y z <span class="fu">|</span> x <span class="fu">==</span> y    <span class="fu">=</span> z
+        <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> z <span class="fu">+</span> <span class="dv">1</span>
+
+g x y z
+  <span class="fu">|</span> x <span class="fu">==</span> y <span class="fu">&amp;&amp;</span> <span class="fu">not</span> z <span class="fu">=</span> <span class="dv">1</span>
+  <span class="fu">|</span> <span class="fu">otherwise</span>       <span class="fu">=</span> <span class="dv">0</span></code></pre>
+<p>If the conditions are very long, the equal signs can start in the next line below the condition:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">f x y z
+  <span class="fu">|</span> thisIsAVeryLongConditionWhichNeedsAllTheSpaceAvailableInTheLine x y z
+  <span class="fu">=</span> <span class="dv">42</span>
+  <span class="fu">|</span> <span class="fu">otherwise</span>
+  <span class="fu">=</span> <span class="dv">0</span></code></pre>
+<h2 id="if-then-else"><span class="header-section-number">2.7</span> <code>if-then-else</code></h2>
+<p>As a general rule, one should try to use patterns and guards instead of <code class="sourceCode curry"><span class="kw">if</span><span class="fu">-</span><span class="kw">then</span><span class="fu">-</span><span class="kw">else</span></code> expressions. Short <code class="sourceCode curry"><span class="kw">if</span><span class="fu">-</span><span class="kw">then</span><span class="fu">-</span><span class="kw">else</span></code> expressions can be written in one line (if this fits into the maximal line length):</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">f x <span class="fu">=</span> g (<span class="kw">if</span> x <span class="kw">then</span> <span class="dv">0</span> <span class="kw">else</span> <span class="dv">1</span>) <span class="dv">42</span></code></pre>
+<p>Otherwise, one should indent the <code class="sourceCode curry"><span class="kw">then</span></code> and <code class="sourceCode curry"><span class="kw">else</span></code> branch, which are vertically aligned:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">foo <span class="fu">=</span> <span class="kw">if</span> <span class="ot">..</span><span class="fu">.</span>
+        <span class="kw">then</span> <span class="ot">..</span><span class="fu">.</span>
+        <span class="kw">else</span> <span class="ot">..</span><span class="fu">.</span></code></pre>
+<p>If the condition is short, one can also write the <code class="sourceCode curry"><span class="kw">if</span></code> and <code class="sourceCode curry"><span class="kw">then</span></code> part in one line, but align the <code class="sourceCode curry"><span class="kw">then</span></code> and <code class="sourceCode curry"><span class="kw">else</span></code> parts:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">foo <span class="fu">=</span> <span class="kw">if</span> <span class="ot">..</span><span class="fu">.</span> <span class="kw">then</span> <span class="ot">..</span><span class="fu">.</span>
+             <span class="kw">else</span> <span class="ot">..</span><span class="fu">.</span></code></pre>
+<h2 id="case-expressions"><span class="header-section-number">2.8</span> <code>case</code> Expressions</h2>
+<p>The alternatives in a <code class="sourceCode curry"><span class="kw">case</span></code> expression should be aligned in the following form:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">foobar <span class="fu">=</span> <span class="kw">case</span> something <span class="kw">of</span>
+  <span class="kw">Just</span> j  <span class="ot">-&gt;</span> foo
+  <span class="kw">Nothing</span> <span class="ot">-&gt;</span> bar</code></pre>
+<p>or</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">foobar <span class="fu">=</span> <span class="kw">case</span> something <span class="kw">of</span>
+           <span class="kw">Just</span> j  <span class="ot">-&gt;</span> foo
+           <span class="kw">Nothing</span> <span class="ot">-&gt;</span> bar</code></pre>
+<p>The arrows <code class="sourceCode curry"><span class="ot">-&gt;</span></code> should be aligned to improve readability.</p>
+<h2 id="let-expressions"><span class="header-section-number">2.9</span> <code>let</code> Expressions</h2>
+<p>Short <code class="sourceCode curry"><span class="kw">let</span></code> expressions with a single local declaration can be written in one line (if the line is not too long):</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">squareSum x y <span class="fu">=</span> <span class="kw">let</span> z <span class="fu">=</span> x <span class="fu">+</span> y <span class="kw">in</span> z <span class="fu">*</span> z
+
+grandfather g c <span class="fu">|</span> <span class="kw">let</span> f <span class="kw">free</span> <span class="kw">in</span> father g f <span class="fu">&amp;&amp;</span> father f c <span class="fu">=</span> <span class="kw">True</span></code></pre>
+<p>Long <code class="sourceCode curry"><span class="kw">let</span></code> expressions or <code class="sourceCode curry"><span class="kw">let</span></code> expressions with more then one local declaration should be aligned so that the keywords <code class="sourceCode curry"><span class="kw">let</span></code> and <code class="sourceCode curry"><span class="kw">in</span></code> are in the same column:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">qsort (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">let</span> (l,r) <span class="fu">=</span> split x xs
+               <span class="kw">in</span> qsort l <span class="fu">++</span> (x<span class="fu">:</span>qsort r)
+
+doubleSquareSum x y <span class="fu">=</span>
+  <span class="kw">let</span> z  <span class="fu">=</span> x <span class="fu">+</span> y
+      sq <span class="fu">=</span> z <span class="fu">*</span> z
+  <span class="kw">in</span> sq <span class="fu">+</span> sq</code></pre>
+<p>The equal signs of all local declarations should be vertically aligned. The same rule is used for <code class="sourceCode curry"><span class="kw">let</span></code> expressions in <code class="sourceCode curry"><span class="kw">do</span></code> blocks (where there is no <code class="sourceCode curry"><span class="kw">in</span></code> expression).</p>
+<h2 id="do-blocks"><span class="header-section-number">2.10</span> <code>do</code> Blocks</h2>
+<p>The statements in a <code class="sourceCode curry"><span class="kw">do</span></code> blocks should start immediately after the keyword <code class="sourceCode curry"><span class="kw">do</span></code> or they are indented in the next line:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">echo <span class="fu">=</span> <span class="kw">do</span> name <span class="ot">&lt;-</span> <span class="fu">getLine</span>
+          <span class="fu">putStrLn</span> name
+
+greet <span class="fu">=</span> <span class="kw">do</span>
+  <span class="fu">putStr</span> <span class="st">&quot;How is your name? &quot;</span>
+  name <span class="ot">&lt;-</span> <span class="fu">getLine</span>
+  <span class="fu">putStrLn</span> (<span class="st">&quot;Hello &quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;!&quot;</span>)</code></pre>
+<h2 id="listtuple-definitions"><span class="header-section-number">2.11</span> List/Tuple Definitions</h2>
+<p>The element of long lists should be aligned as follows:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">exceptions <span class="fu">=</span>
+  [ <span class="dt">InvalidStatusCode</span>
+  , <span class="dt">MissingContentHeader</span>
+  , <span class="dt">InternalServerError</span>
+  ]</code></pre>
+<p>One can also omit the first line break:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">directions <span class="fu">=</span> [ <span class="dt">North</span>
+             , <span class="dt">East</span>
+             , <span class="dt">South</span>
+             , <span class="dt">West</span>
+             ]</code></pre>
+<p>Short lists can be written in one line:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">short <span class="fu">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</code></pre>
+<p>The same rules apply to tuple definitions:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">t       <span class="fu">=</span> (<span class="dv">1</span>, <span class="kw">True</span>)
+ignored <span class="fu">=</span> ( <span class="dt">InvalidStatusCode</span>
+          , <span class="dt">MissingContentHeader</span>
+          )</code></pre>
+<h2 id="brackets"><span class="header-section-number">2.12</span> Brackets</h2>
+<p>Superfluous brackets should be avoided:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">seven <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> <span class="dv">2</span> <span class="fu">*</span> <span class="dv">3</span>
+
+f x <span class="fu">=</span> <span class="kw">if</span> cond x <span class="kw">then</span> <span class="dv">0</span> <span class="kw">else</span> <span class="dv">1</span></code></pre>
+<p>instead of</p>
+<pre class="sourceCode curry"><code class="sourceCode curry">seven <span class="fu">=</span> (<span class="dv">1</span> <span class="fu">+</span> (<span class="dv">2</span> <span class="fu">*</span> <span class="dv">3</span>))
+
+f x <span class="fu">=</span> <span class="kw">if</span> (cond x) <span class="kw">then</span> <span class="dv">0</span> <span class="kw">else</span> <span class="dv">1</span></code></pre>
+<p>In case of specific infix operators (e.g., not defined in the prelude) or if one is not sure about the precedence or want to document the predence, one can write brackets.</p>
+<h1 id="comments"><span class="header-section-number">3</span> Comments</h1>
+<h2 id="language"><span class="header-section-number">3.1</span> Language</h2>
+<p>Comments should be written in correct English. The identifiers used in a program should be also meaningful in English.</p>
+<h2 id="top-level-declarations"><span class="header-section-number">3.2</span> Top-Level Declarations</h2>
+<p>All top-level operations should have a comment and a type signature. This is a must for exported operations. One should use the syntax of <a href="https://www-ps.informatik.uni-kiel.de/currywiki/tools/currydoc">CurryDoc</a> for the comments of exported operations so that the program documentation can easily be generated.</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="co">--- Splits the list argument into a list of lists of related adjacent</span>
+<span class="co">--- elements.</span>
+<span class="co">--- @param eq - the relation to classify adjacent elements</span>
+<span class="co">--- @param xs - the list of elements</span>
+<span class="co">--- @return the list of lists of related adjacent elements</span>
+<span class="ot">groupBy ::</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]</code></pre>
+<p>The comment of an operation should contain enough information so that one can use the operation without studying its implementation.</p>
+<p>Data types should be commented in a similar way. Exported constructors should have individual comments:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="co">--- The data type for representing XML expressions.</span>
+<span class="co">--- @cons XText - a text string (PCDATA)</span>
+<span class="co">--- @cons XElem - an XML element with tag field, attributes, and a list</span>
+<span class="co">---               of XML elements as contents</span>
+<span class="kw">data</span> <span class="dt">XmlExp</span> <span class="fu">=</span> <span class="dt">XText</span> <span class="dt">String</span>
+            <span class="fu">|</span> <span class="dt">XElem</span> <span class="dt">String</span> [(<span class="dt">String</span>,<span class="dt">String</span>)] [<span class="dt">XmlExp</span>]</code></pre>
+<p>For records with explicit selectors (labels), one should add a comment for each selector:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="co">--- A natural person</span>
+<span class="co">--- @field firstName - First name, may contain several ones</span>
+<span class="co">--- @field lastName  - Last name</span>
+<span class="co">--- @field height    - Height in centimeters</span>
+<span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span>
+    <span class="dt">Person</span>
+      {<span class="ot"> firstName ::</span> <span class="dt">String</span>
+      ,<span class="ot"> lastName  ::</span> <span class="dt">String</span>
+      ,<span class="ot"> height    ::</span> <span class="dt">Int</span>
+      }</code></pre>
+<h2 id="end-of-line-comments"><span class="header-section-number">3.3</span> End-of-Line Comments</h2>
+<p>Comments at the end of a line should be separated from the code by at least one space:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="ot">foo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
+foo n <span class="fu">=</span> salt <span class="fu">*</span> <span class="dv">32</span> <span class="fu">+</span> <span class="dv">9</span>
+  <span class="kw">where</span> salt <span class="fu">=</span> <span class="dv">453645243</span>  <span class="co">-- Magic hash salt.</span></code></pre>
+<h1 id="naming"><span class="header-section-number">4</span> Naming</h1>
+<p>Use camel case for names that consists of several logical units (words):</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">data</span> <span class="dt">BankAccount</span> <span class="fu">=</span> <span class="ot">..</span><span class="fu">.</span>
+
+thisIsTheAnswer <span class="fu">=</span> <span class="dv">42</span></code></pre>
+<p>To improve readability, one should not capitalize all letters in abbreviations. For instance, one should write <code class="sourceCode curry">showXmlDoc</code> instead of <code class="sourceCode curry">showXMLDoc</code>. An exception are abbreviations with only two letters, like <code class="sourceCode curry"><span class="dt">IO</span></code>.</p>
+<p>Parameter names and names of local declarations are usually short, but one has to take the following rule into account:</p>
+<blockquote>
+<p>Entity with larger visibility regions have longer names.</p>
+</blockquote>
+<p>The name <code class="sourceCode curry">x</code> can be used in a one-line operation but never as a top-level declaration.</p>
+<p>One should also take into account the following <em>conventions for short names</em>:</p>
+<ul>
+<li><p><code class="sourceCode curry">f</code> denotes an operation of type <code class="sourceCode curry">a <span class="ot">-&gt;</span> b</code></p></li>
+<li><p><code class="sourceCode curry">n</code>, <code class="sourceCode curry">m</code>, etc. denote natural numbers of type <code class="sourceCode curry"><span class="dt">Int</span></code></p></li>
+<li><p><code class="sourceCode curry">x</code>, <code class="sourceCode curry">y</code>, <code class="sourceCode curry">z</code> often denote values of polymorphic types</p></li>
+<li><p>A name with suffix <code class="sourceCode curry">s</code> denote several values like lists. Here are some examples: <code class="sourceCode curry"><span class="ot">xs ::</span> [a]</code>, <code class="sourceCode curry"><span class="ot">fs ::</span> [a <span class="ot">-&gt;</span> b]</code>, <code class="sourceCode curry"><span class="ot">xss ::</span> [[a]]</code></p></li>
+<li><p><code class="sourceCode curry">p</code> denotes a predicate of type <code class="sourceCode curry">a <span class="ot">-&gt;</span> <span class="dt">Bool</span></code></p></li>
+<li><p>A name with an apostroph, like <code class="sourceCode curry">x&#39;</code>, denote modified values:</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="kw">let</span> acc&#39; <span class="fu">=</span> updateAcc acc <span class="kw">in</span> <span class="ot">..</span><span class="fu">.</span></code></pre></li>
+<li><p><code class="sourceCode curry">k</code> and <code class="sourceCode curry">v</code> are often used for <em>keys</em> and <em>values</em> in a mapping.</p></li>
+</ul>
+<h1 id="compiler-warnings"><span class="header-section-number">5</span> Compiler Warnings</h1>
+<p>Code should be compilable with the parsing option</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="fu">:</span>set parser <span class="fu">-</span><span class="dt">Wall</span></code></pre>
+<p>without producing any warnings. If one uses a more logic-oriented programming style, operations are often defined with overlapping rules or incomplete pattern matching. In this case, one can explicitly omit the warnings by the parsing option</p>
+<pre class="sourceCode curry"><code class="sourceCode curry"><span class="ot">{-# OPTIONS_CYMAKE -Wno-incomplete-patterns -Wno-overlapping #-}</span></code></pre>
+<p>in the beginning module header. However, this should be done <em>only</em> in a program that depends on these features of Curry.</p>
+</body>
+</html>
