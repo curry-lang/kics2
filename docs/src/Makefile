@@ -6,11 +6,18 @@ HTMLFILES = $(DOCDIR)/markdown_syntax.html $(DOCDIR)/INSTALL.html \
 
 MANUAL = $(DOCDIR)/Manual.pdf
 
+# Executable of CurryDoc:
+CURRYDOC := $(shell which curry-doc)
+
 .PHONY: pdf
 pdf : manual.pdf
 
 .PHONY: install
-install: $(HTMLFILES) $(MANUAL)
+install: $(HTMLFILES)
+	@if [ -x "$(CURRYDOC)" ] ; then \
+	  $(MAKE) $(MANUAL) ; else \
+	  echo "'curry-doc' not installed, skipping manual generation." ; \
+	fi
 
 .PHONY: clean
 clean:
