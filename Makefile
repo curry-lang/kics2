@@ -603,9 +603,9 @@ $(TARBALL): $(COMP) frontend $(MANUAL)
 	cd $(DISTDIR) && $(MAKE) REPL          # translate REPL
 	cd $(DISTDIR) && $(MAKE) clean         # clean object files
 	cd $(DISTDIR) && $(MAKE) cleandist     # delete unnessary files
-	# copy documentation
+	# copy documentation if it exists:
 	mkdir -p $(DISTDIR)/docs
-	cp $(MANUAL) $(DISTDIR)/docs
+	@if [ -f $(MANUAL) ] ; then cp $(MANUAL) $(DISTDIR)/docs ; fi
 	# update Makefile
 	cat Makefile \
 	  | sed -e "/^# SNIP FOR DISTRIBUTION/,\$$d" \
