@@ -12,6 +12,10 @@ else
 fi
 export KICS2HOME
 
+# Add KiCS2 bin directory to path so that currypp can be found:
+PATH=$PATH:$KICS2HOME/bin
+export PATH
+
 # The directory where CPM installs the binaries:
 CPMBIN="$HOME/.cpm/bin"
 
@@ -58,10 +62,6 @@ case $1 in
   style     ) check_and_call_tool casc        curry-style    ${1+"$@"} ;;
   verify    ) check_and_call_tool verify      curry-verify   ${1+"$@"} ;;
 esac
-
-# Add KiCS2 bin directory to path so that currypp can be found:
-PATH=$PATH:$KICS2HOME/bin
-export PATH
 
 REPL="$KICS2HOME/bin/.local/kics2i"
 if [ ! -x "$REPL" ] ; then
