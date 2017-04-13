@@ -574,7 +574,7 @@ DEV_DIRS = benchmarks debug docs experiments
 .PHONY: cleandist
 cleandist:
 	rm -rf .dist-modules .git .gitignore .gitmodules
-	cd currytools              && rm -rf .git .gitignore
+	cd currytools              && rm -rf .git .gitignore download_tools.sh
 	cd frontend/curry-base     && rm -rf .git .gitignore dist
 	cd frontend/curry-frontend && rm -rf .git .gitignore dist
 	rm -rf $(CURRYLIBSDIR)
