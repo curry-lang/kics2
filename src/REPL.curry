@@ -731,7 +731,7 @@ processShow rst args = do
 processInterface :: ReplState -> String -> IO (Maybe ReplState)
 processInterface rst args = do
   modname <- getModuleName rst args
-  checkForCpmCommand "curry-showflat" "showflatcurry"
+  checkAndCallCpmTool "curry-showflat" "showflatcurry"
     (\toolexec -> execCommandWithPath rst toolexec ["-int", modname])
 
 processBrowse :: ReplState -> String -> IO (Maybe ReplState)
@@ -739,13 +739,13 @@ processBrowse rst args
   | notNull $ stripCurrySuffix args = skipCommand "superfluous argument"
   | otherwise                       = checkForWish $ do
       writeVerboseInfo rst 1 "Starting Curry Browser in separate window..."
-      let toolexec = "currytools" </> "browser" </> "BrowserGUI"
-      callTool rst toolexec (mainMod rst)
+      checkAndCallCpmTool "curry-browse" "currybrowse"
+        (\toolexec -> execCommandWithPath rst toolexec [mainMod rst])
 
 processUsedImports :: ReplState -> String -> IO (Maybe ReplState)
 processUsedImports rst args = do
   let modname  = if null args then mainMod rst else stripCurrySuffix args
-  checkForCpmCommand "curry-usedimports" "importusage"
+  checkAndCallCpmTool "curry-usedimports" "importusage"
     (\toolexec -> execCommandWithPath rst toolexec [modname])
 
 processSave :: ReplState -> String -> IO (Maybe ReplState)
@@ -1024,9 +1024,9 @@ printAllLoadPathPrograms rst = mapIO_ printDirPrograms (loadPaths rst)
 -- Showing source code of functions via SourcProgGUI tool.
 -- If necessary, open a new connection and remember it in the repl state.
 showFunctionInModule :: ReplState -> String -> String -> IO (Maybe ReplState)
-showFunctionInModule rst mod fun = checkForWish $ do
-  let mbh      = lookup mod (sourceguis rst)
-  checkForCpmCommand "curry-showsource" "sourceproggui" $ \spgui -> do
+showFunctionInModule rst mod fun =
+  checkForWish $
+  checkAndCallCpmTool "curry-showsource" "sourceproggui" $ \spgui -> do
     writeVerboseInfo rst 1 $
       "Showing source code of function '" ++ mod ++ "." ++ fun ++
       "' in separate window..."
@@ -1037,13 +1037,13 @@ showFunctionInModule rst mod fun = checkForWish $ do
     writeVerboseInfo rst 2 $ "Executing: " ++ spguicmd
     (rst',h') <- maybe (do h <- connectToCommand spguicmd
                            return (rst {sourceguis = (mod,(fun,h))
-                                              : sourceguis rst }, h))
+                                                     : sourceguis rst }, h))
                        (\ (f,h) -> do
                            hPutStrLn h ('-':f)
                            hFlush h
                            return (rst {sourceguis = updateFun (sourceguis rst)
-                                                          mod fun }, h))
-                       mbh
+                                                               mod fun }, h))
+                       (lookup mod (sourceguis rst))
     hPutStrLn h' ('+':fun)
     hFlush h'
     return (Just rst')
@@ -1051,39 +1051,16 @@ showFunctionInModule rst mod fun = checkForWish $ do
   updateFun []                _  _  = []
   updateFun ((m,(f,h)):sguis) md fn =
     if m==md then (m,(fn,h)):sguis
-            else (m,(f,h)) : updateFun sguis md fn
-
--- Call a tool of the KiCS2 distribution (first argument) with some
--- arguments (second argument). The root dir of KiCS2 is prepended
--- and it is checked whether this tool exists. Furthermore,
--- the current import path is exported to the tool via the environment
--- variable CURRYPATH (if it is not empty).
-callTool :: ReplState -> String -> String -> IO (Maybe ReplState)
-callTool rst cmd args = do
-  let path = kics2Home rst </> cmd
-      setpath = if null (importPaths rst)
-                then ""
-                else "CURRYPATH=" ++
-                     intercalate [searchPathSeparator]  (importPaths rst) ++
-                     " && export CURRYPATH && "
-      syscmd = setpath ++ path ++ ' ' : args
-  exists <- doesFileExist path
-  if exists
-    then do writeVerboseInfo rst 2 $ "Executing: " ++ syscmd
-            system syscmd >> return (Just rst)
-    else skipCommand $
-           Inst.installDir ++ '/' : cmd ++ " not found\n" ++
-           "Possible solution: run 'cd " ++ Inst.installDir ++
-           " && make install'"
+             else (m,(f,h)) : updateFun sguis md fn
 
 -- Check whether some CPM tool is available, i.e., either in the current
 -- path or in the CPM bin directory. If it is not available,
 -- skip the command with an error message how to install the tool from
 -- the package (specified in the second argument). Otherwise, continue with
 -- the last argument by passing the name of the CPM tool.
-checkForCpmCommand :: String -> String -> (String -> IO (Maybe ReplState))
-                   -> IO (Maybe ReplState)
-checkForCpmCommand tool package continue = do
+checkAndCallCpmTool :: String -> String -> (String -> IO (Maybe ReplState))
+                    -> IO (Maybe ReplState)
+checkAndCallCpmTool tool package continue = do
   excmd <- system $ "which " ++ tool ++ " > /dev/null"
   if excmd == 0
     then continue tool
