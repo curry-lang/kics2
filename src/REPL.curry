@@ -731,8 +731,8 @@ processShow rst args = do
 processInterface :: ReplState -> String -> IO (Maybe ReplState)
 processInterface rst args = do
   modname <- getModuleName rst args
-  let toolexec = "currytools" </> "browser" </> "ShowFlatCurry"
-  callTool rst toolexec ("-int " ++ modname)
+  checkForCpmCommand "curry-showflat" "showflatcurry"
+    (\toolexec -> execCommandWithPath rst toolexec ["-int", modname])
 
 processBrowse :: ReplState -> String -> IO (Maybe ReplState)
 processBrowse rst args
@@ -745,8 +745,8 @@ processBrowse rst args
 processUsedImports :: ReplState -> String -> IO (Maybe ReplState)
 processUsedImports rst args = do
   let modname  = if null args then mainMod rst else stripCurrySuffix args
-      toolexec = "currytools" </> "importcalls" </> "ImportCalls"
-  callTool rst toolexec modname
+  checkForCpmCommand "curry-usedimports" "importusage"
+    (\toolexec -> execCommandWithPath rst toolexec [modname])
 
 processSave :: ReplState -> String -> IO (Maybe ReplState)
 processSave rst args
@@ -1026,16 +1026,16 @@ printAllLoadPathPrograms rst = mapIO_ printDirPrograms (loadPaths rst)
 showFunctionInModule :: ReplState -> String -> String -> IO (Maybe ReplState)
 showFunctionInModule rst mod fun = checkForWish $ do
   let mbh      = lookup mod (sourceguis rst)
-      toolexec = "currytools" </> "browser" </> "SourceProgGUI"
-      spgui    = kics2Home rst </> toolexec
-  spgexists <- doesFileExist spgui
-  if not spgexists
-   then errorMissingTool toolexec
-   else do
+  checkForCpmCommand "curry-showsource" "sourceproggui" $ \spgui -> do
     writeVerboseInfo rst 1 $
       "Showing source code of function '" ++ mod ++ "." ++ fun ++
       "' in separate window..."
-    (rst',h') <- maybe (do h <- connectToCommand (spgui++" "++mod)
+    let spguicmd = "CURRYPATH=" ++
+                   intercalate [searchPathSeparator]
+                               (importPaths rst ++ sysLibPath) ++
+                   " && export CURRYPATH && " ++ spgui ++ " " ++ mod
+    writeVerboseInfo rst 2 $ "Executing: " ++ spguicmd
+    (rst',h') <- maybe (do h <- connectToCommand spguicmd
                            return (rst {sourceguis = (mod,(fun,h))
                                               : sourceguis rst }, h))
                        (\ (f,h) -> do
@@ -1071,12 +1071,45 @@ callTool rst cmd args = do
   if exists
     then do writeVerboseInfo rst 2 $ "Executing: " ++ syscmd
             system syscmd >> return (Just rst)
-    else errorMissingTool cmd
+    else skipCommand $
+           Inst.installDir ++ '/' : cmd ++ " not found\n" ++
+           "Possible solution: run 'cd " ++ Inst.installDir ++
+           " && make install'"
 
-errorMissingTool :: String -> IO (Maybe ReplState)
-errorMissingTool cmd = skipCommand $
-     Inst.installDir ++ '/' : cmd ++ " not found\n"
-  ++ "Possible solution: run \"cd " ++ Inst.installDir ++" && make install\""
+-- Check whether some CPM tool is available, i.e., either in the current
+-- path or in the CPM bin directory. If it is not available,
+-- skip the command with an error message how to install the tool from
+-- the package (specified in the second argument). Otherwise, continue with
+-- the last argument by passing the name of the CPM tool.
+checkForCpmCommand :: String -> String -> (String -> IO (Maybe ReplState))
+                   -> IO (Maybe ReplState)
+checkForCpmCommand tool package continue = do
+  excmd <- system $ "which " ++ tool ++ " > /dev/null"
+  if excmd == 0
+    then continue tool
+    else do homedir <- getHomeDirectory
+            let cpmtoolfile = homedir </> ".cpm" </> "bin" </> tool
+            excpm <- doesFileExist cpmtoolfile
+            if excpm
+              then continue cpmtoolfile
+              else skipCommand errmsg
+ where
+  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cpm installbin " ++
+           package ++ "'!"
+
+-- Execute some command (first argument) with some arguments (second argument).
+-- The current load path is exported to the command via the environment
+-- variable CURRYPATH.
+execCommandWithPath :: ReplState -> String -> [String]
+                    -> IO (Maybe ReplState)
+execCommandWithPath rst cmd args = do
+  let setpath = "CURRYPATH=" ++
+                intercalate [searchPathSeparator]
+                            (importPaths rst ++ sysLibPath) ++
+                " && export CURRYPATH && "
+      syscmd = setpath ++ cmd ++ ' ' : unwords args
+  writeVerboseInfo rst 2 $ "Executing: " ++ syscmd
+  system syscmd >> return (Just rst)
 
 -- Check whether some system command is available. If it is not available,
 -- skip the command with the given error message, otherwise continue with
