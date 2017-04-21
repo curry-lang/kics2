@@ -1071,7 +1071,7 @@ checkAndCallCpmTool tool package continue = do
               then continue cpmtoolfile
               else skipCommand errmsg
  where
-  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cpm installbin " ++
+  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cpm installapp " ++
            package ++ "'!"
 
 -- Execute some command (first argument) with some arguments (second argument).
