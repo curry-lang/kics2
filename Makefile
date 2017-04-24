@@ -37,11 +37,11 @@ PROFILING       = yes
 # The major version number
 MAJORVERSION    = 0
 # The minor version number
-MINORVERSION    = 5
+MINORVERSION    = 6
 # The revision version number
-REVISIONVERSION = 2
+REVISIONVERSION = 0
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION=3
+BUILDVERSION=1
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
