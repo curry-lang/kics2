@@ -1,7 +1,7 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 0.5.2
+Release notes for KiCS2 Version 0.6.0
 -------------------------------------
 
 Changes to version 0.5.1:
