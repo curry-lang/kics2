@@ -4,7 +4,6 @@
 
 .PHONY: all
 all: Benchmarks
-	cd benchmark_papers && $(MAKE)
 
 # generate binary for Benchmarks program
 Benchmarks: Benchmarks.curry
@@ -22,4 +21,3 @@ publish:
 clean:
 	$(CLEANCURRY)
 	rm -f bench.log
-	cd benchmark_papers && $(MAKE) clean
