@@ -30,9 +30,9 @@ check_and_call_tool() {
     echo "Executing CPM installed tool:" "$TOOLBIN" ${1+"$@"}
     # Extend CURRYPATH with system libraries of this installation:
     if [ -n "$CURRYPATH" ] ; then
-      CURRYPATH=$CURRYPATH:$PAKCSHOME/lib
+      CURRYPATH=$CURRYPATH:$KICS2HOME/lib
     else
-      CURRYPATH=$PAKCSHOME/lib
+      CURRYPATH=$KICS2HOME/lib
     fi
     export CURRYPATH
     exec "$TOOLBIN" ${1+"$@"}
