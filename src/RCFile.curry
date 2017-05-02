@@ -37,8 +37,10 @@ readRC :: IO [(String, String)]
 readRC = do
   rcName   <- rcFileName
   rcExists <- doesFileExist rcName
-  if rcExists then updateRC else copyFile defaultRC rcName
-  readPropertyFile rcName
+  catch (if rcExists then updateRC else copyFile defaultRC rcName) (const done)
+  -- check again existence of user rc file:
+  newrcExists <- doesFileExist rcName
+  readPropertyFile (if newrcExists then rcName else defaultRC)
 
 rcKeys :: [(String, String)] -> [String]
 rcKeys = mergeSort . map fst
