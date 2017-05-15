@@ -18,8 +18,10 @@ Changes to version 0.5.1:
 
       - `CurryStringClassifier` (now in package `addtypes`)
       - `FlatCurry.Annotated.*` (now in package `flatcurry-annotated`)
+      - `JavaScript` (now in package `javascript`)
       - `Prolog` (now in package `prolog`)
       - `Rewriting.*` (now in package `rewriting`)
+      - `WUIjs` (now in package `wui`)
 
 Release notes for KiCS2 Version 0.5.1
 -------------------------------------
