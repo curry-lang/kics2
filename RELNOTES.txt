@@ -13,7 +13,13 @@ Changes to version 0.5.1:
     easily be installed (by a one-line command) locally via `cpm`.
     Instructions how to install these tools are included
     in the KiCS2 manual.
+  * Some libraries removed since they are available as packages
+    which can easily be installed via `cpm`:
 
+      - `CurryStringClassifier` (now in package `addtypes`)
+      - `FlatCurry.Annotated.*` (now in package `flatcurry-annotated`)
+      - `Prolog` (now in package `prolog`)
+      - `Rewriting.*` (now in package `rewriting`)
 
 Release notes for KiCS2 Version 0.5.1
 -------------------------------------
