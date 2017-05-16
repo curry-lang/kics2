@@ -84,7 +84,7 @@ export FRONTENDDIR   = $(ROOT)/frontend
 export LIBSRCDIR     = $(ROOT)/lib-trunk
 # Directory where the libraries are located
 export LIBDIR        = $(ROOT)/lib
-# Directory where the libraries are located
+# Directory where the documentation is located
 export DOCDIR        = $(ROOT)/docs
 # Directory where local executables are stored
 export LOCALBIN      = $(BINDIR)/.local
@@ -96,6 +96,11 @@ export LOCALPKG   = $(INSTALLPREFIX)/pkg
 export PKGDB         = $(LOCALPKG)/kics2.conf.d
 # The local path (from the ROOT) to the package database
 export LOCALPKGDB    = pkg/kics2.conf.d
+
+# Executable of CurryDoc:
+CURRYDOC := $(shell which curry-doc)
+# Executable of the markdown translator (required for documentation generation):
+MD2PDF := $(shell which md2pdf)
 
 # GHC and CABAL configuration
 # ---------------------------
@@ -519,7 +524,7 @@ $(MANUAL):
 .PHONY: manual
 manual:
 	# generate manual, if necessary:
-	@if [ -d docs/src -a $(DISTPKGINSTALL) = "no" ] ; then \
+	@if [ -d docs/src -a $(DISTPKGINSTALL) = "no" -a -x "$(CURRYDOC)" -a -x "$(MD2PDF)" ] ; then \
 	  $(MAKE) ${MANUALVERSION} && cd docs/src && $(MAKE) install ; \
 	fi
 
