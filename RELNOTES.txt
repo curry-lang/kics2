@@ -16,9 +16,11 @@ Changes to version 0.5.1:
   * Some libraries removed since they are available as packages
     which can easily be installed via `cpm`:
 
+      - `CategorizedHtmlList` (now in package `html`)
       - `CurryStringClassifier` (now in package `addtypes`)
       - `FlatCurry.Annotated.*` (now in package `flatcurry-annotated`)
       - `JavaScript` (now in package `javascript`)
+      - `Mail` (now in package `mail`)
       - `Prolog` (now in package `prolog`)
       - `Rewriting.*` (now in package `rewriting`)
       - `WUIjs` (now in package `wui`)
