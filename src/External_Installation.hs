@@ -15,6 +15,9 @@ external_d_C_minorVersion _ _ = toCurry I.minorVersion
 external_d_C_revisionVersion :: Cover -> ConstStore -> Curry_Prelude.C_Int
 external_d_C_revisionVersion _ _ = toCurry I.revisionVersion
 
+external_d_C_buildVersion :: Cover -> ConstStore -> Curry_Prelude.C_Int
+external_d_C_buildVersion _ _ = toCurry I.buildVersion
+
 external_d_C_compilerDate :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_compilerDate _ _ = toCurry I.compilerDate
 
@@ -33,14 +36,14 @@ external_d_C_runtimeMinor _ _ = toCurry I.runtimeMinor
 external_d_C_ghcExec :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_ghcExec _ _ = toCurry I.ghcExec
 
+external_d_C_ghcLocalOptions :: Cover -> ConstStore -> Curry_Prelude.C_String
+external_d_C_ghcLocalOptions _ _ = toCurry I.ghcLocalOptions
+
 external_d_C_ghcOptions :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_ghcOptions _ _ = toCurry I.ghcOptions
 
 external_d_C_ghcOptimizations :: Cover -> ConstStore -> Curry_Prelude.C_String
 external_d_C_ghcOptimizations _ _ = toCurry I.ghcOptimizations
-
-external_d_C_installGlobal :: Cover -> ConstStore -> Curry_Prelude.C_Bool
-external_d_C_installGlobal _ _ = toCurry I.installGlobal
 
 external_d_C_withProfiling :: Cover -> ConstStore -> Curry_Prelude.C_Bool
 external_d_C_withProfiling _ _ = toCurry I.withProfiling

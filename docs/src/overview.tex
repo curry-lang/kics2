@@ -12,25 +12,25 @@ or Mac OS X systems.
 
 Installation instructions for \CYS can be found in
 the file \code{INSTALL.txt} stored in the \CYS installation directory.
-Note that there are two possibilities to install \CYS:
-\begin{description}
-\item[Global installation:]\index{global installation}\index{installation!global}
-\CYS is installed in some global system directory where users
-have no write permission. In this case, some options for experimenting
-with \CYS (like \code{supply} or \code{ghc}, see below)
-are not available (since they require the recompilation of parts of
-the installed system).
-\item[Local installation:]\index{local installation}\index{installation!local}
-\CYS is installed in some local user directory where the user
-has write permission and the option \code{GLOBALINSTALL}
-in the \code{Makefile} of the \CYS installation is set as follows:
-\begin{lstlisting}
-GLOBALINSTALL=no
-\end{lstlisting}
-In this case, all options of \CYS are available.
-\end{description}
+% Note that there are two possibilities to install \CYS:
+% \begin{description}
+% \item[Global installation:]\index{global installation}\index{installation!global}
+% \CYS is installed in some global system directory where users
+% have no write permission. In this case, some options for experimenting
+% with \CYS (like \code{supply} or \code{ghc}, see below)
+% are not available (since they require the recompilation of parts of
+% the installed system).
+% \item[Local installation:]\index{local installation}\index{installation!local}
+% \CYS is installed in some local user directory where the user
+% has write permission and the option \code{GLOBALINSTALL}
+% in the \code{Makefile} of the \CYS installation is set as follows:
+% \begin{lstlisting}
+% GLOBALINSTALL=no
+% \end{lstlisting}
+% In this case, all options of \CYS are available.
+% \end{description}
 %
-Furthermore, \CYS can be installed with experimental support
+Note that \CYS can be installed with experimental support
 for profiling\index{profiling}
 of executables. To use profiling, two requirements have to be met:
 \begin{itemize}
@@ -110,7 +110,7 @@ Curry language report).
 Thus, in the various run-time systems, the definition of
 functions with local declarations look different from
 their original definition (in order to see the result
-of this transformation, you can use the \cb, see
+of this transformation, you can use the CurryBrowser, see
 Section~\ref{sec-currybrowser}).
 \item \index{tabulator stops}
 Tabulator stops instead of blank spaces in source files are

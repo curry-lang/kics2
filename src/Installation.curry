@@ -4,7 +4,7 @@
 --- file `ROOT/runtime/Installation.hs` which is automatically generated.
 ---
 --- @author  Michael Hanus, Bjoern Peemoeller, Fabian Skrlac
---- @version September 2014
+--- @version February 2017
 --- --------------------------------------------------------------------------
 
 module Installation where
@@ -24,6 +24,9 @@ minorVersion external
 revisionVersion :: Int
 revisionVersion external
 
+buildVersion :: Int
+buildVersion external
+
 compilerDate :: String
 compilerDate external
 
@@ -42,14 +45,15 @@ runtimeMinor external
 ghcExec :: String
 ghcExec external
 
+-- GHC options for using local libraries and not cabal packages:
+ghcLocalOptions :: String
+ghcLocalOptions external
+
 ghcOptions :: String
 ghcOptions external
 
 ghcOptimizations :: String
 ghcOptimizations external
-
-installGlobal :: Bool
-installGlobal external
 
 withProfiling :: Bool
 withProfiling external

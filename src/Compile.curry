@@ -59,7 +59,7 @@ main = do
 --- if necessary.
 build :: Options -> String -> IO ()
 build opts mn = do
-  mbMn <- locateCurryFile mn
+  mbMn <- locateCurryFile opts mn
   case mbMn of
     Nothing -> putErrLn $ "Could not find module " ++ mn
     Just f -> do
@@ -74,14 +74,14 @@ build opts mn = do
 --- returns the actual file path
 --- @param mn - the (relative) path to the Curry module with or without extension
 --- @return `Just path` if the module was found, `Nothing` if not
-locateCurryFile :: String -> IO (Maybe FilePath)
-locateCurryFile mn = do
+locateCurryFile :: Options -> String -> IO (Maybe FilePath)
+locateCurryFile opts mn = do
   exists <- doesFileExist mn
   if exists
     then return (Just mn)
     else let modname = stripCurrySuffix mn
              fcyname = flatCurryFileName modname
-          in lookupModuleSourceInLoadPath modname >>=
+          in lookupModuleSource (optImportPaths opts) modname >>=
              maybe (-- try to find a FlatCurry file without source
                     getLoadPathForModule modname >>=
                     lookupFileInPath fcyname [""] )

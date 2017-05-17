@@ -3,7 +3,7 @@
 --- It implements the Read-Eval-Print loop for KiCS2
 ---
 --- @author Michael Hanus, Bjoern Peemoeller
---- @version August 2016
+--- @version February 2017
 --- --------------------------------------------------------------------------
 module REPL where
 
@@ -53,13 +53,16 @@ main :: IO ()
 main = do
   rcFileDefs <- readRC
   args       <- getArgs
-  let (mainargs,defargs) = extractRCArgs args
-      rcDefs             = updateRCDefs rcFileDefs defargs
-      furtherRcDefs      = filter (\da -> fst da `notElem` map fst rcFileDefs)
-                                  defargs
-      rst = initReplState { kics2Home = Inst.installDir
-                          , rcvars    = rcDefs
-                          }
+  let (nodefargs,defargs) = extractRCArgs args
+      (mainargs,rtargs)   = break (=="--") nodefargs
+      rcDefs              = updateRCDefs rcFileDefs defargs
+      furtherRcDefs       = filter (\da -> fst da `notElem` map fst rcFileDefs)
+                                   defargs
+      rst = initReplState
+              { kics2Home = Inst.installDir
+              , rcvars    = rcDefs
+              , rtsArgs   = if null rtargs then "" else unwords (tail rtargs)
+              }
   ipath  <- defaultImportPaths rst
   if null furtherRcDefs
    then processArgsAndStart
@@ -96,6 +99,10 @@ processArgsAndStart rst (arg:args)
   | null      arg = processArgsAndStart rst args
   | arg == "-V" || arg == "--version"
   = getBanner >>= putStrLn >> cleanUpAndExitRepl rst
+  | arg == "--compiler-name"
+  = putStrLn "kics2" >> cleanUpAndExitRepl rst
+  | arg == "--numeric-version"
+  = putStrLn numericVersion >> cleanUpAndExitRepl rst
   | arg == "-h" || arg == "--help" || arg == "-?"
   = printHelp >> cleanUpAndExitRepl rst
   | isCommand arg = do
@@ -117,14 +124,18 @@ printHelpOnInteractive :: IO ()
 printHelpOnInteractive = putStrLn $ unlines
   [ "Invoke interactive environment:"
   , ""
-  , "    kics2 [--noreadline] [-Dprop=val] <commands>"
+  , "    kics2 <options> <commands>"
   , ""
-  , "with:"
+  , "with options:"
   , ""
-  , "--noreadline : do not use input line editing via command `rlwrap'"
-  , "-Dprop=val   : define kics2rc property `prop' as `val'"
-  , "<commands>   : list of commands of the KiCS2 environment"
-  , "               (run `kics2 :h :q' to see the list of all commands)"
+  , "-h|--help|-?      : show this message and quit"
+  , "-V|--version      : show version and quit"
+  , "--compiler-name   : show just the compiler name `kics2' and quit"
+  , "--numeric-version : show just the version number and quit"
+  , "--noreadline      : do not use input line editing via command `rlwrap'"
+  , "-Dprop=val        : define kics2rc property `prop' as `val'"
+  , "<commands>        : list of commands of the KiCS2 environment"
+  , "                    (run `kics2 :h :q' to see the list of all commands)"
   , ""
   ]
 
@@ -141,17 +152,17 @@ printHelpOnTools = putStrLn $ unlines
   , "browse    : browse and analyze"
   , "check     : check properties"
   , "createmake: create make file for main module"
-  , "cymake    : Curry front end"
   , "data2xml  : generate XML bindings"
   , "doc       : generate documentation for Curry programs"
   , "erd2cdbi  : create database code for ER model and Database.CDBI libraries"
   , "erd2curry : create database code for ER model"
+  , "frontend  : Curry front end"
   , "makecgi   : translate Curry HTML program into CGI program"
   , "peval     : partially evaluate a program"
   , "pp        : Curry preprocessor"
   , "spiceup   : create web application via Spicey"
   , "style     : check style of source programs"
-  , "test      : test assertions (no longer supported)"
+  , "test      : test assertions (obsolete, no longer supported)"
   , "verify    : translate Curry module to Agda for property verification"
   , ""
   , "To get more help about the usage of a tool, type"
@@ -164,11 +175,18 @@ getBanner :: IO String
 getBanner = do
   logo <- readFile $ Inst.installDir </> "include" </> "logo" <.> "txt"
   return (logo ++ version)
- where version = "Version "
-              ++ show Inst.majorVersion ++ "." ++ show Inst.minorVersion
-              ++ "." ++ show Inst.revisionVersion
-              ++ " of " ++ Inst.compilerDate
-              ++ " (installed at " ++ Inst.installDate ++ ")"
+ where
+  version =
+    "Version " ++ numericVersion ++
+    (if Inst.buildVersion == 0 then "" else "-b" ++ show Inst.buildVersion) ++
+    " of " ++ Inst.compilerDate ++
+    " (installed at " ++ Inst.installDate ++ ")"
+
+--- Show numeric version number (without build version)
+numericVersion :: String
+numericVersion =
+  intercalate "."
+    (map show [Inst.majorVersion, Inst.minorVersion, Inst.revisionVersion])
 
 -- ---------------------------------------------------------------------------
 
@@ -467,7 +485,7 @@ compileCurryProgram rst curryprog = do
     -- pass current value of "bindingoptimization" property to compiler:
     [ "-Dbindingoptimization=" ++ rcValue (rcvars rst) "bindingoptimization"
     , "-v" ++ show (transVerbose (verbose rst))
-    , "-i" ++ intercalate ":" (loadPaths rst)
+    , "-i" ++ intercalate [searchPathSeparator] (loadPaths rst)
     ] ++
     (if null (parseOpts rst)
     then []
@@ -584,7 +602,7 @@ processLoad rst args = do
                      processCd rst' dirname
     maybe (return Nothing)
      (\rst2 ->
-       (lookupModuleSourceInLoadPath modname) >>=
+       lookupModuleSource (loadPaths rst2) modname >>=
        maybe (skipCommand $ "source file of module "++dirmodname++" not found")
              (\ (_,fn) ->
                  readAndProcessSourceFileOptions rst2 fn >>=
@@ -701,29 +719,34 @@ processShow rst args = do
   case mbf of
     Nothing -> skipCommand "source file not found"
     Just fn -> do
-      let showcmd = rcValue (rcvars rst) "showcommand"
-      system $ (if null showcmd then "cat" else showcmd) ++ ' ' : fn
+      pager <- getEnviron "PAGER"
+      let rcshowcmd = rcValue (rcvars rst) "showcommand"
+          showprog  = if not (null rcshowcmd)
+                        then rcshowcmd
+                        else (if null pager then "cat" else pager)
+      system $ showprog ++ ' ' : fn
       putStrLn ""
       return (Just rst)
 
 processInterface :: ReplState -> String -> IO (Maybe ReplState)
 processInterface rst args = do
   modname <- getModuleName rst args
-  let toolexec = "currytools" </> "browser" </> "ShowFlatCurry"
-  callTool rst toolexec ("-int " ++ modname)
+  checkAndCallCpmTool "curry-showflat" "showflatcurry"
+    (\toolexec -> execCommandWithPath rst toolexec ["-int", modname])
 
 processBrowse :: ReplState -> String -> IO (Maybe ReplState)
 processBrowse rst args
   | notNull $ stripCurrySuffix args = skipCommand "superfluous argument"
-  | otherwise                       = do
-      let toolexec = "currytools" </> "browser" </> "BrowserGUI"
-      callTool rst toolexec (mainMod rst)
+  | otherwise                       = checkForWish $ do
+      writeVerboseInfo rst 1 "Starting Curry Browser in separate window..."
+      checkAndCallCpmTool "curry-browse" "currybrowse"
+        (\toolexec -> execCommandWithPath rst toolexec [mainMod rst])
 
 processUsedImports :: ReplState -> String -> IO (Maybe ReplState)
 processUsedImports rst args = do
   let modname  = if null args then mainMod rst else stripCurrySuffix args
-      toolexec = "currytools" </> "importcalls" </> "ImportCalls"
-  callTool rst toolexec modname
+  checkAndCallCpmTool "curry-usedimports" "importusage"
+    (\toolexec -> execCommandWithPath rst toolexec [modname])
 
 processSave :: ReplState -> String -> IO (Maybe ReplState)
 processSave rst args
@@ -762,13 +785,15 @@ processSetOption rst option
       [(_,act)]    -> act rst (strip args)
       _            -> skipCommand $ "ambiguous option: ':" ++ option ++ "'"
  where (opt, args)  = break (==' ') option
-       matched      = filter (isPrefixOf (map toLower opt) . fst) availOptions
+       matched      = filter (isPrefixOf (map toLower opt) . fst)
+                             (availOptions rst)
 
 -- In a global installation, the option for setting the identifier supply
 -- is not available:
-availOptions :: [(String, ReplState -> String -> IO (Maybe ReplState))]
-availOptions = filter installOpts replOptions
-  where installOpts (opt, _) = not Inst.installGlobal
+availOptions :: ReplState
+             -> [(String, ReplState -> String -> IO (Maybe ReplState))]
+availOptions rst = filter installOpts replOptions
+  where installOpts (opt, _) = localCompile rst
                                || opt `notElem` ["supply"]
 
 replOptions :: [(String, ReplState -> String -> IO (Maybe ReplState))]
@@ -802,6 +827,8 @@ replOptions =
   , ("-trace"       , \r _ -> return (Just r { traceFailure = False }))
   , ("+profile"     , \r _ -> return (Just r { profile      = True  }))
   , ("-profile"     , \r _ -> return (Just r { profile      = False }))
+  , ("+local"       , setLocalMode                                    )
+  , ("-local"       , \r _ -> return (Just r { localCompile = False }))
   , ("+ghci"        , \r _ -> return (Just r { useGhci      = True  }))
   , ("-ghci"        , setNoGhci                                       )
   , ("safe"         , \r _ -> return (Just r { safeExec     = True  }))
@@ -812,6 +839,19 @@ replOptions =
   , ("rts"          , \r a -> return (Just r { rtsOpts      = a     }))
   , ("args"         , \r a -> return (Just r { rtsArgs      = a     }))
   ]
+
+-- Try to set the local compilation mode.
+-- If the lib directory is not writable, a warning is issued and the
+-- local mode is not set.
+setLocalMode :: ReplState -> String -> IO (Maybe ReplState)
+setLocalMode rst _ = do
+  pid <- getPID
+  let libdir = installDir </> "lib"
+      testfile = libdir </> "xxx" ++ show pid
+  catch (writeFile testfile "" >> removeFile testfile)
+        (\_-> do putStrLn $ "Warning: no write permission on `" ++ libdir ++ "'"
+                 putStrLn "Local compilation mode may not work!")
+  return $ Just rst { localCompile = True }
 
 setPrompt :: ReplState -> String -> IO (Maybe ReplState)
 setPrompt rst p
@@ -862,7 +902,7 @@ printOptions rst = putStrLn $ unlines $ filter notNull
   , "choices [<n>]   - set search mode to print the choice structure as a tree"
   , "                  (up to level <n>)"
   , "debugsearch     - set search mode to print debugging information"
-  , ifLocal
+  , ifLocal rst
     "supply <I>      - set idsupply implementation (ghc|giants|integer|ioref|pureio)"
   , "v<n>            - verbosity level"
   , "                    0: quiet (errors and warnings only)"
@@ -879,6 +919,7 @@ printOptions rst = putStrLn $ unlines $ filter notNull
   , "+/-trace        - trace failure in deterministic expression"
   , ifProfiling
     "+/-profile      - compile with GHC's profiling capabilities"
+  , "+/-local        - use local libraries instead of cabal packages"
   , "+/-ghci         - use ghci instead of ghc to evaluate main expression"
   , "safe            - safe execution mode without I/O actions"
   , "prelude <name>  - name of the standard prelude"
@@ -890,9 +931,9 @@ printOptions rst = putStrLn $ unlines $ filter notNull
   , showCurrentOptions rst
   ]
 
--- Hide string if the current installation is global:
-ifLocal :: String -> String
-ifLocal s = if Inst.installGlobal then "" else s
+-- Show string if the local compilation/linking mode is used:
+ifLocal :: ReplState -> String -> String
+ifLocal rst s = if localCompile rst then s else ""
 
 ifProfiling :: String -> String
 ifProfiling s = if Inst.withProfiling then s else ""
@@ -900,7 +941,8 @@ ifProfiling s = if Inst.withProfiling then s else ""
 showCurrentOptions :: ReplState -> String
 showCurrentOptions rst = intercalate "\n" $ filter notNull
   [ "\nCurrent settings:"
-  , "import paths      : " ++ intercalate ":" ("." : importPaths rst)
+  , "import paths      : " ++ intercalate [searchPathSeparator]
+                                          ("." : importPaths rst)
   , "search mode       : " ++ case (ndMode rst) of
       PrDFS         -> "primitive non-monadic depth-first search"
       DEBUG         -> "debugging information for search"
@@ -909,7 +951,7 @@ showCurrentOptions rst = intercalate "\n" $ filter notNull
       BFS           -> "breadth-first search"
       IDS d         -> "iterative deepening (initial depth: " ++ show d ++ ")"
       Par s         -> "parallel search with " ++ show s ++ " threads"
-  , ifLocal $
+  , ifLocal rst $
     "idsupply          : " ++ idSupply rst
   , "prelude           : " ++ preludeName rst
   , "parser options    : " ++ parseOpts rst
@@ -927,6 +969,7 @@ showCurrentOptions rst = intercalate "\n" $ filter notNull
     ,               showOnOff (showTime rst)     ++ "time"
     ,               showOnOff (traceFailure rst) ++ "trace"
     , ifProfiling $ showOnOff (profile rst)      ++ "profile"
+    ,               showOnOff (localCompile rst) ++ "local"
     ,               showOnOff (useGhci rst)      ++ "ghci"
     ]
   ]
@@ -981,23 +1024,26 @@ printAllLoadPathPrograms rst = mapIO_ printDirPrograms (loadPaths rst)
 -- Showing source code of functions via SourcProgGUI tool.
 -- If necessary, open a new connection and remember it in the repl state.
 showFunctionInModule :: ReplState -> String -> String -> IO (Maybe ReplState)
-showFunctionInModule rst mod fun = do
-  let mbh      = lookup mod (sourceguis rst)
-      toolexec = "currytools" </> "browser" </> "SourceProgGUI"
-      spgui    = kics2Home rst </> toolexec
-  spgexists <- doesFileExist spgui
-  if not spgexists
-   then errorMissingTool toolexec
-   else do
-    (rst',h') <- maybe (do h <- connectToCommand (spgui++" "++mod)
+showFunctionInModule rst mod fun =
+  checkForWish $
+  checkAndCallCpmTool "curry-showsource" "sourceproggui" $ \spgui -> do
+    writeVerboseInfo rst 1 $
+      "Showing source code of function '" ++ mod ++ "." ++ fun ++
+      "' in separate window..."
+    let spguicmd = "CURRYPATH=" ++
+                   intercalate [searchPathSeparator]
+                               (importPaths rst ++ sysLibPath) ++
+                   " && export CURRYPATH && " ++ spgui ++ " " ++ mod
+    writeVerboseInfo rst 2 $ "Executing: " ++ spguicmd
+    (rst',h') <- maybe (do h <- connectToCommand spguicmd
                            return (rst {sourceguis = (mod,(fun,h))
-                                              : sourceguis rst }, h))
+                                                     : sourceguis rst }, h))
                        (\ (f,h) -> do
                            hPutStrLn h ('-':f)
                            hFlush h
                            return (rst {sourceguis = updateFun (sourceguis rst)
-                                                          mod fun }, h))
-                       mbh
+                                                               mod fun }, h))
+                       (lookup mod (sourceguis rst))
     hPutStrLn h' ('+':fun)
     hFlush h'
     return (Just rst')
@@ -1005,32 +1051,58 @@ showFunctionInModule rst mod fun = do
   updateFun []                _  _  = []
   updateFun ((m,(f,h)):sguis) md fn =
     if m==md then (m,(fn,h)):sguis
-            else (m,(f,h)) : updateFun sguis md fn
+             else (m,(f,h)) : updateFun sguis md fn
 
--- Call a tool of the KiCS2 distribution (first argument) with some
--- arguments (second argument). The root dir of KiCS2 is prepended
--- and it is checked whether this tool exists. Furthermore,
--- the current import path is exported to the tool via the environment
--- variable CURRYPATH (if it is not empty).
-callTool :: ReplState -> String -> String -> IO (Maybe ReplState)
-callTool rst cmd args = do
-  let path = kics2Home rst </> cmd
-      setpath = if null (importPaths rst)
-                then ""
-                else "CURRYPATH=" ++
-                     intercalate [searchPathSeparator]  (importPaths rst) ++
-                     " && export CURRYPATH && "
-      syscmd = setpath ++ path ++ ' ' : args
-  exists <- doesFileExist path
-  if exists
-    then do writeVerboseInfo rst 2 $ "Executing: " ++ syscmd
-            system syscmd >> return (Just rst)
-    else errorMissingTool cmd
+-- Check whether some CPM tool is available, i.e., either in the current
+-- path or in the CPM bin directory. If it is not available,
+-- skip the command with an error message how to install the tool from
+-- the package (specified in the second argument). Otherwise, continue with
+-- the last argument by passing the name of the CPM tool.
+checkAndCallCpmTool :: String -> String -> (String -> IO (Maybe ReplState))
+                    -> IO (Maybe ReplState)
+checkAndCallCpmTool tool package continue = do
+  excmd <- system $ "which " ++ tool ++ " > /dev/null"
+  if excmd == 0
+    then continue tool
+    else do homedir <- getHomeDirectory
+            let cpmtoolfile = homedir </> ".cpm" </> "bin" </> tool
+            excpm <- doesFileExist cpmtoolfile
+            if excpm
+              then continue cpmtoolfile
+              else skipCommand errmsg
+ where
+  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cpm installapp " ++
+           package ++ "'!"
 
-errorMissingTool :: String -> IO (Maybe ReplState)
-errorMissingTool cmd = skipCommand $
-     Inst.installDir ++ '/' : cmd ++ " not found\n"
-  ++ "Possible solution: run \"cd " ++ Inst.installDir ++" && make install\""
+-- Execute some command (first argument) with some arguments (second argument).
+-- The current load path is exported to the command via the environment
+-- variable CURRYPATH.
+execCommandWithPath :: ReplState -> String -> [String]
+                    -> IO (Maybe ReplState)
+execCommandWithPath rst cmd args = do
+  let setpath = "CURRYPATH=" ++
+                intercalate [searchPathSeparator]
+                            (importPaths rst ++ sysLibPath) ++
+                " && export CURRYPATH && "
+      syscmd = setpath ++ cmd ++ ' ' : unwords args
+  writeVerboseInfo rst 2 $ "Executing: " ++ syscmd
+  system syscmd >> return (Just rst)
+
+-- Check whether some system command is available. If it is not available,
+-- skip the command with the given error message, otherwise continue with
+-- the last argument.
+checkForCommand :: String -> String -> IO (Maybe ReplState)
+                -> IO (Maybe ReplState)
+checkForCommand cmd errmsg continue = do
+  excmd <- system $ "which " ++ cmd ++ " > /dev/null"
+  if (excmd>0) then skipCommand errmsg
+               else continue
+
+-- Check whether the windowing shell "wish" is available.
+checkForWish :: IO (Maybe ReplState) -> IO (Maybe ReplState)
+checkForWish =
+  checkForCommand "wish"
+    "Windowing shell `wish' not found. Please install package `tk'!"
 
 -- ---------------------------------------------------------------------------
 -- Read KiCS2 options in a Curry source file

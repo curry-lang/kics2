@@ -3,11 +3,11 @@
 ##############################################################################
 
 # binary directory and executables
-export BINDIR=$(CURDIR)/bin
+export BINDIR=$(LOCALPKG)/bin
 # The frontend binary
-export CYMAKE = $(BINDIR)/cymake$(EXE_SUFFIX)
+export CYMAKE = $(BINDIR)/curry-frontend$(EXE_SUFFIX)
 
-# Retrieve all Haskell modules as dependencies for cymake
+# Retrieve all Haskell modules as dependencies for the Curry front end
 DEPS := $(shell find curry-base/src/ curry-frontend/src/ -type f)
 
 # install the sources of the front end from its repository
@@ -16,7 +16,8 @@ $(CYMAKE): $(DEPS)
 	mkdir -p $(@D)
 	cd curry-base     && $(CABAL_INSTALL)
 	$(MAKE) transformers # see below
-	cd curry-frontend && $(CABAL_INSTALL) --bindir=$(@D)
+	# install curry-frontend binary into BINDIR:
+	cd curry-frontend && $(CABAL_INSTALL)
 
 # Temporary workaround for https://github.com/haskell/cabal/issues/1855
 # see also http://www.haskell.org/pipermail/cabal-devel/2014-May/009795.html

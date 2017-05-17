@@ -11,8 +11,8 @@ which is automatically invoked by the interactive environment.
 \label{sec:invoke-kics2}
 
 To start \CYS, execute the command
-\ccode{kics2}\pindex{kics2}
-(this is a shell script stored in
+\ccode{kics2}\pindex{kics2} or \ccode{curry}\pindex{curry}
+(these are shell scripts stored in
 \code{\cyshome/bin} where \cyshome is the installation directory
 of \CYS).
 When the system is ready (i.e., when the prompt \ccode{Prelude>} occurs),
@@ -47,6 +47,14 @@ for systems implemented in Curry.
 There are also some specific options that can be used
 when invoking \CYS:
 \begin{description}
+\item[\fbox{\code{-h}} or \fbox{\code{--help}}]:
+Print only a help message.
+\item[\fbox{\code{-V}} or \fbox{\code{--version}}]:
+Print the version information of \CYS and quit.
+\item[\fbox{\code{--compiler-name}}]:
+Print just the compiler name (\code{kics2}) and quit.
+\item[\fbox{\code{--numeric-version}}]:
+Print just the version number and quit.
 \item[\fbox{\code{--noreadline}}] (if used, this must be the first option):
 Do not use input line editing (see Section~\ref{sec-readline}).
 \item[\fbox{\code{-Dname=val}}]
@@ -56,6 +64,22 @@ Overwrite values defined in the configuration file \ccode{.kics2rc}
 where \code{name} is a property defined in the configuration file
 and \code{val} its new value.
 \end{description}
+%
+One can also invoke \CYS with some run-time arguments
+that can be accessed inside a Curry program
+by the I/O operation \code{getArgs}
+(see library \code{System} (Section~\ref{Library:System}).
+These run-time arguments must be written at the end after
+the separator \ccode{--}.
+For instance, if \CYS is invoked by
+\begin{curry}
+kics2 :load Mod -- first and second
+\end{curry}
+then a call to the I/O operation \code{getArgs}
+returns the list value
+\begin{curry}
+["first","and","second"]
+\end{curry}
 
 
 \subsection{Commands of \CYS}
@@ -179,7 +203,9 @@ If the variable \code{showcommand} is set in the
 configuration file \ccode{.kics2rc}
 (see Section~\ref{sec-customization}),
 its value is used as a command to show the source text,
-otherwise the command \ccode{cat} is used.
+otherwise the environment variable \code{PAGER} (or 
+\ccode{cat}, if \code{PAGER} is undefined)
+is used to show the source text.
 
 \item[\fbox{\code{:show $m$}}]\pindex{:show}
 Show the source text of module $m$ which must be accessible
@@ -322,7 +348,7 @@ If the optional argument $n$ is provided,
 the tree is shown up to depth $n$.
 
 \item[\fbox{\code{supply $i$}}]\pindex{supply}
-(not available in global installations, see Section~\ref{sec-install})
+(only available in the local compilation mode, see below)
 Use implementation $i$ as the identifier supply for choice structures
 (see \cite{BrasselHanusPeemoellerReck11} for a detailed explanation).
 Currently, the following values for $i$ are supported:
@@ -330,7 +356,7 @@ Currently, the following values for $i$ are supported:
 \item[\code{integer}:]\pindex{integer}
 Use unbounded integers as choice identifiers.
 This implementation is described in \cite{BrasselHanusPeemoellerReck11}.
-\item[\code{ghc}:]\pindex{ghc}
+\item[\code{ghc} (default):]\pindex{ghc}
 Use a more sophisticated implementation of choice
 identifiers (based on the ideas described in \cite{AugustssonRittriSynek94})
 provided by the Glasgow Haskell Compiler.
@@ -339,7 +365,7 @@ Use IO references (i.e., memory cells) for choice identifiers.
 This is the most efficient implementation for top-level depth-first search
 but cannot be used for more sophisticated search methods
 like encapsulated search.
-\item[\code{ioref} (default):]\pindex{ioref}
+\item[\code{ioref}:]\pindex{ioref}
 Use a mixture of \code{ghc} and \code{pureio}.
 IO references are used for top-level depth-first search
 and \code{ghc} identifiers are used for encapsulated search methods.
@@ -421,6 +447,28 @@ kics2 :set +profile :load MyProgram.curry :save :quit
 ./MyProgram +RTS -p -RTS [additional arguments]
 \end{curry}
 
+\item[\fbox{\code{+/-local}}]\pindex{local}\index{local compilation mode}
+Turn on/off the local compilation and linking mode.
+In the standard execution mode of \CYS,
+the local mode is turned off so that compiled Curry programs
+are linked against pre-compiled libraries that are packaged
+with Cabal. This makes the compilation and linking process faster
+so that this is the preferred execution mode.
+However, one cannot change the system libraries
+and directly use these changed libraries.
+Therefore, for experimental purposes,
+one can use the local mode. In this mode, a compiled Curry
+program is linked against the current versions of the system libraries
+which might require their re-compilation. Hence, it is important
+for the local mode that \CYS is installed in a local directory
+where one has write access, otherwise this mode might not work.
+
+Note that some options for experimenting
+with \CYS (like \code{supply} or \code{ghc})
+are available only in the local compilation mode
+(since they require the recompilation of parts of
+the installed system).
+
 \item[\fbox{\code{+/-ghci}}]\pindex{ghci}
 Turn on/off the ghci mode.
 In the ghci mode, the initial goal is send to the interactive version
@@ -444,7 +492,7 @@ kics2 :set safe
 
 \item[\fbox{\code{parser $opts$}}]\pindex{parser}
 Define additional options passed to the \CYS front end, i.e.,
-the parser program \code{\cyshome/bin/cymake}.
+the parser program \code{\cyshome/bin/kics2-frontend}.
 For instance, setting the option
 \begin{curry}
 :set parser -F --pgmF=transcurry
@@ -469,8 +517,8 @@ Many options necessary to compile Curry programs
 are already set (you can see them by setting the verbosity
 level to 2 or greater).
 One has to be careful when providing additional options.
-For instance, in a global installation of \CYS
-(see Section~\ref{sec-install}), libraries are pre-compiled
+For instance, in the default global installation of \CYS,
+libraries are pre-compiled
 so that inconsistencies might occur if compilation options
 might be changed.
 
@@ -484,8 +532,8 @@ options
 \end{curry}
 
 Other options are useful for experimental purposes,
-but those should be used only in local installations
-(see Section~\ref{sec-install}) to avoid inconsistent
+but those should be used only in the local compilation mode
+(see above) to avoid inconsistent
 target codes for different libraries.
 For instance, setting the option
 \begin{curry}

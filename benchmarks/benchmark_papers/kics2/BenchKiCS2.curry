@@ -21,7 +21,8 @@ numberOfRuns = 1
 
 -- The KiCS2 systems to be benchmarked:
 kics2Systems = [KiCS2 "0.2.3", KiCS2 "0.2.4",
-                KiCS2 "0.3.0", KiCS2 "0.3.1", KiCS2 "0.3.3", KiCS2 "0.4.0",
+                KiCS2 "0.3.0", KiCS2 "0.3.3", KiCS2 "0.4.0",
+                KiCS2 "ghc-8.0.1", KiCS2 "no-strictness",
                 KiCS2 ""]
 
 -- Directory containing the benchmark programs:
@@ -68,7 +69,7 @@ binDirOfSystem MCC             = "/opt/mcc/bin"
 binDirOfSystem (KiCS2 version) = "/opt/kics2/kics2"++
                                  (if null version then "" else '-':version)++
                                  "/bin"
-binDirOfSystem (KiCS2Local _)  = "/net/medoc/home/mh/kics2_local/bin"
+binDirOfSystem (KiCS2Local _)  = "/net/medoc/home/mh/kics2/bin"
 
 -- The main executable of the Curry system:
 binOfSystem cs =
@@ -91,9 +92,10 @@ compileCurry cs opts prog mainexp = system compilecmd >> done
    currybin = binOfSystem cs
 
    -- default options for PAKCS and KiCS2:
-   defopts = ":set -first :set -time " ++
-             case cs of KiCS2Local os -> unwords (map setKLOpt os)
-                        _             -> ""
+   defopts = unwords $
+     [":set -first",":set -time"] ++
+     case cs of KiCS2Local os -> ":set +local" : map setKLOpt os
+                _             -> []
 
 -- The command to execute a compiled Curry program:
 -- (for MCC: increase heap size and set non-interative option)
@@ -161,7 +163,7 @@ benchParProg currysystem progname =
   mapBench (map (\ (p,mbf) -> (p, maybe "-" showF mbf)))
     (runOn benchProg
            (map (":set "++)
-	        (["dfs","bfs"] ++ map ("parallel "++) ["2","4","8",""])))
+                (["dfs","bfs"] ++ map ("parallel "++) ["2","4","8",""])))
  where
   benchProg options = benchProgram currysystem elapsedTime (progname,options,"")
 

@@ -1,19 +1,53 @@
 Release Notes for KiCS2
 =======================
 
+Release notes for KiCS2 Version 0.6.0
+-------------------------------------
+
+Changes to version 0.5.1:
+
+  * Curry Package Manager added as tool `cpm`.
+  * Various tools (e.g., addtypes, currybrowser, currydoc, erd2curry,
+    spicey, verify, xmldata) have been removed from the distribution
+    since they are not necessary for the basic use of KiCS2 and they can
+    easily be installed (by a one-line command) locally via `cpm`.
+    Instructions how to install these tools are included
+    in the KiCS2 manual.
+  * Some libraries removed since they are available as packages
+    which can easily be installed via `cpm`:
+
+      - `CategorizedHtmlList` (now in package `html`)
+      - `CurryStringClassifier` (now in package `addtypes`)
+      - `FlatCurry.Annotated.*` (now in package `flatcurry-annotated`)
+      - `HtmlParser` (now in package `html`)
+      - `JavaScript` (now in package `javascript`)
+      - `Mail` (now in package `mail`)
+      - `Markdown` (now in package `markdown`)
+      - `Prolog` (now in package `prolog`)
+      - `Rewriting.*` (now in package `rewriting`)
+      - `WUIjs` (now in package `wui`)
+
 Release notes for KiCS2 Version 0.5.1
 -------------------------------------
 
 Changes to version 0.5.0:
 
+  * Makefiles changed so that parallel build (make -j) is possible.
+  * Option `local` added to switch to local compilation mode (for
+    locally installed systems). This replaces the old setting in the
+    Makefile for global/local installations.
   * Library `Database.ERD...` added (formerly part of ER currytools).
+  * Library `IOExts` uses system commands
+    `lockfile-create` and `lockfile-remove` instead of `lockfile`
+    for internal file synchronization in order to remove dependency
+    on package `procmail`.
   * Library `Nat` for Peano numbers added.
   * Libraries `Rewriting.*` for term rewriting in Curry extended
     to deal with rewriting strategies, narrowing strategies,
     critical pairs, definitional trees.
   * Library `Sort`: ...Sort operations renamed to ...SortBy and
     ...Sort operations with standard ordering added.
-  * Library `State` implementation the state monad added.
+  * Library `State` with an implementation of the state monad added.
   * Library `Test.EasyCheck` split into two modules to have less
     import dependencies when putting properties into a module.
   * Library `Test.Prop` added as a clone of `Test.EasyCheck` which defines
@@ -28,7 +62,16 @@ Changes to version 0.5.0:
   * New partial evaluator (command "peval") added to `currytools`.
   * New tool Curry2Verify (to translate Curry programs into Agda programs)
     added to `currytools`.
-  * Names of tool executables changed to `kics2 toolname`.
+  * Names of tool executables changed to `kics2 toolname` or `curry toolname`.
+  * Name of Curry parser `cymake` changed to `curry frontend`.
+  * Tool `curry analysis` (CASS): option `--all` added.
+  * Tool `curry analysis` (CASS): analysis `Functional` added and
+    analysis `Deterministic` modified so that it considers encapsulated search.
+  * Tool `curry analysis` (CASS): simple termination analysis `Terminating`
+    added.
+  * Tool `curry analysis` (CASS): analysis `TypesInValues` added.
+  * Tool `curry check` supports also testing with float arguments.
+  * Run-time parameters passed to KiCS2 must be separated by `--`.
 
 
 Release notes for KiCS2 Version 0.5.0

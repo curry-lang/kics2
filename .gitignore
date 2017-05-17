@@ -36,6 +36,7 @@ lib
 runtime/dist
 runtime/kics2-runtime.cabal
 docs/src/version.tex
+docs/src/tooldocs/casc/curry-style-guide.html
 cabal-dev/
 pkg/
 

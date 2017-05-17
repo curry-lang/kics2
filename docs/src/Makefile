@@ -6,11 +6,21 @@ HTMLFILES = $(DOCDIR)/markdown_syntax.html $(DOCDIR)/INSTALL.html \
 
 MANUAL = $(DOCDIR)/Manual.pdf
 
+# Executable of CurryDoc:
+CURRYDOC := $(shell which curry-doc)
+
+# Executable of the markdown translator:
+MD2PDF := $(shell which md2pdf)
+
 .PHONY: pdf
 pdf : manual.pdf
 
 .PHONY: install
-install: $(HTMLFILES) $(MANUAL)
+install: $(HTMLFILES)
+	@if [ -x "$(CURRYDOC)" ] ; then \
+	  $(MAKE) $(MANUAL) ; else \
+	  echo "'curry-doc' not installed, skipping manual generation." ; \
+	fi
 
 .PHONY: clean
 clean:
@@ -44,26 +54,26 @@ syntax.tex: syntax.sty
 
 # format markdown syntax description as LaTeX
 markdown_syntax.tex: markdown_syntax.txt
-	$(REPL) :add Markdown :eval 'readFile "$<" >>= writeFile "$@" . markdownText2LaTeX' :q
+	$(MD2PDF) --include --tex -o "$@" "$<"
 
 # format markdown syntax description as HTML page
 $(DOCDIR)/markdown_syntax.html: markdown_syntax.txt
-	$(REPL) :add Markdown :eval 'readFile "$<" >>= writeFile "$@" . markdownText2CompleteHTML "Markdown Syntax"' :q
+	$(MD2PDF) -t "Markdown Syntax" --html -o "$@" "$<"
 
 # format installation description as HTML page
 $(DOCDIR)/INSTALL.html: $(ROOT)/INSTALL.txt
-	$(REPL) :add Markdown :eval 'readFile "$<" >>= writeFile "$@" . markdownText2CompleteHTML "KiCS2 Installation"' :q
+	$(MD2PDF) -t "KiCS2 Installation" --html -o "$@" "$<"
 
 # format repository installation description as HTML page
 $(DOCDIR)/GITINSTALL.html: $(ROOT)/GITINSTALL.txt
-	$(REPL) :add Markdown :eval 'readFile "$<" >>= writeFile "$@" . markdownText2CompleteHTML "KiCS2 Repository"' :q
+	$(MD2PDF) -t "KiCS2 Repository" --html -o "$@" "$<"
 
 # format release notes as HTML page
 $(DOCDIR)/RELNOTES.html: $(ROOT)/RELNOTES.txt
-	$(REPL) :add Markdown :eval 'readFile "$<" >>= writeFile "$@" . markdownText2CompleteHTML "KiCS2 Release Notes"' :q
+	$(MD2PDF) -t "KiCS2 Release Notes" --html -o "$@" "$<"
 
 # format Curry style guide as HTML page
-$(DOCDIR)/CurryStyleGuide.html: $(ROOT)/currytools/casc/Docs/curry-style-guide.md
-	cd $(ROOT)/currytools/casc/Docs && $(MAKE)
-	@if [ -f "../../currytools/casc/Docs/curry-style-guide.html" ] ; then cp ../../currytools/casc/Docs/curry-style-guide.html $@ ; fi
+$(DOCDIR)/CurryStyleGuide.html: tooldocs/casc/curry-style-guide.md
+	cd tooldocs/casc && $(MAKE)
+	@if [ -f "tooldocs/casc/curry-style-guide.html" ] ; then cp tooldocs/casc/curry-style-guide.html $@ ; fi
 

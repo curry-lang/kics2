@@ -5,7 +5,7 @@ in particular, KiCS2:
 
 Generate and show the paper by
 
-> ../execpaper -f bench_kics2.tex
+> exec-benchmarkpaper -f bench_kics2.tex
 
 Notes:
 
