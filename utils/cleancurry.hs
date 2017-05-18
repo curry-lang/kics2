@@ -138,7 +138,7 @@ srcExts :: [String]
 srcExts = [".curry", ".lcurry"]
 
 cyExts :: [String]
-cyExts = ["fcy", "fint", "acy", "uacy", "icurry"]
+cyExts = ["fcy", "tfcy", "fint", "acy", "uacy", "icurry"]
 
 hasNoPath :: String -> Bool
 hasNoPath = (== ".") . takeDirectory
