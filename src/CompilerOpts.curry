@@ -67,6 +67,7 @@ data Verbosity
   | VerbStatus   -- show own compilation status
   | VerbAnalysis -- additionally show analysis infos
   | VerbDetails  -- additionally show current transformation for each module
+  deriving (Eq, Ord)
 
 --- Description and flag of verbosities
 verbosities :: [(Verbosity, String, String)]
@@ -82,6 +83,7 @@ data OptimLevel
   = OptimNone         -- no optimization
   | OptimHigherOrder  -- higher-order optimization
   | OptimStrictSupply -- strict evaluation of supplies
+  deriving (Eq, Ord)
 
 --- Description and flag of optimization levels
 optimizations :: [(OptimLevel, String, String)]
@@ -95,6 +97,7 @@ data Extension
   = AnonFreeVars       -- anonymous free variables
   | FunctionalPatterns -- functional patterns
   | NoImplicitPrelude  -- no implicit import of the prelude
+  deriving Eq
 
 --- Description and flag of language extensions
 extensions :: [(Extension, String, String)]
@@ -109,8 +112,7 @@ extensions =
 
 --- Dump formats of the compiler
 data DumpFormat
-  = DumpFlat        -- dump flat curry
-  | DumpTypedFlat   -- dump typed flat curry
+  = DumpTypedFlat   -- dump typed flat curry
   | DumpExtImports  -- dump typed flat curry with extended import list
   | DumpLifted      -- dump flat curry after case lifting
   | DumpEliminated  -- dump flat curry after cond elimination
@@ -119,12 +121,12 @@ data DumpFormat
   | DumpFunDecls    -- dump transformed function declarations
   | DumpTypeDecls   -- dump transformed type declarations
   | DumpTranslated  -- dump abstract Haskell
+  deriving Eq
 
 --- Description and flag of dump levels
 dumpLevel :: [(DumpFormat, String, String)]
 dumpLevel =
-  [ (DumpFlat      , "dump-flat"      , "FlatCurry"                     )
-  , (DumpTypedFlat , "dump-typed"     , "result of type inference"      )
+  [ (DumpTypedFlat , "dump-typed"     , "typed FlatCurry"               )
   , (DumpExtImports, "dump-imports"   , "result of completing imports"  )
   , (DumpLifted    , "dump-lifted"    , "result of case lifting"        )
   , (DumpEliminated, "dump-condelim"  , "result of cond elimination"    )
@@ -247,10 +249,10 @@ dumpDescriptions =
   toDescr (flag, name, desc) = (name , "dump " ++ desc, set flag)
   set f opts = opts { optDump = addFlag f (optDump opts) }
 
-addFlag :: a -> [a] -> [a]
+addFlag :: Eq a => a -> [a] -> [a]
 addFlag o opts = nub $ o : opts
 
-removeFlag :: a -> [a] -> [a]
+removeFlag :: Eq a => a -> [a] -> [a]
 removeFlag o opts = filter (/= o) opts
 
 -- -----------------------------------------------------------------------------

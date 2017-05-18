@@ -20,8 +20,8 @@
 
 module LiftCase (isCaseAuxFuncName, liftCases) where
 
-import FlatCurry.Annotated.Types
-import FlatCurry.Annotated.Goodies
+import AnnotatedFlatCurry
+import AnnotatedFlatCurryGoodies
 import List                      (isPrefixOf, partition, delete, nub, sortBy)
 import FiniteMap
 

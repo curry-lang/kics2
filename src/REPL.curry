@@ -33,7 +33,7 @@ import GhciComm             (stopGhciComm)
 import qualified Installation as Inst
 import Names               (funcInfoFile, moduleNameToPath)
 import RCFile
-import Utils               (showMonoTypeExpr, notNull, strip)
+import Utils               (showMonoQualTypeExpr, notNull, strip)
 
 import Linker
 
@@ -42,6 +42,7 @@ data GoalCompile
   = GoalError                             -- error occurred
   | GoalWithoutBindings CurryProg         -- goal does not contain free vars
   | GoalWithBindings CurryProg Int String -- number of vars / new goal
+ deriving Eq
 
 --- Show an error message
 writeErrorMsg :: String -> IO ()
@@ -324,8 +325,8 @@ showTypeOfGoal :: ReplState -> String -> IO Bool
 showTypeOfGoal rst goal = do
   mbProg <- getAcyOfExpr rst goal
   maybe (return False)
-        (\ (CurryProg _ _ _ [CFunc _ _ _ ty _] _) -> do
-          putStrLn $ goal ++ " :: " ++ showMonoTypeExpr False ty
+        (\ (CurryProg _ _ _ _ _ _ [CFunc _ _ _ qty _] _) -> do
+          putStrLn $ goal ++ " :: " ++ showMonoQualTypeExpr False qty
           return True)
         mbProg
 
@@ -335,7 +336,7 @@ getModuleOfFunction rst funname = do
   mbprog <- getAcyOfExpr rst $
     if isAlpha (head funname) then funname else '(' : funname ++ ")"
   return $ maybe ""
-                 (\ (CurryProg _ _ _ [CFunc _ _ _ _ mainrules] _) ->
+                 (\ (CurryProg _ _ _ _  _ _ [CFunc _ _ _ _ mainrules] _) ->
                     modOfMain mainrules)
                  mbprog
  where modOfMain r = case r of
@@ -387,7 +388,7 @@ insertFreeVarsInMainGoal :: ReplState -> String -> Maybe CurryProg
                          -> IO GoalCompile
 insertFreeVarsInMainGoal _   _    Nothing     = return GoalError
 insertFreeVarsInMainGoal rst goal (Just prog) = case prog of
-  CurryProg _ _ _ [mfunc@(CFunc _ _ _ ty _)] _ -> do
+  CurryProg _ _ _ _ _ _ [mfunc@(CFunc _ _ _ (CQualType _ ty) _)] _ -> do
     let freevars           = freeVarsInFuncRule mfunc
         (exp, whereclause) = breakWhereFreeClause goal
     if (safeExec rst) && isIOType ty
@@ -453,14 +454,15 @@ insertFreeVarsInMainGoal rst goal (Just prog) = case prog of
 --- The result is False if the main goal contains some error.
 makeMainGoalMonomorphic :: ReplState -> CurryProg -> String -> IO Bool
 makeMainGoalMonomorphic rst prog goal = case prog of
-  CurryProg _ _ _ [(CFunc _ _ _ ty _)] _
+  CurryProg _ _ _ _ _ _ [(CFunc _ _ _ qty@(CQualType _ ty) _)] _
     | isFunctionalType ty
     -> writeErrorMsg "expression is of functional type" >> return False
     | isPolyType ty -> do
-      writeMainGoalFile rst (modsOfType ty) (Just $ showMonoTypeExpr True ty)
+      -- TODO: Consider modules occuring in the context of the qualified type
+      writeMainGoalFile rst (modsOfType ty) (Just $ showMonoQualTypeExpr True qty)
                             goal
       writeVerboseInfo rst 2 $
-        "Type of main expression \"" ++ showMonoTypeExpr False ty
+        "Type of main expression \"" ++ showMonoQualTypeExpr False qty
         ++ "\" made monomorphic"
       writeVerboseInfo rst 1
         "Type variables of main expression replaced by \"()\""

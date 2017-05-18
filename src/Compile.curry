@@ -14,9 +14,10 @@ import Distribution
 import FilePath          (FilePath, (</>), dropExtension, normalise)
 import FiniteMap
 import FlatCurry.Types
-import FlatCurry.Files   (flatCurryFileName)
 import FlatCurry.Goodies (updQNamesInProg)
-import FlatCurry.Annotated.Goodies (unAnnProg)
+import AnnotatedFlatCurry
+import AnnotatedFlatCurryFiles   (typedFlatCurryFileName)
+import AnnotatedFlatCurryGoodies (unAnnProg)
 import ReadShowTerm      (readQTermFile)
 import System            (getArgs)
 
@@ -34,7 +35,6 @@ import LiftCase                  (liftCases)
 import EliminateCond             (eliminateCond)
 import DefaultPolymorphic        (defaultPolymorphic)
 import MissingImports            (fixMissingImports)
-import FlatCurry.Annotated.TypeInference (inferProgFromProgEnv)
 import Message                   (putErrLn, showStatus, showDetail)
 import ModuleDeps                (ModuleIdent, Source, deps)
 import Names
@@ -59,7 +59,7 @@ main = do
 --- if necessary.
 build :: Options -> String -> IO ()
 build opts mn = do
-  mbMn <- locateCurryFile opts mn
+  mbMn <- locateCurryFile mn
   case mbMn of
     Nothing -> putErrLn $ "Could not find module " ++ mn
     Just f -> do
@@ -74,29 +74,29 @@ build opts mn = do
 --- returns the actual file path
 --- @param mn - the (relative) path to the Curry module with or without extension
 --- @return `Just path` if the module was found, `Nothing` if not
-locateCurryFile :: Options -> String -> IO (Maybe FilePath)
-locateCurryFile opts mn = do
+locateCurryFile :: String -> IO (Maybe FilePath)
+locateCurryFile mn = do
   exists <- doesFileExist mn
   if exists
     then return (Just mn)
     else let modname = stripCurrySuffix mn
-             fcyname = flatCurryFileName modname
-          in lookupModuleSource (optImportPaths opts) modname >>=
+             tfcyname = typedFlatCurryFileName modname
+          in lookupModuleSourceInLoadPath modname >>=
              maybe (-- try to find a FlatCurry file without source
                     getLoadPathForModule modname >>=
-                    lookupFileInPath fcyname [""] )
+                    lookupFileInPath tfcyname [""] )
                    (\ (_,fn) -> return (Just fn))
 
 makeModule :: [(ModuleIdent, Source)] -> State -> ((ModuleIdent, Source), Int)
            -> IO State
-makeModule mods state mod@((mid, (fn, fcy)), _)
-  | optForce opts = compileModule progs modCnt state mod
+makeModule mods state mod@((mid, (fn, tfcy)), _)
+  | optForce opts = compileModule modCnt state mod
   | otherwise     = do
                     depFiles <- getDepFiles
                     smake (destFile (optTraceFailure opts)
                                     (optOutputSubdir opts) mid fn)
                           depFiles
-                          (compileModule progs modCnt state mod)
+                          (compileModule modCnt state mod)
                           (loadAnalysis modCnt state mod)
   where
     getDepFiles = do
@@ -108,9 +108,8 @@ makeModule mods state mod@((mid, (fn, fcy)), _)
                                $ fst $ fromJust $ lookup i mods) imps
       return $ ownModule ++ imported
     extFile = externalFile fn
-    (Prog _ imps _ _ _) = fcy
+    (AProg _ imps _ _ _) = tfcy
     modCnt = length mods
-    progs = [ (m, p) | (m, (_, p)) <- mods]
     opts = compOptions state
 
 writeAnalysis :: Options -> ModuleIdent -> FilePath -> AnalysisResult -> IO ()
@@ -139,16 +138,11 @@ loadAnalysis total state ((mid, (fn, _)), current) = do
       ndaFile = analysisFile (optOutputSubdir opts) mid fn
       opts = compOptions state
 
-compileModule :: [(ModuleIdent, Prog)] -> Int -> State
-              -> ((ModuleIdent, Source), Int) -> IO State
-compileModule progs total state ((mid, (fn, fcy)), current) = do
+compileModule :: Int -> State -> ((ModuleIdent, Source), Int) -> IO State
+compileModule total state ((mid, (fn, tfcy)), current) = do
   showStatus opts $ compMessage (current, total) "Compiling" mid (fn, dest)
 
-  let fcy' = filterPrelude opts fcy
-  dump DumpFlat opts fcyName (show fcy')
-
-  showDetail opts "Inferring types"
-  let afcy = either error id (inferProgFromProgEnv progs fcy)
+  let afcy = filterPrelude opts tfcy
   dump DumpTypedFlat opts typedName (show afcy)
 
   showDetail opts "Lifting case expressions"
@@ -202,12 +196,11 @@ compileModule progs total state ((mid, (fn, fcy)), current) = do
   return state'
 
     where
-    fcyName        = fcyFile $ withBaseName (++ "Dump"      ) mid
-    typedName      = fcyFile $ withBaseName (++ "Typed"     ) mid
-    extImportsName = fcyFile $ withBaseName (++ "ExtImports") mid
-    liftedName     = fcyFile $ withBaseName (++ "Lifted"    ) mid
-    elimName       = fcyFile $ withBaseName (++ "ElimCond"  ) mid
-    defaultedName  = fcyFile $ withBaseName (++ "Defaulted" ) mid
+    typedName      = tfcyFile $ withBaseName (++ "Typed"     ) mid
+    extImportsName = tfcyFile $ withBaseName (++ "ExtImports") mid
+    liftedName     = tfcyFile $ withBaseName (++ "Lifted"    ) mid
+    elimName       = tfcyFile $ withBaseName (++ "ElimCond"  ) mid
+    defaultedName  = tfcyFile $ withBaseName (++ "Defaulted" ) mid
     renamedName    = fcyFile $ withBaseName (++ "Renamed"   ) mid
     funDeclName    = ahsFile $ withBaseName (++ "FunDecls"  ) mid
     typeDeclName   = ahsFile $ withBaseName (++ "TypeDecls" ) mid
@@ -215,7 +208,8 @@ compileModule progs total state ((mid, (fn, fcy)), current) = do
     dest           = destFile (optTraceFailure opts) (optOutputSubdir opts) mid fn
     funcInfo       = funcInfoFile (optOutputSubdir opts) mid fn
     opts           = compOptions state
-    fcyFile f      = withExtension (const ".fcy") f
+    fcyFile f     = withExtension (const ".fcy") f
+    tfcyFile f     = withExtension (const ".tfcy") f
     ahsFile f      = withExtension (const ".ahs") f
 
 -- Extract some basic information (deterministic, IO) about all functions
@@ -226,16 +220,19 @@ extractFuncInfos funs =
   isIO AH.Untyped      = False
   isIO (AH.CType _ ty) = withIOResult ty
 
-  withIOResult (AH.TVar        _) = False
-  withIOResult (AH.FuncType _ ty) = withIOResult ty
-  withIOResult (AH.TCons    tc _) = tc == (curryPrelude, "C_IO")
+  withIOResult (AH.TVar           _) = False
+  withIOResult (AH.FuncType    _ ty) = withIOResult ty
+  withIOResult (AH.TCons       tc _) = tc == (curryPrelude, "C_IO")
+  withIOResult (AH.ForallType _ _ _) = False
 
 -- Patch Prelude in order to add some exports for predefined items
 patchPreludeExports :: AH.Prog -> AH.Prog
 patchPreludeExports p@(AH.Prog m imps td fd od)
-  | m == curryPrelude = AH.Prog m imps (curryDecl:td) (toCurryString:fd) od
+  | m == curryPrelude = AH.Prog m imps (applyDecl:curryDecl:td)
+                                (toCurryString:fd) od
   | otherwise         = p
  where
+  applyDecl     = AH.Type (curryPrelude, "C_Apply") AH.Public [] []
   curryDecl     = AH.Type (curryPrelude, "Curry") AH.Public [] []
   toCurryString = AH.Func "" (curryPrelude, "toCurryString") 1 AH.Public
                           AH.Untyped AH.External
@@ -247,9 +244,9 @@ compMessage (curNum, maxNum) what m (src, dst)
   ++ " ( " ++ normalise src ++ ", " ++ normalise dst ++ " )"
   where sMaxNum  = show maxNum
 
-filterPrelude :: Options -> Prog -> Prog
-filterPrelude opts p@(Prog m imps td fd od)
-  | noPrelude = Prog m (filter (/= prelude) imps) td fd od
+filterPrelude :: Options -> AProg a -> AProg a
+filterPrelude opts p@(AProg m imps td fd od)
+  | noPrelude = AProg m (filter (/= prelude) imps) td fd od
   | otherwise = p
   where noPrelude = NoImplicitPrelude `elem` optExtensions opts
 
@@ -269,6 +266,7 @@ integrateExternals opts (AH.Prog m is td fd od) fn = do
  where
   defaultPragmas = [ "{-# LANGUAGE MagicHash #-}"
                    , "{-# LANGUAGE ScopedTypeVariables #-}"
+                   , "{-# LANGUAGE Rank2Types #-}"
                    , "{-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}"
                    ]
   ppOpts = AHP.defaultOptions { AHP.traceFailure  = optTraceFailure opts

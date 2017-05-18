@@ -77,7 +77,7 @@ getTypeMap ts = listToFM (<)
 
 type Analysis t a = Map a -> (t, [QName]) -> (QName, a)
 
-fullIteration :: Analysis t a -> [(t, [QName])] -> Map a -> Map a -> Map a
+fullIteration :: Eq a => Analysis t a -> [(t, [QName])] -> Map a -> Map a -> Map a
 fullIteration analyze calls env start =
   let after = listToFM (<) $ map (analyze (env `plusFM` start)) calls
   in if (start `eqFM` after)
@@ -110,15 +110,15 @@ analyseND p importedInfo =
 --- Analysis function for non-determinism analysis.
 ndFunc:: Analysis FuncDecl NDClass
 ndFunc ndInfo (f, called)
-  | isRuleExternal rule      = default
+  | isRuleExternal rule      = dflt
   | isNDExpr (ruleBody rule) = (name, ND)
   | callsND                  = (name, ND)
-  | otherwise                = default
+  | otherwise                = dflt
   where
     name    = funcName f
     rule    = funcRule f
     callsND = any (== Just ND) $ map (lookupFM ndInfo) called
-    default = (name, fromJust $ lookupFM ndInfo name)
+    dflt    = (name, fromJust $ lookupFM ndInfo name)
 
 --- Check whether an expression is non-deterministic, i.e.,
 --- whether it uses an OR (overlapping rule) or FREE (free variables).
@@ -204,6 +204,7 @@ classifyHOType (FuncType _ _) = TypeHO
 classifyHOType (TCons qn tys)
   | qn == ioType = maximumTypeHOClass (TypeIO : map classifyHOType tys)
   | otherwise    = maximumTypeHOClass (map classifyHOType tys)
+classifyHOType (ForallType _ t) = classifyHOType t
 
 usedTypes :: TypeDecl -> [QName]
 usedTypes (Type    _ _ _ cs) = toList $ unionMap  typeCons
@@ -214,6 +215,7 @@ typeCons :: TypeExpr -> SetRBT QName
 typeCons (TVar       _) = empty
 typeCons (FuncType a b) = typeCons a `unionRBT` typeCons b
 typeCons (TCons qn tys) = qn `insertRBT` unionMap typeCons tys
+typeCons (ForallType _ ty) = typeCons ty
 
 -- -----------------------------------------------------------------------------
 -- (first/higher)-order analysis of data constructors
@@ -236,8 +238,8 @@ externalCons :: [(QName, ConsHOClass)]
 externalCons = [(successType, ConsFO)]
 
 consOrder :: ConsDecl -> (QName, ConsHOClass)
-consOrder (Cons qn _ _ tys) = (qn, class)
-  where class = typeToConsHOClass $ maximumTypeHOClass (map classifyHOType tys)
+consOrder (Cons qn _ _ tys) = (qn, cls)
+  where cls = typeToConsHOClass $ maximumTypeHOClass (map classifyHOType tys)
 
 -- -----------------------------------------------------------------------------
 -- (first/higher)-order analysis of functions
@@ -278,13 +280,15 @@ isHOType ioAsHo typeInfo ty = case ty of
   TCons    qn tys -> maximumFuncHOClass $
                         typeToFuncHOClass ioAsHo (getHOResult qn typeInfo) :
                           map (isHOType ioAsHo typeInfo) tys
+  ForallType _ t  -> isHOType ioAsHo typeInfo t
 
 --- splits a function type into the type expressions
 --- of the arguments and the result.
 splitFuncType :: TypeExpr -> [TypeExpr]
-splitFuncType t@(TVar        _) = [t]
-splitFuncType (FuncType  at rt) = at : splitFuncType rt
-splitFuncType t@(TCons     _ _) = [t]
+splitFuncType t@(TVar         _) = [t]
+splitFuncType (FuncType   at rt) = at : splitFuncType rt
+splitFuncType t@(TCons      _ _) = [t]
+splitFuncType t@(ForallType _ _) = [t]
 
 -- -----------------------------------------------------------------------------
 -- Visibility analysis
@@ -340,10 +344,10 @@ ioType = renameQName (prelude, "IO")
 
 -- Small interface to Sets
 
-empty :: SetRBT a
+empty :: Ord a => SetRBT a
 empty = emptySetRBT (<=)
 
-unionMap :: (a -> SetRBT b) -> [a] -> SetRBT b
+unionMap :: Ord b => (a -> SetRBT b) -> [a] -> SetRBT b
 unionMap f = foldr unionRBT empty . map f
 
 toList :: SetRBT a -> [a]

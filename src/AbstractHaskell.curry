@@ -28,6 +28,7 @@ module AbstractHaskell where
 ---       imports: list of modules names that are imported,
 ---       typedecls, opdecls, functions: see below
 data Prog = Prog String [String] [TypeDecl] [FuncDecl] [OpDecl]
+  deriving Show
 
 --- The data type for representing qualified names.
 --- In AbstractHaskell all names are qualified to avoid name clashes.
@@ -38,6 +39,7 @@ type QName = (String, String)
 --- Data type to specify the visibility of various entities.
 data Visibility = Public    -- exported entity
                 | Private   -- private entity
+  deriving (Eq, Show)
 
 --- The data type for representing type variables.
 --- They are represented by (i,n) where i is a type variable index
@@ -68,13 +70,16 @@ data TypeDecl
   = Type     QName Visibility [TVarIName] [ConsDecl]
   | TypeSyn  QName Visibility [TVarIName] TypeExpr
   | Instance QName TypeExpr [Context] [(QName, Rule)]
+  deriving (Show)
 
 --- A single type context is class name applied to type variables.
-data Context = Context QName [TVarIName]
+data Context = Context QName [TypeExpr]
+  deriving (Eq, Show)
 
 --- A constructor declaration consists of the name and arity of the
 --- constructor and a list of the argument types of the constructor.
 data ConsDecl = Cons QName Int Visibility [TypeExpr]
+  deriving Show
 
 
 --- Data type for type expressions.
@@ -85,26 +90,31 @@ data ConsDecl = Cons QName Int Visibility [TypeExpr]
 ---       "Int", "Float", "Bool", "Char", "IO", "Success",
 ---       "()" (unit type), "(,...,)" (tuple types), "[]" (list type)
 data TypeExpr
-  = TVar TVarIName              -- type variable
-  | FuncType TypeExpr TypeExpr  -- function type t1->t2
-  | TCons QName [TypeExpr]      -- type constructor application
-                                -- (TCons (module,name) arguments)
+  = TVar TVarIName                            -- type variable
+  | FuncType TypeExpr TypeExpr                -- function type t1->t2
+  | TCons QName [TypeExpr]                    -- type constructor application
+                                              -- (TCons (module,name) arguments)
+  | ForallType [TVarIName] [Context] TypeExpr -- explicitly quantified type expression
+  deriving (Eq, Show)
 
 --- Data type to represent the type signature of a defined function.
 --- The type can be missing or a type with an optional context.
 data TypeSig
   = Untyped
   | CType [Context] TypeExpr
+  deriving Show
 
 --- Data type for operator declarations.
 --- An operator declaration "fix p n" in Curry corresponds to the
 --- AbstractHaskell term (Op n fix p).
 data OpDecl = Op QName Fixity Int
+  deriving Show
 
 data Fixity
   = InfixOp   -- non-associative infix operator
   | InfixlOp  -- left-associative infix operator
   | InfixrOp  -- right-associative infix operator
+  deriving Show
 
 --- Data types for representing object variables.
 --- Object variables occurring in expressions are represented by (Var i)
@@ -133,27 +143,32 @@ type VarIName = (Int, String)
 --- by pretty printers that generate a readable Curry program
 --- containing documentation comments.
 data FuncDecl = Func String QName Int Visibility TypeSig Rules
+  deriving Show
 
 --- Rules are either a list of single rules or no rule at all
 --- if then function is defined externally.
 data Rules
   = Rules [Rule]
   | External
+  deriving Show
 
 --- The most general form of a rule. It consists of a list of patterns
 --- (left-hand side), a list of guards ("success" if not present in the
 --- source text) with their corresponding right-hand sides, and
 --- a list of local declarations.
 data Rule = Rule [Pattern] Rhs [LocalDecl]
+  deriving Show
 
 data Rhs
   = SimpleRhs  Expr
   | GuardedRhs [(Expr, Expr)]
+  deriving Show
 
 --- Data type for representing local (let/where) declarations
 data LocalDecl
   = LocalFunc FuncDecl                 -- local function declaration
   | LocalPat  Pattern Expr [LocalDecl] -- local pattern declaration
+  deriving Show
 
 --- Data type for representing Haskell expressions.
 data Expr
@@ -171,6 +186,7 @@ data Expr
   | IfThenElse Expr Expr Expr    -- if-then-else expression
   | Tuple      [Expr]
   | List       [Expr]
+  deriving Show
 
 --- Data type for representing statements in do expressions and
 --- list comprehensions.
@@ -178,6 +194,7 @@ data Statement
   = SExpr Expr        -- an expression (I/O action or boolean)
   | SPat Pattern Expr -- a pattern definition
   | SLet [LocalDecl]  -- a local let declaration
+  deriving Show
 
 --- Data type for representing pattern expressions.
 data Pattern
@@ -188,9 +205,11 @@ data Pattern
   | PAs VarIName Pattern       -- as-pattern (extended Curry)
   | PTuple [Pattern]
   | PList [Pattern]
+  deriving Show
 
 --- Data type for representing branches in case expressions.
 data BranchExpr = Branch Pattern Expr
+  deriving Show
 
 --- Data type for representing literals occurring in an expression.
 --- It is either an integer, a float, a character, or a string constant.
@@ -199,3 +218,4 @@ data Literal
   | Floatc  Float
   | Charc   Char
   | Stringc String
+  deriving Show

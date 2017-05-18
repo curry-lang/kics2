@@ -7,7 +7,7 @@ module AbstractHaskellGoodies where
 
 import AbstractHaskell
 import Char            (toLower)
-import List            (union)
+import List            ((\\), union)
 
 infixr 9 ~>
 
@@ -73,9 +73,10 @@ dateType :: TypeExpr
 dateType = baseType ("Time", "CalendarTime")
 
 tyVarsOf :: TypeExpr -> [TVarIName]
-tyVarsOf (TVar        tv) = [tv]
-tyVarsOf (FuncType t1 t2) = tyVarsOf t1 `union` tyVarsOf t2
-tyVarsOf (TCons    _ tys) = foldr union [] (map tyVarsOf tys)
+tyVarsOf (TVar             tv) = [tv]
+tyVarsOf (FuncType      t1 t2) = tyVarsOf t1 `union` tyVarsOf t2
+tyVarsOf (TCons         _ tys) = foldr union [] (map tyVarsOf tys)
+tyVarsOf (ForallType tvs _ ty) = tyVarsOf ty \\ tvs
 
 -- -----------------------------------------------------------------------------
 -- Goodies for function declarations
@@ -176,7 +177,7 @@ renameSymbolInTypeDecl ren tdecl = case tdecl of
                                          (renameSymbolInTypeExpr ren texp)
   Instance qf texp ctxt rules ->
     Instance (ren qf) (renameSymbolInTypeExpr ren texp)
-              (map (\ (Context qn tvars) -> Context (ren qn) tvars) ctxt)
+              (map (renameSymbolInContext ren) ctxt)
               (map renameSymbolInInstRule rules)
  where
   renameSymbolInInstRule (qf,rule) =
@@ -188,10 +189,12 @@ renameSymbolInConsDecl ren (Cons qf ar vis texps) =
 
 renameSymbolInTypeExpr :: (QName -> QName) -> TypeExpr -> TypeExpr
 renameSymbolInTypeExpr ren texp = case texp of
-  TCons qf texps   -> TCons (ren qf) (map (renameSymbolInTypeExpr ren) texps)
-  FuncType te1 te2 -> FuncType (renameSymbolInTypeExpr ren te1)
-                                 (renameSymbolInTypeExpr ren te2)
-  TVar v           -> TVar v
+  TCons qf texps      -> TCons (ren qf) (map (renameSymbolInTypeExpr ren) texps)
+  FuncType te1 te2    -> FuncType (renameSymbolInTypeExpr ren te1)
+                                  (renameSymbolInTypeExpr ren te2)
+  TVar v              -> TVar v
+  ForallType vs cx te -> ForallType vs (map (renameSymbolInContext ren) cx)
+                                       (renameSymbolInTypeExpr ren te)
 
 renameSymbolInExpr :: (QName -> QName) -> Expr -> Expr
 renameSymbolInExpr ren exp = case exp of
@@ -248,8 +251,11 @@ renameSymbolInLocal ren local = case local of
 renameSymbolInTypeSig :: (QName -> QName) -> TypeSig -> TypeSig
 renameSymbolInTypeSig _   Untyped       = Untyped
 renameSymbolInTypeSig ren (CType tc te) =
-  CType (map (\ (Context qn tvars) -> Context (ren qn) tvars) tc)
-        (renameSymbolInTypeExpr ren te)
+  CType (map (renameSymbolInContext ren) tc) (renameSymbolInTypeExpr ren te)
+
+renameSymbolInContext :: (QName -> QName) -> Context -> Context
+renameSymbolInContext ren (Context qn texps) =
+  Context (ren qn) (map (renameSymbolInTypeExpr ren) texps)
 
 renameSymbolInFunc :: (QName -> QName) -> FuncDecl -> FuncDecl
 renameSymbolInFunc ren (Func cmt qf ar vis ctype rules) =

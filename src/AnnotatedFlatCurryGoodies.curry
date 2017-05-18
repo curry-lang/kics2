@@ -16,9 +16,9 @@
 --- @category meta
 --------------------------------------------------------------------------------
 
-module FlatCurry.Annotated.Goodies where
+module AnnotatedFlatCurryGoodies where
 
-import FlatCurry.Annotated.Types
+import AnnotatedFlatCurry
 import qualified FlatCurry.Types as FC
 
 type Update a b = (b -> b) -> a -> a
@@ -277,44 +277,59 @@ tConsArgs texpr = case texpr of
   (TCons _ args) -> args
   _              -> error "AnnotatedFlatCurryGoodies.tConsArgs: no functional type"
 
- --- transform type expression
+--- transform type expression
 trTypeExpr :: (TVarIndex -> a) ->
               (QName -> [a] -> a) ->
-              (a -> a -> a) -> TypeExpr -> a
-trTypeExpr tvar _ _ (TVar n) = tvar n
-trTypeExpr tvar tcons functype (TCons name args)
-  = tcons name (map (trTypeExpr tvar tcons functype) args)
-trTypeExpr tvar tcons functype (FuncType from to) = functype (f from) (f to)
+              (a -> a -> a) ->
+              ([TVarIndex] -> a -> a) -> TypeExpr -> a
+trTypeExpr tvar _ _ _ (TVar n) = tvar n
+trTypeExpr tvar tcons functype foralltype (TCons name args)
+  = tcons name (map (trTypeExpr tvar tcons functype foralltype) args)
+trTypeExpr tvar tcons functype foralltype (FuncType from to)
+  = functype (f from) (f to)
  where
-  f = trTypeExpr tvar tcons functype
+  f = trTypeExpr tvar tcons functype foralltype
+trTypeExpr tvar tcons functype foralltype (ForallType ns t)
+  = foralltype ns (trTypeExpr tvar tcons functype foralltype t)
 
 -- Test Operations
 
 --- is type expression a type variable?
 isTVar :: TypeExpr -> Bool
-isTVar = trTypeExpr (\_ -> True) (\_ _ -> False) (\_ _ -> False)
+isTVar = trTypeExpr (\_ -> True) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False)
 
 --- is type declaration a constructed type?
 isTCons :: TypeExpr -> Bool
-isTCons = trTypeExpr (\_ -> False) (\_ _ -> True) (\_ _ -> False)
+isTCons
+  = trTypeExpr (\_ -> False) (\_ _ -> True) (\_ _ -> False) (\_ _ -> False)
 
 --- is type declaration a functional type?
 isFuncType :: TypeExpr -> Bool
-isFuncType = trTypeExpr (\_ -> False) (\_ _ -> False) (\_ _ -> True)
+isFuncType
+  = trTypeExpr (\_ -> False) (\_ _ -> False) (\_ _ -> True) (\_ _ -> False)
+
+--- is type declaration a forall type?
+isForallType :: TypeExpr -> Bool
+isForallType
+  = trTypeExpr (\_ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> True)
 
 -- Update Operations
 
 --- update all type variables
 updTVars :: (TVarIndex -> TypeExpr) -> TypeExpr -> TypeExpr
-updTVars tvar = trTypeExpr tvar TCons FuncType
+updTVars tvar = trTypeExpr tvar TCons FuncType ForallType
 
 --- update all type constructors
 updTCons :: (QName -> [TypeExpr] -> TypeExpr) -> TypeExpr -> TypeExpr
-updTCons tcons = trTypeExpr TVar tcons FuncType
+updTCons tcons = trTypeExpr TVar tcons FuncType ForallType
 
 --- update all functional types
 updFuncTypes :: (TypeExpr -> TypeExpr -> TypeExpr) -> TypeExpr -> TypeExpr
-updFuncTypes = trTypeExpr TVar TCons
+updFuncTypes functype = trTypeExpr TVar TCons functype ForallType
+
+--- update all forall types
+updForallTypes :: ([TVarIndex] -> TypeExpr -> TypeExpr) -> TypeExpr -> TypeExpr
+updForallTypes = trTypeExpr TVar TCons FuncType
 
 -- Auxiliary Functions
 
@@ -323,12 +338,14 @@ argTypes :: TypeExpr -> [TypeExpr]
 argTypes (TVar           _) = []
 argTypes (TCons        _ _) = []
 argTypes (FuncType dom ran) = dom : argTypes ran
+argTypes (ForallType _ _) = []
 
 --- get result type from (nested) functional type
 resultType :: TypeExpr -> TypeExpr
 resultType (TVar          n) = TVar n
 resultType (TCons name args) = TCons name args
 resultType (FuncType  _ ran) = resultType ran
+resultType (ForallType ns t) = ForallType ns t
 
 --- rename variables in type expression
 rnmAllVarsInTypeExpr :: (TVarIndex -> TVarIndex) -> TypeExpr -> TypeExpr

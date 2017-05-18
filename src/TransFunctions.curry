@@ -9,6 +9,7 @@ module TransFunctions ( State (..), defaultState, trProg, runIOES ) where
 
 import FiniteMap (lookupFM, plusFM, delListFromFM)
 import Function  (first)
+import List      (nub)
 
 import qualified AbstractHaskell        as AH
 import qualified AbstractHaskellGoodies as AHG
@@ -383,9 +384,71 @@ renameCons qn@(q, n) =
 -- -----------------------------------------------------------------------------
 
 toTypeSig :: AH.TypeExpr -> AH.TypeSig
-toTypeSig ty = AH.CType ctxt ty
-  where
-  ctxt = map (\tv -> AH.Context (curryPrelude, "Curry") [tv]) (AHG.tyVarsOf ty)
+toTypeSig ty = AH.CType (genContext [] ty) (toLocalTypeSig (AHG.tyVarsOf ty) ty)
+
+--- Insert Curry contexts for nested forall types in a type expression. The
+--- first parameter denotes the type variables that are currently in scope.
+toLocalTypeSig :: [AH.TVarIName] -> AH.TypeExpr -> AH.TypeExpr
+toLocalTypeSig _   (AH.TVar tv) = AH.TVar tv
+toLocalTypeSig tvs (AH.TCons qn tys) = AH.TCons qn $ map (toLocalTypeSig tvs) tys
+toLocalTypeSig tvs (AH.FuncType ty1 ty2) =
+  AH.FuncType (toLocalTypeSig tvs ty1) (toLocalTypeSig tvs ty2)
+toLocalTypeSig tvs (AH.ForallType tvs' cx ty) =
+  AH.ForallType tvs' (cx ++ genContext tvs ty) $
+    toLocalTypeSig (tvs ++ tvs') ty
+
+--- Generate context elements from gathered context type expressions
+genContext :: [AH.TVarIName] -> AH.TypeExpr -> [AH.Context]
+genContext tvs = map mkContext . gatherContextTypeExprs tvs
+
+--- Generate a context element
+mkContext :: AH.TypeExpr -> AH.Context
+mkContext ty = AH.Context (curryPrelude, "Curry") [ty]
+
+--- Gather those type expressions for which a Curry context has to be generated.
+--- In particular, these type expression are either type variables of simple
+--- kind that are not from outer scope (in that case, a Curry context would
+--- be generated in that scope) or type variable applications to an arbitrary
+--- type expression in which not all type variable are from outer scope
+--- (otherwise a Curry context would be generated in that scope). The first
+--- parameter denotes these type variables from outer scope.
+gatherContextTypeExprs :: [AH.TVarIName] -> AH.TypeExpr -> [AH.TypeExpr]
+gatherContextTypeExprs tvs ty = nub $ gatherContextTypeExprs' [] ty
+ where
+  gatherContextTypeExprs' acc ty'@(AH.TVar  tv)
+    | isHigherKinded tv ty || tv `elem` tvs = acc
+    | otherwise = ty' : acc
+  gatherContextTypeExprs' acc (AH.FuncType ty1 ty2)
+    = gatherContextTypeExprs' (gatherContextTypeExprs' acc ty1) ty2
+  gatherContextTypeExprs' acc ty'@(AH.TCons qn tys)
+    | qn == (curryPrelude, "C_Apply") && isTypeVar (head tys) &&
+      any (`notElem` tvs) (AHG.tyVarsOf ty')
+      = ty' : gatherContextTypeExprs' acc (head $ tail tys)
+    | otherwise = foldl gatherContextTypeExprs' acc tys
+  -- Only keep those type expressions that do not contain any variables that
+  -- are locally quantified within the forall type
+  gatherContextTypeExprs' acc (AH.ForallType tvs' _ ty')
+    = acc ++ (filter (all (`notElem` tvs') . AHG.tyVarsOf) $
+                gatherContextTypeExprs (tvs ++ AHG.tyVarsOf ty) ty')
+
+--- State whether a type expression is a type variable
+isTypeVar :: AH.TypeExpr -> Bool
+isTypeVar (AH.TVar _) = True
+isTypeVar (AH.FuncType _ _) = False
+isTypeVar (AH.TCons _ _) = False
+isTypeVar (AH.ForallType _ _ _) = False
+
+--- State whether a type variable is occuring with a higher kind than * in a
+--- type expression, where * is the kind of simple types
+isHigherKinded :: AH.TVarIName -> AH.TypeExpr -> Bool
+isHigherKinded _  (AH.TVar         _)      = False
+isHigherKinded tv (AH.FuncType ty1 ty2)    =
+  isHigherKinded tv ty1 || isHigherKinded tv ty2
+isHigherKinded tv (AH.ForallType tvs _ ty) =
+  tv `notElem` tvs && isHigherKinded tv ty
+isHigherKinded tv (AH.TCons qn tys)
+  | qn == (curryPrelude, "C_Apply") = AH.TVar tv == head tys
+  | otherwise = or (map (isHigherKinded tv) tys)
 
 trDetType :: Int -> TypeExpr -> M AH.TypeExpr
 trDetType = trTypeExpr detFuncType
@@ -419,9 +482,12 @@ trTypeExpr combFunc addArgs n t
 --- to combine the two type expressions of a functional type.
 trHOTypeExpr :: (AH.TypeExpr -> AH.TypeExpr -> AH.TypeExpr)
              -> TypeExpr -> AH.TypeExpr
-trHOTypeExpr _ (TVar         i) = AH.TVar (cvTVarIndex i)
-trHOTypeExpr f (FuncType t1 t2) = f (trHOTypeExpr f t1) (trHOTypeExpr f t2)
-trHOTypeExpr f (TCons    qn ts) = AH.TCons qn (map (trHOTypeExpr f) ts)
+trHOTypeExpr _ (TVar          i) = AH.TVar (cvTVarIndex i)
+trHOTypeExpr f (FuncType  t1 t2) = f (trHOTypeExpr f t1) (trHOTypeExpr f t2)
+trHOTypeExpr f (TCons     qn ts) = AH.TCons qn (map (trHOTypeExpr f) ts)
+trHOTypeExpr f (ForallType is t) =
+  let t' = trHOTypeExpr f t
+  in AH.ForallType (map cvTVarIndex is) (genContext [] t') t'
 
 cvTVarIndex :: TVarIndex -> AH.TVarIName
 cvTVarIndex i = (i, 't' : show i)

@@ -15,8 +15,8 @@ module MissingImports (fixMissingImports) where
 
 import SetRBT
 
-import FlatCurry.Annotated.Types
-import FlatCurry.Annotated.Goodies
+import AnnotatedFlatCurry
+import AnnotatedFlatCurryGoodies
 import State
 
 type ModuleName = String
@@ -44,6 +44,7 @@ vsTypeExpr :: TypeExpr -> MM ()
 vsTypeExpr (TVar           _) = returnS ()
 vsTypeExpr (FuncType ty1 ty2) = vsTypeExpr ty1 `bindS_` vsTypeExpr ty2
 vsTypeExpr (TCons (m, _) tys) = addModule m `bindS_` mapS_ vsTypeExpr tys
+vsTypeExpr (ForallType  _ ty) = vsTypeExpr ty
 
 vsRule :: ARule TypeExpr -> MM ()
 vsRule (ARule     _ _ e) = vsExpr e
@@ -59,5 +60,3 @@ vsExpr (AOr    _ e1 e2) = vsExpr e1 `bindS_` vsExpr e2
 vsExpr (ACase _ _ e bs) = vsExpr e `bindS_` mapS_ (vsExpr . branchExpr) bs
 -- Relevant part: Add modules of which types are used in 'ty' to set
 vsExpr (ATyped  _ e ty) = vsExpr e `bindS_` vsTypeExpr ty
-
-

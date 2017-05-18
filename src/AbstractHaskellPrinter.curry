@@ -160,7 +160,7 @@ ppContexts opts cs
   | otherwise = tupled (map (ppContext opts) cs) <+> doubleArrow
 
 ppContext :: Options -> Context -> Doc
-ppContext opts (Context qn tvs) = ppTypeExp opts (TCons qn (map TVar tvs))
+ppContext opts (Context qn ts) = ppTypeExp opts (TCons qn ts)
 
 --- pretty a top-level type expression
 ppTypeExp :: Options -> TypeExpr -> Doc
@@ -177,6 +177,8 @@ ppTypeExpr o p (TCons   qn tys)
   | otherwise                    = parensIf (p > 1 && not (null tys))
                                  $ fillSep
                                  $ ppQName o qn : map (ppTypeExpr o 2) tys
+ppTypeExpr o p (ForallType vs cx t) = parensIf (p > 0) $ text "forall"
+  <+> fillSep (map ppTypeVar vs) <+> dot <+> ppContexts o cx <+> ppTypeExp o t
 
 ppTypeVar :: TVarIName -> Doc
 ppTypeVar (_, name) = text name

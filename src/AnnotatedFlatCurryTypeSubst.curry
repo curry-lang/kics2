@@ -5,10 +5,10 @@
 --- @version September 2014
 --- @category meta
 --- ----------------------------------------------------------------------------
-module FlatCurry.Annotated.TypeSubst where
+module AnnotatedFlatCurryTypeSubst where
 
 import FiniteMap
-import FlatCurry.Annotated.Types
+import AnnotatedFlatCurry
 
 --- The (abstract) data type for substitutions on TypeExpr.
 type AFCSubst = FM TVarIndex TypeExpr
@@ -103,6 +103,7 @@ substPattern sub (ALPattern t    l) = ALPattern (subst sub t) l
 --- @param sub - the substitution to search in
 --- @return either the looked-up and converted type or the default type
 subst :: AFCSubst -> TypeExpr -> TypeExpr
-subst sub e@(TVar     n) = maybe e id (lookupAFCSubst sub n)
-subst sub (TCons  t tys) = TCons t (map (subst sub) tys)
-subst sub (FuncType a b) = FuncType (subst sub a) (subst sub b)
+subst sub e@(TVar        n) = maybe e id (lookupAFCSubst sub n)
+subst sub (TCons     t tys) = TCons t (map (subst sub) tys)
+subst sub (FuncType    a b) = FuncType (subst sub a) (subst sub b)
+subst sub (ForallType ns t) = ForallType ns (subst sub t)

@@ -12,6 +12,7 @@ module Classification where
 --- @cons D  deterministic function
 --- @cons ND potentially non-deterministic function
 data NDClass = D | ND
+  deriving (Eq, Show)
 
 
 --- Classification of a type (constructor) to be first order or higher order.
@@ -21,6 +22,7 @@ data NDClass = D | ND
 ---                a function (modulo polymorphism)
 --- @cons TypeHO - type whose values may contain a function
 data TypeHOClass = TypeFO | TypeIO | TypeHO
+  deriving Eq
 
 --- Return the greater of the two `TypeHOClass`es.
 maxTypeHOClass :: TypeHOClass -> TypeHOClass -> TypeHOClass
@@ -42,6 +44,7 @@ maximumTypeHOClass thcs = foldr maxTypeHOClass TypeFO thcs
 ---                argument type, either directly or wrapped by other type
 ---                constructors)
 data ConsHOClass = ConsFO | ConsHO
+  deriving Eq
 
 --- Return the greater of the two `ConsHOClass`es.
 maxConsHOClass :: ConsHOClass -> ConsHOClass -> ConsHOClass
@@ -66,6 +69,7 @@ typeToConsHOClass TypeHO = ConsHO
 ---                     with the arity `a` as its result
 --- @cons FuncHO      - higher order function
 data FuncHOClass = FuncFO | FuncHORes Int | FuncHO
+  deriving (Eq, Show)
 
 --- Return the greater of the two `FuncHOClass`es.
 maxFuncHOClass :: FuncHOClass -> FuncHOClass -> FuncHOClass

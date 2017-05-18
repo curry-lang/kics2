@@ -13,8 +13,8 @@
 --- @category meta
 ------------------------------------------------------------------------------
 
-module FlatCurry.Annotated.Types
-  ( module FlatCurry.Annotated.Types
+module AnnotatedFlatCurry
+  ( module AnnotatedFlatCurry
   , module FlatCurry.Types
   ) where
 
@@ -26,17 +26,20 @@ import FlatCurry.Types ( QName, VarIndex, Visibility (..), TVarIndex
 
 --- Annotated FlatCurry program (corresponds to a module)
 data AProg a = AProg String [String] [TypeDecl] [AFuncDecl a] [OpDecl]
+ deriving (Eq, Ord, Read, Show)
 
 --- Arity of a function declaration
 type Arity = Int
 
 --- Annotated function declaration
 data AFuncDecl a = AFunc QName Arity Visibility TypeExpr (ARule a)
+ deriving (Eq, Ord, Read, Show)
 
 --- Annotated function rule
 data ARule a
   = ARule     a [(VarIndex, a)] (AExpr a)
   | AExternal a String
+ deriving (Eq, Ord, Read, Show)
 
 --- Annotated expression
 data AExpr a
@@ -48,11 +51,15 @@ data AExpr a
   | AOr    a (AExpr a) (AExpr a)
   | ACase  a CaseType (AExpr a) [ABranchExpr a]
   | ATyped a (AExpr a) TypeExpr
+ deriving (Eq, Ord, Read, Show)
 
 --- Annotated case branch
 data ABranchExpr a = ABranch (APattern a) (AExpr a)
+ deriving (Eq, Ord, Read, Show)
 
 --- Annotated pattern
 data APattern a
   = APattern  a (QName, a) [(VarIndex, a)] --- constructor pattern
   | ALPattern a Literal                    --- literal pattern
+ deriving (Eq, Ord, Read, Show)
+
