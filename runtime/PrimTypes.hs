@@ -8,6 +8,8 @@ import KiCS2Debug
 import FailInfo
 import Types
 
+type C_Apply a b = a b
+
 -- -----------------------------------------------------------------------------
 -- Nat
 -- -----------------------------------------------------------------------------
@@ -142,34 +144,50 @@ instance Unifiable Nat where
   lazyBind d i (Guard_Nat cd c e) = getConstrList c ++ [i :=: LazyBind
     (lazyBind d i e)]
 
-instance Curry Nat where
-  (=?=) (Choice_Nat cd i x y) z d cs = narrow cd i (((x =?= z) d) cs) (((y =?= z) d) cs)
-  (=?=) (Choices_Nat  cd i xs) y d cs = narrows cs cd i (\x -> ((x =?= y) d) cs) xs
-  (=?=) (Guard_Nat  cd c e) y d cs = guardCons cd c (((e =?= y) d) (addCs c cs))
-  (=?=) (Fail_Nat  cd info) _ _ _ = failCons cd info
-  (=?=) z (Choice_Nat  cd i x y) d cs = narrow cd i (((z =?= x) d) cs) (((z =?= y) d) cs)
-  (=?=) y (Choices_Nat  cd i xs) d cs = narrows cs cd i (\x -> ((y =?= x) d) cs) xs
-  (=?=) y (Guard_Nat  cd c e) d cs = guardCons cd c (((y =?= e) d) (addCs c cs))
-  (=?=) _ (Fail_Nat  cd info) _ _ = failCons cd info
-  (=?=) IHi IHi d cs = C_True
-  (=?=) (O x1) (O y1) d cs = ((x1 =?= y1) d) cs
-  (=?=) (I x1) (I y1) d cs = ((x1 =?= y1) d) cs
-  (=?=) _ _ d _ = C_False
-  (<?=) (Choice_Nat  cd i x y) z d cs = narrow cd i (((x <?= z) d) cs) (((y <?= z) d) cs)
-  (<?=) (Choices_Nat  cd i xs) y d cs = narrows cs cd i (\x -> ((x <?= y) d) cs) xs
-  (<?=) (Guard_Nat  cd c e) y d cs = guardCons cd c (((e <?= y) d) (addCs c cs))
-  (<?=) (Fail_Nat  cd info) _ _ _ = failCons cd info
-  (<?=) z (Choice_Nat  cd i x y) d cs = narrow cd i (((z <?= x) d) cs) (((z <?= y) d) cs)
-  (<?=) y (Choices_Nat  cd i xs) d cs = narrows cs cd i (\x -> ((y <?= x) d) cs) xs
-  (<?=) y (Guard_Nat  cd c e) d cs = guardCons cd c (((y <?= e) d) (addCs c cs))
-  (<?=) _ (Fail_Nat  cd info) _ _ = failCons cd info
-  (<?=) IHi IHi d cs = C_True
-  (<?=) IHi (O _) _ _ = C_True
-  (<?=) IHi (I _) _ _ = C_True
-  (<?=) (O x1) (O y1) d cs = ((x1 <?= y1) d) cs
-  (<?=) (O _) (I _) _ _ = C_True
-  (<?=) (I x1) (I y1) d cs = ((x1 <?= y1) d) cs
-  (<?=) _ _ d _ = C_False
+instance Curry Nat
+
+d_C_prim_eqNat :: Nat -> Nat -> Cover -> ConstStore -> C_Bool
+d_C_prim_eqNat (Choice_Nat cd i x y) z d cs =
+  narrow cd i (((x `d_C_prim_eqNat` z) d) cs) (((y `d_C_prim_eqNat` z) d) cs)
+d_C_prim_eqNat (Choices_Nat  cd i xs) y d cs =
+  narrows cs cd i (\x -> ((x `d_C_prim_eqNat` y) d) cs) xs
+d_C_prim_eqNat (Guard_Nat  cd c e) y d cs =
+  guardCons cd c (((e `d_C_prim_eqNat` y) d) (addCs c cs))
+d_C_prim_eqNat (Fail_Nat  cd info) _ _ _ = failCons cd info
+d_C_prim_eqNat z (Choice_Nat  cd i x y) d cs =
+  narrow cd i (((z `d_C_prim_eqNat` x) d) cs) (((z `d_C_prim_eqNat` y) d) cs)
+d_C_prim_eqNat y (Choices_Nat  cd i xs) d cs =
+  narrows cs cd i (\x -> ((y `d_C_prim_eqNat` x) d) cs) xs
+d_C_prim_eqNat y (Guard_Nat  cd c e) d cs =
+  guardCons cd c (((y `d_C_prim_eqNat` e) d) (addCs c cs))
+d_C_prim_eqNat _ (Fail_Nat  cd info) _ _ = failCons cd info
+d_C_prim_eqNat IHi IHi d cs = C_True
+d_C_prim_eqNat (O x1) (O y1) d cs = ((x1 `d_C_prim_eqNat` y1) d) cs
+d_C_prim_eqNat (I x1) (I y1) d cs = ((x1 `d_C_prim_eqNat` y1) d) cs
+d_C_prim_eqNat _ _ d _ = C_False
+
+d_C_prim_ltEqNat :: Nat -> Nat -> Cover -> ConstStore -> C_Bool
+d_C_prim_ltEqNat (Choice_Nat  cd i x y) z d cs =
+  narrow cd i (((x `d_C_prim_ltEqNat` z) d) cs) (((y `d_C_prim_ltEqNat` z) d) cs)
+d_C_prim_ltEqNat (Choices_Nat  cd i xs) y d cs =
+  narrows cs cd i (\x -> ((x `d_C_prim_ltEqNat` y) d) cs) xs
+d_C_prim_ltEqNat (Guard_Nat  cd c e) y d cs =
+  guardCons cd c (((e `d_C_prim_ltEqNat` y) d) (addCs c cs))
+d_C_prim_ltEqNat (Fail_Nat  cd info) _ _ _ = failCons cd info
+d_C_prim_ltEqNat z (Choice_Nat  cd i x y) d cs =
+  narrow cd i (((z `d_C_prim_ltEqNat` x) d) cs) (((z `d_C_prim_ltEqNat` y) d) cs)
+d_C_prim_ltEqNat y (Choices_Nat  cd i xs) d cs =
+  narrows cs cd i (\x -> ((y `d_C_prim_ltEqNat` x) d) cs) xs
+d_C_prim_ltEqNat y (Guard_Nat  cd c e) d cs =
+  guardCons cd c (((y `d_C_prim_ltEqNat` e) d) (addCs c cs))
+d_C_prim_ltEqNat _ (Fail_Nat  cd info) _ _ = failCons cd info
+d_C_prim_ltEqNat IHi IHi d cs = C_True
+d_C_prim_ltEqNat IHi (O _) _ _ = C_True
+d_C_prim_ltEqNat IHi (I _) _ _ = C_True
+d_C_prim_ltEqNat (O x1) (O y1) d cs = ((x1 `d_C_prim_ltEqNat` y1) d) cs
+d_C_prim_ltEqNat (O _) (I _) _ _ = C_True
+d_C_prim_ltEqNat (I x1) (I y1) d cs = ((x1 `d_C_prim_ltEqNat` y1) d) cs
+d_C_prim_ltEqNat _ _ d _ = C_False
 
 -- -----------------------------------------------------------------------------
 -- BinInt
@@ -296,34 +314,50 @@ instance Unifiable BinInt where
   lazyBind d i (Guard_BinInt cd c e) = getConstrList c ++ [i :=: LazyBind
     (lazyBind d i e)]
 
-instance Curry BinInt where
-  (=?=) (Choice_BinInt cd i x y) z d cs = narrow cd i (((x =?= z) d) cs) (((y =?= z) d) cs)
-  (=?=) (Choices_BinInt cd i xs) y d cs = narrows cs cd i (\x -> ((x =?= y) d) cs) xs
-  (=?=) (Guard_BinInt cd c e) y d cs = guardCons cd c (((e =?= y) d) (addCs c cs))
-  (=?=) (Fail_BinInt cd info) _ _ _ = failCons cd info
-  (=?=) z (Choice_BinInt cd i x y) d cs = narrow cd i (((z =?= x) d) cs) (((z =?= y) d) cs)
-  (=?=) y (Choices_BinInt cd i xs) d cs = narrows cs cd i (\x -> ((y =?= x) d) cs) xs
-  (=?=) y (Guard_BinInt cd c e) d cs = guardCons cd c (((y =?= e) d) (addCs c cs))
-  (=?=) _ (Fail_BinInt cd info) _ _ = failCons cd info
-  (=?=) (Neg x1) (Neg y1) d cs = ((x1 =?= y1) d) cs
-  (=?=) Zero Zero d cs = C_True
-  (=?=) (Pos x1) (Pos y1) d cs = ((x1 =?= y1) d) cs
-  (=?=) _ _ d _ = C_False
-  (<?=) (Choice_BinInt cd i x y) z d cs = narrow cd i (((x <?= z) d) cs) (((y <?= z) d) cs)
-  (<?=) (Choices_BinInt cd i xs) y d cs = narrows cs cd i (\x -> ((x <?= y) d) cs) xs
-  (<?=) (Guard_BinInt cd c e) y d cs = guardCons cd c (((e <?= y) d) (addCs c cs))
-  (<?=) (Fail_BinInt cd info) _ _ _ = failCons cd info
-  (<?=) z (Choice_BinInt cd i x y) d cs = narrow cd i (((z <?= x) d) cs) (((z <?= y) d) cs)
-  (<?=) y (Choices_BinInt cd i xs) d cs = narrows cs cd i (\x -> ((y <?= x) d) cs) xs
-  (<?=) y (Guard_BinInt cd c e) d cs = guardCons cd c (((y <?= e) d) (addCs c cs))
-  (<?=) _ (Fail_BinInt cd info) _ _ = failCons cd info
-  (<?=) (Neg x1) (Neg y1) d cs = ((x1 <?= y1) d) cs
-  (<?=) (Neg _) Zero _ _ = C_True
-  (<?=) (Neg _) (Pos _) _ _ = C_True
-  (<?=) Zero Zero d cs = C_True
-  (<?=) Zero (Pos _) _ _ = C_True
-  (<?=) (Pos x1) (Pos y1) d cs = ((x1 <?= y1) d) cs
-  (<?=) _ _ d _ = C_False
+instance Curry BinInt
+
+d_C_prim_eqBinInt :: BinInt -> BinInt -> Cover -> ConstStore -> C_Bool
+d_C_prim_eqBinInt (Choice_BinInt cd i x y) z d cs =
+  narrow cd i (((x `d_C_prim_eqBinInt` z) d) cs) (((y `d_C_prim_eqBinInt` z) d) cs)
+d_C_prim_eqBinInt (Choices_BinInt cd i xs) y d cs =
+  narrows cs cd i (\x -> ((x `d_C_prim_eqBinInt` y) d) cs) xs
+d_C_prim_eqBinInt (Guard_BinInt cd c e) y d cs =
+  guardCons cd c (((e `d_C_prim_eqBinInt` y) d) (addCs c cs))
+d_C_prim_eqBinInt (Fail_BinInt cd info) _ _ _ = failCons cd info
+d_C_prim_eqBinInt z (Choice_BinInt cd i x y) d cs =
+  narrow cd i (((z `d_C_prim_eqBinInt` x) d) cs) (((z `d_C_prim_eqBinInt` y) d) cs)
+d_C_prim_eqBinInt y (Choices_BinInt cd i xs) d cs =
+  narrows cs cd i (\x -> ((y `d_C_prim_eqBinInt` x) d) cs) xs
+d_C_prim_eqBinInt y (Guard_BinInt cd c e) d cs =
+  guardCons cd c (((y `d_C_prim_eqBinInt` e) d) (addCs c cs))
+d_C_prim_eqBinInt _ (Fail_BinInt cd info) _ _ = failCons cd info
+d_C_prim_eqBinInt (Neg x1) (Neg y1) d cs = ((x1 `d_C_prim_eqNat` y1) d) cs
+d_C_prim_eqBinInt Zero Zero d cs = C_True
+d_C_prim_eqBinInt (Pos x1) (Pos y1) d cs = ((x1 `d_C_prim_eqNat` y1) d) cs
+d_C_prim_eqBinInt _ _ d _ = C_False
+
+d_C_prim_ltEqBinInt :: BinInt -> BinInt -> Cover -> ConstStore -> C_Bool
+d_C_prim_ltEqBinInt (Choice_BinInt cd i x y) z d cs =
+  narrow cd i (((x `d_C_prim_ltEqBinInt` z) d) cs) (((y `d_C_prim_ltEqBinInt` z) d) cs)
+d_C_prim_ltEqBinInt (Choices_BinInt cd i xs) y d cs =
+  narrows cs cd i (\x -> ((x `d_C_prim_ltEqBinInt` y) d) cs) xs
+d_C_prim_ltEqBinInt (Guard_BinInt cd c e) y d cs =
+  guardCons cd c (((e `d_C_prim_ltEqBinInt` y) d) (addCs c cs))
+d_C_prim_ltEqBinInt (Fail_BinInt cd info) _ _ _ = failCons cd info
+d_C_prim_ltEqBinInt z (Choice_BinInt cd i x y) d cs =
+  narrow cd i (((z `d_C_prim_ltEqBinInt` x) d) cs) (((z `d_C_prim_ltEqBinInt` y) d) cs)
+d_C_prim_ltEqBinInt y (Choices_BinInt cd i xs) d cs =
+  narrows cs cd i (\x -> ((y `d_C_prim_ltEqBinInt` x) d) cs) xs
+d_C_prim_ltEqBinInt y (Guard_BinInt cd c e) d cs =
+  guardCons cd c (((y `d_C_prim_ltEqBinInt` e) d) (addCs c cs))
+d_C_prim_ltEqBinInt _ (Fail_BinInt cd info) _ _ = failCons cd info
+d_C_prim_ltEqBinInt (Neg x1) (Neg y1) d cs = ((x1 `d_C_prim_ltEqNat` y1) d) cs
+d_C_prim_ltEqBinInt (Neg _) Zero _ _ = C_True
+d_C_prim_ltEqBinInt (Neg _) (Pos _) _ _ = C_True
+d_C_prim_ltEqBinInt Zero Zero d cs = C_True
+d_C_prim_ltEqBinInt Zero (Pos _) _ _ = C_True
+d_C_prim_ltEqBinInt (Pos x1) (Pos y1) d cs = ((x1 `d_C_prim_ltEqNat` y1) d) cs
+d_C_prim_ltEqBinInt _ _ d _ = C_False
 
 -- -----------------------------------------------------------------------------
 -- Higher Order Funcs
@@ -398,9 +432,7 @@ instance (Unifiable t0,Unifiable t1) => Unifiable (Func t0 t1) where
   lazyBind _ _ (Fail_Func _ info) = [Unsolvable info]
   lazyBind cd i (Guard_Func _ cs e) = (getConstrList cs) ++ [(i :=: (LazyBind (lazyBind cd i e)))]
 
-instance (Curry t0, Curry t1) => Curry (Func t0 t1) where
-  (=?=) = error "(==) is undefined for functions"
-  (<?=) = error "(<=) is undefined for functions"
+instance (Curry t0, Curry t1) => Curry (Func t0 t1)
 -- END GENERATED FROM PrimTypes.curry
 
 -- -----------------------------------------------------------------------------
@@ -478,9 +510,7 @@ instance Unifiable t0 => Unifiable (C_IO t0) where
   lazyBind _  _ (Fail_C_IO _ info) = [Unsolvable info]
   lazyBind cd i (Guard_C_IO _ cs e) = (getConstrList cs) ++ [(i :=: (LazyBind (lazyBind cd i e)))]
 
-instance Curry t0 => Curry (C_IO t0) where
-  (=?=) = error "(==) is undefined for IO actions"
-  (<?=) = error "(<=) is undefined for IO actions"
+instance Curry t0 => Curry (C_IO t0)
 -- END GENERATED FROM PrimTypes.curry
 
 -- Convert an IO action to a Curry IO action without converting the result.
@@ -561,9 +591,7 @@ instance Unifiable (PrimData t0) where
   lazyBind _  _ (Fail_PrimData _ info) = [Unsolvable info]
   lazyBind cd i (Guard_PrimData _ cs e) = (getConstrList cs) ++ [(i :=: (LazyBind (lazyBind cd i e)))]
 
-instance Curry (PrimData a) where
-  (=?=) = error "(==) is undefined for primitive data"
-  (<?=) = error "(<=) is undefined for primitive data"
+instance Curry (PrimData a)
 
 -- END GENERATED FROM PrimTypes.curry
 
@@ -580,6 +608,7 @@ instance ConvertCurryHaskell (PrimData a) a where -- needs FlexibleInstances
 -- since the operation IOExts.connectToCmd uses one handle for reading and
 -- writing, we implement handles either as a single handle or two handles:
 data CurryHandle = OneHandle Handle | InOutHandle Handle Handle
+  deriving Eq
 
 inputHandle :: CurryHandle -> Handle
 inputHandle (OneHandle h)     = h

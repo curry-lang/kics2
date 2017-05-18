@@ -393,13 +393,7 @@ lazyTry x y cd cs = case try x of
 
 -- Class for Curry types
 class (Show a, Read a, NonDet a, Generable a, NormalForm a, Unifiable a)
-      => Curry a where
-  -- implementation of strict equalit (==) for a data type
-  (=?=) :: a -> a -> Cover -> ConstStore -> C_Bool
-  (=?=) = error "(==) is undefined"
-  -- implementation of less-or-equal (<=) for a data type
-  (<?=) :: a -> a -> Cover -> ConstStore -> C_Bool
-  (<?=) = error "(<=) is undefined"
+      => Curry a
 
 -- ---------------------------------------------------------------------------
 -- Conversion between Curry and Haskell data types
@@ -552,38 +546,7 @@ instance Unifiable C_Bool where
   lazyBind d i (Guard_C_Bool cd c e) = getConstrList c ++ [i :=: LazyBind
     (lazyBind d i e)]
 
-instance Curry C_Bool where
-  (=?=) (Choice_C_Bool cd i x y) z d cs = narrow cd i ((=?=) x z d cs) ((=?=) y
-    z d cs)
-  (=?=) (Choices_C_Bool cd i xs) y d cs = narrows cs cd i (\x -> (=?=) x y d cs)
-    xs
-  (=?=) (Guard_C_Bool cd c e) y d cs = guardCons cd c ((=?=) e y d (addCs c cs))
-  (=?=) (Fail_C_Bool cd info) _ _ _ = failCons cd info
-  (=?=) z (Choice_C_Bool cd i x y) d cs = narrow cd i ((=?=) z x d cs) ((=?=) z
-    y d cs)
-  (=?=) y (Choices_C_Bool cd i xs) d cs = narrows cs cd i (\x -> (=?=) y x d cs)
-    xs
-  (=?=) y (Guard_C_Bool cd c e) d cs = guardCons cd c ((=?=) y e d (addCs c cs))
-  (=?=) _ (Fail_C_Bool cd info) _ _ = failCons cd info
-  (=?=) C_False C_False d cs = C_True
-  (=?=) C_True C_True d cs = C_True
-  (=?=) _ _ d _ = C_False
-  (<?=) (Choice_C_Bool cd i x y) z d cs = narrow cd i ((<?=) x z d cs) ((<?=) y
-    z d cs)
-  (<?=) (Choices_C_Bool cd i xs) y d cs = narrows cs cd i (\x -> (<?=) x y d cs)
-    xs
-  (<?=) (Guard_C_Bool cd c e) y d cs = guardCons cd c ((<?=) e y d (addCs c cs))
-  (<?=) (Fail_C_Bool cd info) _ _ _ = failCons cd info
-  (<?=) z (Choice_C_Bool cd i x y) d cs = narrow cd i ((<?=) z x d cs) ((<?=) z
-    y d cs)
-  (<?=) y (Choices_C_Bool cd i xs) d cs = narrows cs cd i (\x -> (<?=) y x d cs)
-    xs
-  (<?=) y (Guard_C_Bool cd c e) d cs = guardCons cd c ((<?=) y e d (addCs c cs))
-  (<?=) _ (Fail_C_Bool cd info) _ _ = failCons cd info
-  (<?=) C_False C_False d cs = C_True
-  (<?=) C_False C_True _ _ = C_True
-  (<?=) C_True C_True d cs = C_True
-  (<?=) _ _ d _ = C_False
+instance Curry C_Bool
 
 -- ---------------------------------------------------------------------------
 -- Functions
@@ -617,6 +580,4 @@ instance NonDet b => Unifiable (a -> b) where
   bind     = internalError "bind for function is undefined"
   lazyBind = internalError "lazyBind for function is undefined"
 
-instance NonDet b => Curry (a -> b) where
-  (=?=) = error "(==) is undefined for functions"
-  (<?=) = error "(<=) is undefined for functions"
+instance NonDet b => Curry (a -> b)
