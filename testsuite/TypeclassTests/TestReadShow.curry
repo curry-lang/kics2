@@ -12,18 +12,18 @@ showOfReadInt :: Int -> Prop
 showOfReadInt = showOfRead
 
 showOfReadChar :: Char -> Prop
-showOfReadChar = showOfRead
+showOfReadChar c = ord c >= 0 ==> showOfRead c
 
 showOfReadOrdering :: Ordering -> Prop
 showOfReadOrdering = showOfRead
 
 showOfReadString :: String -> Prop
-showOfReadString = showOfRead
+showOfReadString s = all (\c -> ord c >= 0) s ==> showOfRead s
 
 showOfReadMaybeInt :: Maybe Int -> Prop
 showOfReadMaybeInt = showOfRead
 
-showOfReadEitherCharBool :: Either Char Bool -> Prop
+showOfReadEitherCharBool :: Either Int Bool -> Prop
 showOfReadEitherCharBool = showOfRead
 
 showOfReadPairIntBool :: (Int,Bool) -> Prop
