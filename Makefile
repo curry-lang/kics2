@@ -374,11 +374,15 @@ endif
 
 # run the test suite to check the installation
 .PHONY: runtest
-runtest: testsuite/doTest
-	#cd testsuite  && ./doTest --nogui
-	cd testsuite2 && ./test.sh $(RUNTESTPARAMS)
+runtest:
+	cd testsuite && ./test.sh $(RUNTESTPARAMS)
 	cd lib && ./test.sh $(RUNTESTPARAMS)
 	cd currytools && $(MAKE) runtest $(RUNTESTPARAMS)
+
+# run the test suites in verbose mode so that all output is shown:
+.PHONY: runtestverbose
+runtestverbose:
+	$(MAKE) runtest RUNTESTPARAMS=-v
 
 ########################################################################
 # Cleaning:
