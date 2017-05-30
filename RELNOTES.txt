@@ -26,6 +26,7 @@ Changes to version 0.5.1:
       - `Bootstrap3Style` (now in package `html`)
       - `CategorizedHtmlList` (now in package `html`)
       - `CurryStringClassifier` (now in package `addtypes`)
+      - `Database.ERDGoodies` (now in package `ertools`)
       - `FlatCurry.Annotated.*` (now in package `flatcurry-annotated`)
       - `GraphInductive` (now in package `graph-inductive`)
       - `HtmlParser` (now in package `html`)
