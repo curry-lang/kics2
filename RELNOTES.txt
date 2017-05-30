@@ -21,6 +21,7 @@ Changes to version 0.5.1:
       - `CHR` (now in package `chr-curry`)
       - `CategorizedHtmlList` (now in package `html`)
       - `CurryStringClassifier` (now in package `addtypes`)
+      - `Database.ERDGoodies` (now in package `ertools`)
       - `FlatCurry.Annotated.*` (now in package `flatcurry-annotated`)
       - `GraphInductive` (now in package `graph-inductive`)
       - `HtmlParser` (now in package `html`)
