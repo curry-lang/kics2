@@ -470,7 +470,7 @@ makeMainGoalMonomorphic rst prog goal = case prog of
       return True
   _ -> error "REPL.makeMainGoalMonomorphic"
  where newgoal ty = if isIOReturnType ty
-                    then '(' : goal ++ ") >>= print"
+                    then '(' : goal ++ ") Prelude.>>= Prelude.print"
                     else goal
 
 -- Compile a Curry program with kics2 compiler:
