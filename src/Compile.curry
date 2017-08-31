@@ -89,7 +89,7 @@ locateCurryFile mn = do
 
 makeModule :: [(ModuleIdent, Source)] -> State -> ((ModuleIdent, Source), Int)
            -> IO State
-makeModule mods state mod@((mid, (fn, tfcy)), _)
+makeModule mods state mod@((mid, (fn, imps, _)), _)
   | optForce opts = compileModule modCnt state mod
   | otherwise     = do
                     depFiles <- getDepFiles
@@ -105,10 +105,9 @@ makeModule mods state mod@((mid, (fn, tfcy)), _)
       let imported  = map (\i -> destFile (optTraceFailure opts)
                                           (optOutputSubdir opts)
                                           i
-                               $ fst $ fromJust $ lookup i mods) imps
+                               $ fst3 $ fromJust $ lookup i mods) imps
       return $ ownModule ++ imported
     extFile = externalFile fn
-    (AProg _ imps _ _ _) = tfcy
     modCnt = length mods
     opts = compOptions state
 
@@ -125,7 +124,7 @@ readAnalysis opts mid fn = do
     where ndaFile = analysisFile (optOutputSubdir opts) mid fn
 
 loadAnalysis :: Int -> State -> ((ModuleIdent, Source), Int) -> IO State
-loadAnalysis total state ((mid, (fn, _)), current) = do
+loadAnalysis total state ((mid, (fn, _, _)), current) = do
   showStatus opts $ compMessage (current, total) "Analyzing" mid (fn, ndaFile)
   (types, ndAna, hoType, hoCons, hoFunc) <- readAnalysis opts mid fn
   return state { typeMap      = (typeMap state)      `plusFM` types
@@ -139,14 +138,14 @@ loadAnalysis total state ((mid, (fn, _)), current) = do
       opts = compOptions state
 
 compileModule :: Int -> State -> ((ModuleIdent, Source), Int) -> IO State
-compileModule total state ((mid, (fn, tfcy)), current) = do
+compileModule total state ((mid, (fn, _, rawTfcy)), current) = do
   showStatus opts $ compMessage (current, total) "Compiling" mid (fn, dest)
 
-  let afcy = filterPrelude opts tfcy
-  dump DumpTypedFlat opts typedName (show afcy)
+  let tfcy = filterPrelude opts (read rawTfcy)
+  dump DumpTypedFlat opts typedName (show tfcy)
 
   showDetail opts "Lifting case expressions"
-  let pLifted = liftCases True afcy
+  let pLifted = liftCases True tfcy
   dump DumpLifted opts liftedName (show pLifted)
 
   showDetail opts "Eliminate calls to cond"
@@ -312,3 +311,6 @@ rename p@(Prog name imports _ _ _) =
 
 defaultModules :: [String]
 defaultModules = [basics]
+
+fst3 :: (a, b, c) -> a
+fst3 (x, _, _) = x

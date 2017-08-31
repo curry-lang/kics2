@@ -21,7 +21,9 @@ import FilePath     ( FilePath, dropExtension, takeExtension, takeBaseName
 import Files        (lookupFileInPath, getFileInPath)
 import FiniteMap    (FM, emptyFM, addToFM, fmToList, lookupFM)
 import AnnotatedFlatCurry
-import AnnotatedFlatCurryFiles (readTypedFlatCurryFile, typedFlatCurryFileName)
+import AnnotatedFlatCurryFiles ( readTypedFlatCurryFileRaw
+                               , typedFlatCurryFileName
+                               )
 import Function     (second)
 import List         (intercalate, partition)
 import Maybe        (fromJust, isJust, isNothing)
@@ -36,7 +38,7 @@ import SCC          (scc)
 type ModuleIdent = String
 type Errors      = [String]
 
-type Source      = (FilePath, AProg TypeExpr) -- file name, code
+type Source      = (FilePath, [ModuleIdent], String) -- file name, imports, raw code
 type SourceEnv   = FM ModuleIdent (Maybe Source)
 
 
@@ -92,53 +94,35 @@ lookupModule opts m = lookupFileInPath (moduleNameToPath m)
 
 sourceDeps :: Options -> ModuleIdent -> String -> SourceEnv -> IO SourceEnv
 sourceDeps opts mn fn mEnv = do
-  tfcy@(AProg m is _ _ _) <- readCurrySource opts mn fn
-  foldIO (moduleDeps opts) (addToFM mEnv m (Just (fn, tfcy))) is
+  rawTfcy <- readCurrySourceRaw opts mn fn
+  let (m, is) = readModuleNameAndImports rawTfcy
+  foldIO (moduleDeps opts) (addToFM mEnv m (Just (fn, is, rawTfcy))) is
 
--- Reads a FlatCurry file or parses a Curry module.
+-- Reads only module name and imports from a typed FlatCurry representation.
+readModuleNameAndImports :: String -> (ModuleIdent, [ModuleIdent])
+readModuleNameAndImports s = (m, is)
+  where ((m , s'):_) = reads (drop 6 s) -- drops leading "AProg"
+        ((is, _ ):_) = reads s'
+
+-- Reads a typed FlatCurry file or parses a Curry module.
 -- TODO: This should better return `Either Errors Prog` so that compilation
 -- errors can be recognized.
-readCurrySource :: Options -> ModuleIdent -> FilePath -> IO (AProg TypeExpr)
-readCurrySource opts mn fn
+readCurrySourceRaw :: Options -> ModuleIdent -> FilePath -> IO String
+readCurrySourceRaw opts mn fn
   | isTypedFlatCurryFile fn
   = do showStatus opts $ "Reading directly from typed FlatCurry file '"++fn++"'"
-       preprocessTfcyFile {-opts-} fn
+       readTypedFlatCurryFileRaw fn
   | otherwise
   = do tfcyname <- parseCurryWithOptions opts (stripCurrySuffix mn)
                    $ setFullPath importPaths
                    $ setQuiet    (optVerbosity opts == VerbQuiet)
                    $ setSpecials (optParser opts)
                    defaultParams
-       preprocessTfcyFile {-opts-} tfcyname
+       readTypedFlatCurryFileRaw tfcyname
   where importPaths = "." : optImportPaths opts
 
--- Pre-process a FlatCurry program and load it for compilation.
--- Currently, the binding optimizer (replace =:=/2 by ==/2) is applied.
-preprocessTfcyFile :: {-Options ->-} FilePath -> IO (AProg TypeExpr)
-preprocessTfcyFile {-copts-} tfcyname = do
-  -- TODO: Reactivate binding optimization when implemented for typed FlatCurry
-  -- change current verbosity level to main verbosity level in order to
-  -- see the status of pre-processing imported modules:
-  {-let opts    = copts { optVerbosity = optMainVerbosity copts }
-      rcbopt  = rcValue (rcVars opts) "bindingoptimization"
-      optexec = installDir </> "currytools" </> "optimize" </> "bindingopt"
-  existsoptexec <- doesFileExist optexec
-  when (rcbopt /= "no" && existsoptexec) $ do
-    showAnalysis opts $ "Pre-processing file " ++ fcyname
-    let verb = case optVerbosity opts of
-                  VerbAnalysis -> "-v1"
-                  VerbDetails  -> "-v3"
-                  _            -> "-v0"
-        fastopt = if rcbopt == "full" then "" else "-f"
-        optcmd  = unwords [optexec, verb, fastopt, fcyname]
-    showAnalysis opts $ "Executing: " ++ optcmd
-    status <- system optcmd
-    unless (status == 0) $ do
-      putStrLn "WARNING: Binding optimization failed for file:"
-      putStrLn fcyname-}
-  readTypedFlatCurryFile tfcyname
-
--- Parse a Curry program with the front end and return the FlatCurry file name.
+-- Parse a Curry program with the front end and return the typed FlatCurry
+-- file name.
 parseCurryWithOptions :: Options -> ModuleIdent -> FrontendParams -> IO String
 parseCurryWithOptions opts modname options = do
   mbCurryFile  <- lookupModule opts modname
@@ -167,7 +151,7 @@ flattenDeps = fdeps . sortDeps where
     -- extract the module ident
     modules (m, _) = [m]
     -- extract the imports
-    imports (_, (_, (AProg _ imps _ _ _))) = imps
+    imports (_, (_, imps, _)) = imps
 
   fdeps :: [[(ModuleIdent, Source)]] -> ([(ModuleIdent, Source)], Errors)
   fdeps = foldr checkdep ([], [])

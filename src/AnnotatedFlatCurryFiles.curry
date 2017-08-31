@@ -44,17 +44,17 @@ typedFlatCurryFileName prog = inCurrySubdir (stripCurrySuffix prog) <.> "tfcy"
 
 readTypedFlatCurryFile :: String -> IO (AProg TypeExpr)
 readTypedFlatCurryFile filename = do
+  filecontents <- readTypedFlatCurryFileRaw filename
+  return (read filecontents)
+
+readTypedFlatCurryFileRaw :: String -> IO String
+readTypedFlatCurryFileRaw filename = do
   extfcy <- doesFileExist filename
   if extfcy
-   then readExistingTFCY filename
+   then readFile filename
    else do let subdirfilename = inCurrySubdir filename
            exdirtfcy <- doesFileExist subdirfilename
            if exdirtfcy
-            then readExistingTFCY subdirfilename
+            then readFile subdirfilename
             else error ("EXISTENCE ERROR: Typed FlatCurry file '" ++ filename ++
                         "' does not exist")
- where
-   readExistingTFCY fname = do
-     filecontents <- readFile fname
-     return (read filecontents)
-
