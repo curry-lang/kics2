@@ -272,12 +272,13 @@ of this default path).
 
 To use the dependencies of a package, the Curry compiler needs to be
 started via CPM so that the compiler will know where to search for the
-modules provided. You can use the \code{cpm curry} command to start the
+modules provided. You can use the command \ccode{cpm curry} to start the
 Curry compiler (which is either the compiler used to install CPM
-or specified with the configuration option \code{curry_bin},
+or specified with the configuration option \code{CURRY_BIN},
 see Section~\ref{sec:config}).
-Any parameters given to \code{cpm curry} will be passed along verbatim to
-the Curry compiler, for example the following will start the Curry
+Any parameters given to \ccode{cpm curry} will be passed along verbatim to
+the Curry compiler.
+For example, the following will start the Curry
 compiler, print the result of evaluating the expression \code{39+3}
 and then quit.
 
@@ -285,10 +286,12 @@ and then quit.
 > cpm curry :eval "39+3" :quit
 \end{lstlisting}
 %
-To execute other Curry commands such as \code{curry check} with the package's
-dependencies available, you can use the \code{cpm exec} command. \code{cpm exec}
-will set the \code{CURRYPATH} environment variable and then execute the command
-it is given.
+To execute other Curry commands, such as \ccode{curry check},
+with the package's dependencies available,
+you can use the \ccode{cpm exec} command.
+This command will set the \code{CURRYPATH} environment variable
+and then execute the command given after \ccode{exec}.
+
 
 \subsection{Replacing Dependencies with Local Versions}
 \label{sec:cpm-link}
@@ -434,6 +437,32 @@ In this case, one can mark those functions with the compiler pragma
 so that CPM will not generate tests for them.
 
 
+\subsection{Adding Packages to the Central Package Index}
+\label{sec:adding-a-package}
+
+When you have your package ready and want to use it in other packages,
+it must be added to the central package index so that CPM can find it
+when searching for packages. For this purpose, you can use the
+\ccode{cpm add} command:
+%
+\begin{lstlisting}
+> cpm add mypackage
+\end{lstlisting}
+%
+In this case, \code{mypackage} is the name of the directory containing
+you package. In particular, the JSON file \ccode{mypackage/package.json} must
+contain the metadata of the package (see also Section~\ref{sec:reference}).
+This command copies your package into your local copy of the central package
+index so that it can be used in other packages.
+If you want to replace this copy by an improved version
+of the same package, you have to provide the option
+\code{-f} or \code{--force}.
+
+Note that this command makes your package only available on your local
+system. If you want to publish your package so that it can be used
+by other CPM users, follow the instruction described next.
+
+
 \subsection{Publishing a Package}
 \label{sec:publishing-a-package}
 
@@ -483,14 +512,12 @@ to the tag \ccode{v\$version\$}.
 
 After you have published the files for your new package version, you
 have to add the corresponding package specification to the central
-package index. The central package index is just a Git repository
-containing a directory for each package, which contain subdirectories
-for all versions of that package which in turn contain the package
-specification files. So the specification for version $1.0.5$ of the
-\code{json} package would be located in
-\code{json/1.0.5/package.json}.  If you have access to the Git
-repository containing the central package index, then you can add the
-package specification yourself.  Otherwise, send your package
+package index. This can be done with the \ccode{cpm add} command
+(see Section~\ref{sec:adding-a-package}).
+If you have access to the Git
+repository containing the central package index, then you can push
+the modified version of this Git repository.
+Otherwise, send your package
 specification file to \url{packages@curry-language.org} in order to
 publish it.
 
@@ -502,33 +529,36 @@ CPM can be configured via the \code{\$HOME/.cpmrc} configuration file. The
 following list shows all configuration options and their default values.
 
 \begin{description}
-\item[\fbox{\code{repository_path}}] The path to the index repository.
+\item[\fbox{\code{REPOSITORY_PATH}}] The path to the index repository.
 Default value: \code{\$HOME/.cpm/index}.
 
-\item[\fbox{\code{package_install_path}}] The path to the global package cache.
+\item[\fbox{\code{PACKAGE_INSTALL_PATH}}] The path to the global package cache.
 This is where all downloaded packages are stored.
 Default value: \code{\$HOME/.cpm/packages}
 
-\item[\fbox{\code{bin_install_path}}] The path to the executables
+\item[\fbox{\code{BIN_INSTALL_PATH}}] The path to the executables
 of packages. This is the location where the compiled executables
 of packages containing full applications are stored.
 Hence, in order to use such applications, one should have this path
 in the personal load path (environment variable \code{PATH}).
 Default value: \code{\$HOME/.cpm/bin}
 
-\item[\fbox{\code{app_package_path}}]
+\item[\fbox{\code{APP_PACKAGE_PATH}}]
 The path to the package cache where packages are checked out if only
 their binaries are installed (see Section~\ref{sec:installapp}).
 Default value: \code{\$HOME/.cpm/app_packages}.
 
-\item[\fbox{\code{curry_bin}}]
+\item[\fbox{\code{CURRY_BIN}}]
 The name of the executable of the Curry system used
 to compile and test packages.
 The default value is the binary of the Curry system which has been used
 to compile CPM.
 \end{description}
 %
-Note that one can override the values of these configuration options
+Note that one write the option names also in lowercase or omit
+the underscores. For instance, one can also write \code{currybin}
+instead of \code{CURRY_BIN}.
+Moreover, one can override the values of these configuration options
 by the CPM options \code{-d} or \code{--define}.
 For instance, to install the binary
 of the package \code{spicey} in the directory \code{\$HOME/bin},
@@ -541,11 +571,17 @@ one can execute the command
 \section{Some CPM Internals}
 \label{sec:internals}
 
-CPM's central package index is a Git repository containing package specification
-files. A copy of this Git repository is stored on your local system in the 
-\code{\$HOME/.cpm/index} directory, unless you changed the location using the
-\code{repository_path} setting. CPM uses the package index when searching for 
-and installing packages and during dependency resolution. 
+CPM's central package index is a Git repository containing package
+specification files. A copy of this Git repository is stored on your
+local system in the \code{\$HOME/.cpm/index} directory, unless you
+changed the location using the \code{REPOSITORY_PATH} setting. CPM
+uses the package index when searching for and installing packages and
+during dependency resolution.
+This index contains a directory for each package, which contain subdirectories
+for all versions of that package which in turn contain the package
+specification files. So the specification for version $1.0.5$ of the
+\code{json} package would be located in
+\code{json/1.0.5/package.json}.  
 
 When a package is installed on the system, it is stored in the
 \emph{global package cache}.
@@ -568,13 +604,22 @@ caches.
 \section{Command Reference}
 \label{sec:cmd-reference}
 
-This section gives a short description of all available CPM commands. In 
-addition to the commands listed here, there is a global parameter
-\code{--verbosity}
-which defaults to \code{info} but can be increased to \code{debug} for
-more output.
-Furthermore, there is a global parameter \code{--define} to override
-the configuration options of CPM, see Section~\ref{sec:config}.
+This section gives a short description of all available CPM commands.
+In addition to the commands listed below, there are some global options
+which can be placed in front of the CPM command:
+\begin{description}
+\item[\code{-v$\,|\,$--verbosity [info|debug]}:]
+The default value is \code{info}.
+The value \code{debug} provides more output messages in order to see
+what CPM is doing.
+\item[\code{-t$\,|\,$--time}:]
+This option adds the elapsed time to every info or debug output line.
+\item[\code{-d$\,|\,$--define $option$=$value$}:]
+This option overrides the configuration options of CPM,
+ see Section~\ref{sec:config}.
+\end{description}
+%
+The available commands of CPM are:
 
 \begin{description}
 \item[\fbox{\code{info}}] Gives information on the current package, e.g. the
@@ -595,7 +640,7 @@ Unless the option \code{--versions} is set, only the newest version
 of a package (compatible to the current compiler) is shown.
 The option \code{--versions} shows all versions of the packages.
 If a package is not compatible to the current compiler, then
-the package version is shown as \ccode{???}.
+the package version is shown in brackets (e.g., \ccode{(1.5.4)}).
 The option \code{--csv} shows the information in CSV format.
 
 \item[\fbox{\code{list --category [--csv]}}]
@@ -698,7 +743,17 @@ Using the option \code{--modules}, one can also specify a comma-separated
 list of module names to be tested.
 
 \item[\fbox{\code{doc}}]
-Generates the HTML documentation of the current package with CurryDoc.
+Generates the documentation of the current package.
+The documentation consists of the API documentation (in HTML format)
+and the manual (if provided) in PDF format.
+The options \code{--programs} and \code{--text} forces to generate
+only the API documentation and the manual, respectively.
+Using the option \code{--docdir}, one can specify the
+target directory where the documentation should be stored.
+If this option is not provided, \ccode{cdoc} is used as the documentation
+directory.
+
+The API documentation in HTML format is generated with CurryDoc.
 If the package specification contains a list of exported modules
 (see Section~\ref{sec:reference}),
 then these modules are documented.
@@ -709,10 +764,10 @@ or all modules in the directory \code{src}
 are documented.
 Using the option \code{--modules}, one can also specify a comma-separated
 list of module names to be documented.
-Using the option \code{--docdir}, one can specify the
-target directory where the documentation should be stored.
-If this option is not provided, \ccode{cdoc} is used as the documentation
-directory.
+
+The manual is generated only if the package specification contains
+a field \code{documentation} where the main file of the manual
+is specified (see Section~\ref{sec:reference} for more details).
 
 \item[\fbox{\code{diff [$version$]}}]
 Compares the API and behavior of the current package to another
@@ -747,6 +802,14 @@ Any arguments are passed verbatim to the compiler.
 
 \item[\fbox{\code{link $source$}}] Can be used to replace a dependency of the 
 current package using a local copy, see Section~\ref{sec:cpm-link} for details.
+
+\item[\fbox{\code{add $source$ [--force]}}]
+Copies the package contained in $source$ into the local copy
+of the central package index so that it can be used by other packages
+in the local environment
+(see Section~\ref{sec:adding-a-package} for details).
+The option \ccode{--force} allows to overwrite existing copies
+in the central package index.
 
 \item[\fbox{\code{clean}}] Cleans the current package from the
 generated auxiliariy files, e.g., intermediate Curry files,
@@ -815,8 +878,9 @@ text of the license. The suggested name for this file is \code{LICENSE}.
 \item[\fbox{\code{homepage}}] The package's web site. This field should contain
 a valid URL.
 
-\item[\fbox{\code{bugReports}}] A place to report bugs found int he package. The
-suggested formats are either a valid URL to a bug tracker or an email address.
+\item[\fbox{\code{bugReports}}] A place to report bugs found in the package.
+The suggested formats are either a valid URL to a bug tracker
+or an email address.
 
 \item[\fbox{\code{repository}}] The location of a SCM repository containing the
 package's source code. Should be a valid URL to either a repository (e.g. a Git
@@ -840,7 +904,7 @@ some version of a package should be examined or installed
 If a newest package should be installed, i.e., no specific version
 number is provided, then only the newest version
 which is compatible to the current Curry compiler
-(see also Section~\ref{sec:config} for configuration option \code{curry_bin})
+(see also Section~\ref{sec:config} for configuration option \code{CURRY_BIN})
 is considered.
 Similarly, the current package is executed
 (CPM commands \code{curry} and \code{test})
@@ -890,6 +954,9 @@ if this package contains also an executable application.
 The name of the executable must be defined (with key \code{name})
 whereas the name of the main module (key \code{main}) is optional.
 If the latter is missing, CPM assumes that the main module is \code{Main}.
+Furthermore, the executable specification can also contain
+options for various Curry compilers. The options must be a JSON object
+consisting of compiler names as keys and an option string for the compiler.
 For instance, a possible specification could be as follows:
 %
 \begin{lstlisting}
@@ -897,8 +964,9 @@ For instance, a possible specification could be as follows:
   ...,
   "executable": {
     "name": "cpm",
-    "main": "CPM.Main"
-  }
+    "main": "CPM.Main",
+    "options": { "kics2" : ":set rts -T" }
+   }
 }
 \end{lstlisting}
 %
@@ -954,7 +1022,7 @@ directories \code{test} and \code{examples} could be as follows:
   "testsuite": [
      { "src-dir": "test",
        "options": "-v",
-       "script": [ "test.sh" ]
+       "script": "test.sh"
      },
      { "src-dir": "examples",
        "options": "-m80",
@@ -964,7 +1032,112 @@ directories \code{test} and \code{examples} could be as follows:
 }
 \end{lstlisting}
 
+\item[\fbox{\code{documentation}}]
+A JSON object specifying the name of the directory
+which contains the sources of the documentation (e.g., a manual)
+of the package, the main file of the documentation, and an optional command
+to generate the documentation.
+For instance, a possible specification could be as follows:
+%
+\begin{lstlisting}
+{
+  ...,
+  "documentation": {
+    "src-dir": "docs",
+    "main"   : "manual.tex",
+    "command": "pfdlatex -output-directory=OUTDIR manual.tex"
+  }
+  ...
+}
+\end{lstlisting}
+%
+In this case, the directory \code{docs} contains the sources of
+the manual and \code{manual.tex} is its main file which will be
+processed with the specified command.
+Occurrences of the string \code{OUTDIR} in the command string
+will be replaced by the actual documentation directory
+(see description of the command \code{cpm doc}).
+If the command is omitted, the following commands are used
+(and you have to ensure that these programs are installed):
+\begin{itemize}
+\item
+If the main file has the extension \code{.tex},
+e.g., \code{manual.tex}, the command is
+\begin{lstlisting}
+pdflatex -output-directory=OUTDIR manual.tex
+\end{lstlisting}
+and it will be executed twice.
+\item
+If the main file has the extension \code{.md},
+e.g., \code{manual.md}, the command is
+\begin{lstlisting}
+pandoc manual.md -o OUTDIR/manual.pdf
+\end{lstlisting}
+\end{itemize}
+
 \end{description}
+%
+In order to get a compact overview over all metadata fields,
+we show an example of a package specification where all fields
+are used:
+%
+\begin{lstlisting}
+{
+    "name": "PACKAGE_NAME",
+    "version": "0.0.1",
+    "author": "YOUR NAME <YOUR EMAIL ADDRESS>",
+    "maintainer": "ANOTHER NAME <ANOTHER EMAIL ADDRESS>",
+    "synopsis": "A ONE-LINE SUMMARY ABOUT THE PACKAGE",
+    "synopsis": "A MORE DEATILED SUMMARY ABOUT THE PACKAGE",
+    "category": [ "Category1", "Category2" ],
+    "license": "BSD-3-Clause",
+    "licenseFile": "LICENSE",
+    "copyright": "COPYRIGHT INFORMATION",
+    "homepage": "THE URL OF THE WEB SITE OF THE PACKAGE",
+    "bugReports": "EMAIL OR BUG TRACKER URL FOR REPORTING BUGS",
+    "repository": "THE (GIT) URL OF THE WEB SITE REPOSITORY",
+    "dependencies": {
+        "PACKAGE1" : ">= 0.0.1, < 1.5.0",
+        "PACKAGE2" : "~> 1.2.3",
+        "PACKAGE3" : ">= 2.1.4, < 3.0.0 || >= 4.0.0"
+    },
+    "compilerCompatibility": {
+        "pakcs": ">= 1.14.0, < 2.0.0",
+        "kics2": ">= 0.5.0, < 2.0.0"
+    },
+    "sourceDirs" : [ "src", "include" ],
+    "exportedModules": [ "Module1", "Module2" ],
+    "configModule": "ConfigPackage",
+    "executable": {
+        "name": "NAME_OF_BINARY",
+        "main": "Main",
+        "options": {
+            "kics2" : ":set rts -T",
+            "pakcs" : ":set printdepth 100"
+        }
+    },
+    "testsuite": [
+       { "src-dir": "src",
+         "options": "-m80",
+         "modules": [ "Module1", "Module2" ]
+       },
+       { "src-dir": "examples",
+         "options": "-v",
+         "script" : "test.sh"
+       }
+    ],
+    "documentation": {
+        "src-dir": "docs",
+        "main"   : "manual.tex",
+        "command": "pfdlatex -output-directory=OUTDIR manual.tex"
+    },
+    "source": {
+        "git": "URL OF THE GIT REPOSITORY",
+        "tag": "$\$$version"
+    }
+}
+\end{lstlisting}
+
 
 \section{Error Recovery}
 \label{sec:recovery}
@@ -980,7 +1153,7 @@ Here are some suggestions how to do this:
 \begin{description}
 \item[\code{cpm clean}]~\\
 This command cleans the current package from
-generated auxiliariy files (see Section~\ref{sec:cmd-reference}).
+generated auxiliary files (see Section~\ref{sec:cmd-reference}).
 Then you can re-install the package and packages on which it depends
 by the command \code{cpm install}.
 \item[\code{rm -rf \$HOME/.cpm/packages}] ~\\
