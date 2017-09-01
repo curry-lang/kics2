@@ -20,6 +20,8 @@ Changes to version 0.5.1:
     easily be installed (by a one-line command) locally via `cpm`.
     Instructions how to install these tools are included
     in the KiCS2 manual.
+  * Operation `RegExp.match`: order of arguments swapped
+  * Curry preprocessor does not generate implicit `match` for regexps.
   * Some libraries removed since they are available as packages
     which can easily be installed via `cpm`:
 

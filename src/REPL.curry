@@ -472,7 +472,7 @@ makeMainGoalMonomorphic rst prog goal = case prog of
       return True
   _ -> error "REPL.makeMainGoalMonomorphic"
  where newgoal ty = if isIOReturnType ty
-                    then '(' : goal ++ ") >>= print"
+                    then '(' : goal ++ ") Prelude.>>= Prelude.print"
                     else goal
 
 -- Compile a Curry program with kics2 compiler:
@@ -1073,7 +1073,7 @@ checkAndCallCpmTool tool package continue = do
               then continue cpmtoolfile
               else skipCommand errmsg
  where
-  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cpm installapp " ++
+  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cpm install " ++
            package ++ "'!"
 
 -- Execute some command (first argument) with some arguments (second argument).

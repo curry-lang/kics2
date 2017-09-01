@@ -41,7 +41,7 @@ MINORVERSION    = 0
 # The revision version number
 REVISIONVERSION = 0
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION=1
+BUILDVERSION    = 2
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -135,7 +135,7 @@ CABAL_MINOR := $(shell "$(CABAL)" --numeric-version | cut -d. -f2)
 ifeq ($(shell test $(CABAL_MAJOR) -gt 1 -o \( $(CABAL_MAJOR) -eq 1 -a $(CABAL_MINOR) -ge 22 \) ; echo $$?),0)
 CABAL_REL_OPT = --enable-relocatable
 else
-CABAL_REL_OPT = 
+CABAL_REL_OPT =
 endif
 # CABAL on Windows does not support the option "--enable-relocatable":
 ifdef WINDOWS
