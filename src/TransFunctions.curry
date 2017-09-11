@@ -318,7 +318,7 @@ globalTemporary = renameQName ("Global", "Temporary")
 ---
 --- to make it a constant.
 trGlobalDecl :: FuncDecl -> M [AH.FuncDecl]
-trGlobalDecl (Func qn a v t r) = case r of
+trGlobalDecl (Func qn a v t r) = doInDetMode True $ case r of
   (Rule _ (Comb _ _ [e, _]))  | a == 0  ->
     trCompleteExpr e       >+= \e'      ->
     renameFun qn           >+= \qn'     ->
