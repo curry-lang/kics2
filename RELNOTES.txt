@@ -20,7 +20,6 @@ Changes to version 0.5.1:
 
       - `AbstractCurry.*` (now in package `abstract-curry`)
       - `Bootstrap3Style` (now in package `html`)
-      - `CLPB` (now in package `clpbool`)
       - `CHR` (now in package `chr-curry`)
       - `CategorizedHtmlList` (now in package `html`)
       - `CurryStringClassifier` (now in package `addtypes`)
