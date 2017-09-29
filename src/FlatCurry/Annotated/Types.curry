@@ -13,8 +13,8 @@
 --- @category meta
 ------------------------------------------------------------------------------
 
-module AnnotatedFlatCurry
-  ( module AnnotatedFlatCurry
+module FlatCurry.Annotated.Types
+  ( module FlatCurry.Annotated.Types
   , module FlatCurry.Types
   ) where
 

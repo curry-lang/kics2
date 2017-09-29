@@ -15,9 +15,9 @@ import FilePath          (FilePath, (</>), dropExtension, normalise)
 import FiniteMap
 import FlatCurry.Types
 import FlatCurry.Goodies (updQNamesInProg)
-import AnnotatedFlatCurry
-import AnnotatedFlatCurryFiles   (typedFlatCurryFileName)
-import AnnotatedFlatCurryGoodies (unAnnProg)
+import FlatCurry.Annotated.Types
+import FlatCurry.Annotated.Files   (typedFlatCurryFileName)
+import FlatCurry.Annotated.Goodies (unAnnProg)
 import ReadShowTerm      (readQTermFile)
 import System            (getArgs)
 

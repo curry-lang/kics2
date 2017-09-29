@@ -41,7 +41,7 @@ MINORVERSION    = 0
 # The revision version number
 REVISIONVERSION = 0
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION    = 2
+BUILDVERSION    = 3
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -97,6 +97,8 @@ export PKGDB         = $(LOCALPKG)/kics2.conf.d
 # The local path (from the ROOT) to the package database
 export LOCALPKGDB    = pkg/kics2.conf.d
 
+# Executable of CurryCheck:
+CURRYCHECK := $(shell which curry-check)
 # Executable of CurryDoc:
 CURRYDOC := $(shell which curry-doc)
 # Executable of the markdown translator (required for documentation generation):
@@ -372,9 +374,15 @@ else
 export RUNTESTPARAMS=
 endif
 
-# run the test suite to check the installation
+# run the test suites to check the installation
 .PHONY: runtest
 runtest:
+	@if [ ! -x "$(CURRYCHECK)" ] ; then \
+	  echo "Executable 'curry-check' is not installed!" && echo "To run the tests, install it by > cpm install currycheck" ; \
+	else $(MAKE) runalltests ; fi
+
+.PHONY: runalltests
+runalltests:
 	cd testsuite && ./test.sh $(RUNTESTPARAMS)
 	cd lib && ./test.sh $(RUNTESTPARAMS)
 	cd currytools && $(MAKE) runtest $(RUNTESTPARAMS)

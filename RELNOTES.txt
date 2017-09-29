@@ -1,8 +1,8 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 2.0.0 (May 22, 2017)
------------------------------------------------------
+Release notes for KiCS2 Version 2.0.0 (September 29, 2017)
+----------------------------------------------------------
 
 This version has almost the same functionality as Version 0.6.0
 but adds type classes similar to Haskell 98.
@@ -14,7 +14,7 @@ Release notes for KiCS2 Version 0.6.0
 Changes to version 0.5.1:
 
   * Curry Package Manager added as tool `cpm`.
-  * Various tools (e.g., addtypes, currybrowser, currydoc, erd2curry,
+  * Various tools (e.g., addtypes, currybrowser, currycheck, currydoc, erd2curry,
     spicey, verify, xmldata) have been removed from the distribution
     since they are not necessary for the basic use of KiCS2 and they can
     easily be installed (by a one-line command) locally via `cpm`.
@@ -25,10 +25,13 @@ Changes to version 0.5.1:
   * Some libraries removed since they are available as packages
     which can easily be installed via `cpm`:
 
+      - `AbstractCurry.*` (now in package `abstract-curry`)
       - `Bootstrap3Style` (now in package `html`)
+      - `CHR` (now in package `chr-curry`)
       - `CategorizedHtmlList` (now in package `html`)
       - `CurryStringClassifier` (now in package `addtypes`)
       - `Database.ERDGoodies` (now in package `ertools`)
+      - `FlatCurry.*` (now in package `flatcurry`)
       - `FlatCurry.Annotated.*` (now in package `flatcurry-annotated`)
       - `GraphInductive` (now in package `graph-inductive`)
       - `HtmlParser` (now in package `html`)
@@ -39,6 +42,7 @@ Changes to version 0.5.1:
       - `Rewriting.*` (now in package `rewriting`)
       - `URL` (now in package `url`)
       - `WUI` and `WUIjs` (now in package `wui`)
+      - `XmlConv` (now in package `xml`)
 
 Release notes for KiCS2 Version 0.5.1
 -------------------------------------

@@ -7,11 +7,11 @@
 --- @version October 2015
 --- @category meta
 --- --------------------------------------------------------------------------
-module AnnotatedFlatCurryPretty where
+module FlatCurry.Annotated.Pretty where
 
 import Pretty
 
-import AnnotatedFlatCurry
+import FlatCurry.Annotated.Types
 
 --- pretty-print a FlatCurry module
 ppProg :: AProg _ -> Doc

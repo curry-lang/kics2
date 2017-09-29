@@ -8,7 +8,7 @@
 --- @category meta
 ------------------------------------------------------------------------------
 
-module AnnotatedFlatCurryFiles where
+module FlatCurry.Annotated.Files where
 
 import Directory       (doesFileExist)
 import Distribution    ( FrontendParams, FrontendTarget (..), defaultParams
@@ -18,7 +18,7 @@ import Distribution    ( FrontendParams, FrontendTarget (..), defaultParams
                        )
 import FileGoodies     (getFileInPath, lookupFileInPath)
 import FilePath        (takeFileName, (</>), (<.>))
-import AnnotatedFlatCurry
+import FlatCurry.Annotated.Types
 import Maybe           (isNothing)
 import ReadShowTerm    (readUnqualifiedTerm, showTerm)
 
