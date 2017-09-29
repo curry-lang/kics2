@@ -97,6 +97,8 @@ export PKGDB         = $(LOCALPKG)/kics2.conf.d
 # The local path (from the ROOT) to the package database
 export LOCALPKGDB    = pkg/kics2.conf.d
 
+# Executable of CurryCheck:
+CURRYCHECK := $(shell which curry-check)
 # Executable of CurryDoc:
 CURRYDOC := $(shell which curry-doc)
 # Executable of the markdown translator (required for documentation generation):
@@ -374,8 +376,13 @@ endif
 
 # run the test suite to check the installation
 .PHONY: runtest
-runtest: testsuite/doTest
-	#cd testsuite  && ./doTest --nogui
+runtest:
+	@if [ ! -x "$(CURRYCHECK)" ] ; then \
+	  echo "Executable 'curry-check' is not installed!" && echo "To run the tests, install it by > cpm install currycheck" ; \
+	else $(MAKE) runalltests ; fi
+
+.PHONY: runalltests
+runalltests:
 	cd testsuite2 && ./test.sh $(RUNTESTPARAMS)
 	cd lib && ./test.sh $(RUNTESTPARAMS)
 	cd currytools && $(MAKE) runtest $(RUNTESTPARAMS)
