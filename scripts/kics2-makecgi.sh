@@ -20,6 +20,7 @@ ERROR=
 HELP=no
 CURRYDOPTIONS=
 CURRYOPTIONS=":set -time :set -interactive"
+CPM=no
 COMPACT=no
 DEBUG=no
 DEBUGFILE=
@@ -37,6 +38,7 @@ while [ $# -gt 0 -a -z "$ERROR" ]; do
   case $1 in
    -help | -h | -\? ) HELP=yes ;;
    -D*              ) CURRYDOPTIONS="$CURRYDOPTIONS $1" ;;
+   -cpm             ) CPM=yes ;;
    -compact         ) COMPACT=yes ;;
    -debug           ) DEBUG=yes ;;
    -debugfile       ) shift ; DEBUGFILE=$1 ;;
@@ -78,6 +80,7 @@ if [ $# != 1 -a $# != 3 ] ; then
   echo "<curry>    : name of the Curry program (without suffix) containing the script"
   echo
   echo "FURTHER OPTIONS:"
+  echo '-cpm       : use CPM and Curry package "html"'
   echo '-Dname=val : define kics2rc property "name" as "val"'
   echo "-compact   : reduce size of generated cgi program by deleting unused functions"
   echo "-debug     : include code for showing failures"
@@ -103,6 +106,11 @@ if [ $# != 1 -a $# != 3 ] ; then
   exit 1
 fi
 
+CPMEXEC=
+if [ $CPM = yes ] ; then
+  CPMEXEC="cpm exec"
+fi
+
 # Try to locate WUI/JavaScript translator:
 WUIJS_PREPROCESSOR=`which curry2js`
 if [ ! -x "$WUIJS_PREPROCESSOR" ] ; then
@@ -115,7 +123,7 @@ fi
 if [ -z "$WUIJS_PREPROCESSOR" -a $WUIJS = yes ] ; then
   echo "No support for JavaScript possible!"
   echo "Please install the Curry->JavaScript translator curry2js by:"
-  echo "> cpm update && cpm installapp curry2js"
+  echo "> cpm update && cpm install curry2js"
   exit 1
 fi
 
@@ -153,14 +161,19 @@ CGIKEY="$CGIFILEPATHNAME/$CGIPROG `date '+%m/%d/%y/%H/%M/%S'`"
 rm -f $MAINCURRY
 echo "module $MAINMOD($MAINCALL) where" >> $MAINCURRY
 echo "import $PROG" >> $MAINCURRY
-echo "import HTML" >> $MAINCURRY
+if [ $CPM = yes ] ; then
+  echo "import HTML.Base" >> $MAINCURRY
+  echo "import HTML.CgiServer" >> $MAINCURRY
+else
+  echo "import HTML" >> $MAINCURRY
+fi
 echo "$MAINCALL :: IO ()" >> $MAINCURRY
 if [ $WUIJS = no ] ; then
   echo "$MAINCALL = runFormServerWithKey \"$CGIPROG\" \"$CGIKEY\" ($MAIN)" >> $MAINCURRY
 else
   CGIBASE=`expr $CGIPROG : '\(.*\)\.cgi' \| $CGIPROG`
   JSFILE=$CGIBASE\_wui.js
-  $WUIJS_PREPROCESSOR -wui -o $JSFILE $PROG $WUIMODULES
+  $CPMEXEC $WUIJS_PREPROCESSOR -wui -o $JSFILE $PROG $WUIMODULES
   if [ $? != 0 ] ; then
     rm -f $MAINCURRY
     exit $?
@@ -174,7 +187,7 @@ fi
 
 # compile main module:
 echo "Generating saved state for initial expression: $MAIN"
-$CURRYROOT/bin/curry $CURRYDOPTIONS $CURRYOPTIONS :l $MAINMOD :save $MAINCALL :q
+$CPMEXEC $CURRYROOT/bin/curry $CURRYDOPTIONS $CURRYOPTIONS :l $MAINMOD :save $MAINCALL :q
 
 # now the file $MAINMOD should contain the executable computing the HTML form:
 if test ! -f $MAINMOD ; then
