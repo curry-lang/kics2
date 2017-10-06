@@ -385,7 +385,7 @@ runtest:
 runalltests:
 	cd testsuite && ./test.sh $(RUNTESTPARAMS)
 	cd lib && ./test.sh $(RUNTESTPARAMS)
-	cd currytools && $(MAKE) runtest $(RUNTESTPARAMS)
+	cd currytools && $(MAKE) runtest
 
 # run the test suites in verbose mode so that all output is shown:
 .PHONY: runtestverbose
