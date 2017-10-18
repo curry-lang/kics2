@@ -6,6 +6,17 @@ Release notes for KiCS2 Version 2.0.0 (October 11, 2017)
 
 This version has almost the same functionality as Version 0.6.0
 but adds type classes similar to Haskell 98.
+In addition to version 0.6.0 and type classes,
+this version contains the following changes:
+
+  * Some libraries removed since they are available as packages
+    which can easily be installed via `cpm`:
+
+      - `Assertion`
+        (no longer used since `currytest` has been replaced by `currycheck`)
+      - `CSV` (now available as `Text.CSV` in package `csv`)
+      - `Parser` (now available in package `fl-parser`)
+      - `RegExp` (now available in package `regexp`)
 
 
 Release notes for KiCS2 Version 0.6.0
