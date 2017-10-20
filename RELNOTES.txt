@@ -24,7 +24,7 @@ Release notes for KiCS2 Version 0.6.0
 
 Changes to version 0.5.1:
 
-  * Curry Package Manager added as tool `cpm`.
+  * Curry Package Manager added as tool `cypm`.
   * Various tools (e.g., addtypes, currybrowser, currycheck, currydoc, erd2curry,
     spicey, verify, xmldata) have been removed from the distribution
     since they are not necessary for the basic use of KiCS2 and they can
