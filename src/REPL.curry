@@ -1073,7 +1073,7 @@ checkAndCallCpmTool tool package continue = do
               then continue cpmtoolfile
               else skipCommand errmsg
  where
-  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cpm install " ++
+  errmsg = "'" ++ tool ++ "' not found. Install it by: 'cypm install " ++
            package ++ "'!"
 
 -- Execute some command (first argument) with some arguments (second argument).

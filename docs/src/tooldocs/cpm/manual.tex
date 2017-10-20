@@ -52,85 +52,144 @@
 
 \maketitle
 
-\begin{abstract}
+\tableofcontents
+
+\clearpage
+
+
+\section{Introduction}
+
 This document describes the Curry package manager (CPM), a tool to
 distribute and install Curry libraries and manage version dependencies
 between these libraries.
-\end{abstract}
+
+A distinguishing feature of CPM is its ability to perform
+\emph{semantic versioning checking}, i.e., CPM provides a command
+to check the semantics of a new package version against an
+older version of the same package.
+
+
+\bigskip\bigskip
 
 \section{Installing the Curry Package Manager}
 
-To install and use CPM, a working installation of either the
+CPM is part of recent distributions of the Curry systems
 PAKCS\footnote{\url{https://www.informatik.uni-kiel.de/~pakcs/}}
-compiler in version 1.14.1 or greater, or the
+(since version 1.15.0)
+and
 KiCS2\footnote{\url{https://www-ps.informatik.uni-kiel.de/kics2/}}
-compiler in version 0.5.1 or greater is required. Additionally, CPM requires
+(since version 0.6.0).
+If you use an older release of PAKCS or KiCS2 or you want to
+install the most recent CPM version from the source repository,
+this section contains some hints about the installation of CPM.
+
+To install and use CPM, a working installation of either
+PAKCS in version 1.14.1 or greater, or
+KiCS2 in version 0.5.1 or greater is required. Additionally, CPM requires 
 \emph{Git}\footnote{\url{http://www.git-scm.com}},
 \emph{curl}\footnote{\url{https://curl.haxx.se}}
-and \emph{unzip} to be available on the \code{PATH} during installation and
+and \emph{unzip} to be available on the \code{PATH} during installation and 
 operation. You also need to ensure that your Haskell installations reads files
 using UTF-8 encoding by default. Haskell uses the system locale charmap for its
-default encoding. You can check the current value using
+default encoding. You can check the current value using 
 \code{System.IO.localeEncoding} inside a \code{ghci} session.
 
-To install CPM from the sources, enter the
+To install CPM from the sources, enter the 
 root directory of the CPM source distribution.
 The main executable \code{curry} of your Curry system must be in your
 path (otherwise, you can also specify the root location of your Curry system
 by modifying the definition of \code{CURRYROOT} in the \code{Makefile}).
 Then type \code{make} to compile CPM which generates
-a binary called \code{cpm} in the \code{bin} subdirectory. Put
+a binary called \code{cypm} in the \code{bin} subdirectory. Put
 this binary somewhere on your path.
 
-Afterwards, run \code{cpm update} to pull down a copy of the central package
-index to your system.
+
+\clearpage
+
+\section{Starting the Curry Package Manager}
+
+If the binary \code{cypm} is on your path, execute the command
+%
+\begin{lstlisting}
+> cypm update
+\end{lstlisting}
+%
+to pull down a copy of the central package index to your system.
+You can use the same command to update later
+your copy of the central package index to the newest version.
+
+Afterwards, you can show a short list of all packages in this index by
+%
+\begin{lstlisting}
+> cypm list
+\end{lstlisting}
+%
+The command
+%
+\begin{lstlisting}
+> cypm info PACKAGE
+\end{lstlisting}
+%
+can be used to show more information about a package.
+There is also a command
+%
+\begin{lstlisting}
+> cypm search QUERY
+\end{lstlisting}
+%
+to search inside the central package index.
+
+Section~\ref{sec:cmd-reference} contains a complete list of all
+available CPM commands.
+
+\clearpage
 
 \section{Package Basics}
 \label{sec:package-basics}
 
-Essentially, a Curry package is nothing more than a directory structure
+Essentially, a Curry package is nothing more than a directory structure 
 containing a \code{package.json} file and a \code{src} directory at its root.
-The \code{package.json} file is a JSON file containing package metadata, the
+The \code{package.json} file is a JSON file containing package metadata, the 
 \code{src} directory contains the Curry modules that make up the package.
 
-We assume familiarity with the JSON file format. A good introduction can be
-found at \url{http://json.org}. The package specification file must contain a
-top-level JSON object with at least the keys \code{name}, \code{author},
-\code{version}, \code{synopsis} and \code{dependencies}. More possible fields
+We assume familiarity with the JSON file format. A good introduction can be 
+found at \url{http://json.org}. The package specification file must contain a 
+top-level JSON object with at least the keys \code{name}, \code{author}, 
+\code{version}, \code{synopsis} and \code{dependencies}. More possible fields 
 are described in Section~\ref{sec:reference}. A package's name may contain any
 ASCII alphanumeric character as well as dashes (\code{-}) and underscores
 (\code{_}). It must start with an alphanumeric character. The author field is a
 free-form field, but the suggested format is either a name (\code{John Doe}),
 or a name followed by an email address in angle brackets
 (\code{John Doe <john.doe@goldenstate.gov>}). Separate multiple authors with
-commas.
+commas. 
 
-Versions must be specified in the format laid out in the semantic versioning
-standard:\footnote{\url{http://www.semver.org}} each version number consists of
+Versions must be specified in the format laid out in the semantic versioning 
+standard:\footnote{\url{http://www.semver.org}} each version number consists of 
 numeric major, minor and patch versions separated by dot characters as well as
 an optional pre-release specifier consisting of ASCII alphanumerics and hyphens,
 e.g. \code{1.2.3} and \code{1.2.3-beta5}. Please note that build metadata as
-specified in the standard is not supported.
+specified in the standard is not supported. 
 
-The synopsis should be a short summary of what the package does. Use the
-\code{description} field for longer form explanations.
+The synopsis should be a short summary of what the package does. Use the 
+\code{description} field for longer form explanations. 
 
 Dependencies are specified as a nested JSON object with package names as keys
-and dependency constraints as values. A dependency constraint restricts the
+and dependency constraints as values. A dependency constraint restricts the 
 range of versions of the dependency that a package is compatible to. Constraints
 consist of elementary comparisons that can be combined into conjunctions, which
 can then be combined into one large disjunction -- essentially a disjunctive
-normal form. The supported comparison operators are $<, \leq, >, \geq, =$ and
+normal form. The supported comparison operators are $<, \leq, >, \geq, =$ and 
 $\sim>$. The first four are interpreted according to the rules for comparing
 version numbers laid out in the semantic versioning standard. $\sim>$ is called
-the \emph{semantic versioning arrow}. It requires that the package version be
+the \emph{semantic versioning arrow}. It requires that the package version be 
 at least as large as its argument, but still within the same minor version, i.e.
 $\sim> 1.2.3$ would match $1.2.3$, $1.2.9$ and $1.2.55$, but not $1.2.2$ or
 $1.3.0$.
 
-To combine multiple comparisons into a conjunction, separate them by commas,
-e.g. $\geq 2.0.0, < 3.0.0$ would match all versions with major version $2$.
-Note that it would not match \textit{2.1.3-beta5} for example, since pre-release
+To combine multiple comparisons into a conjunction, separate them by commas, 
+e.g. $\geq 2.0.0, < 3.0.0$ would match all versions with major version $2$. 
+Note that it would not match \textit{2.1.3-beta5} for example, since pre-release 
 versions are only matched if the comparison is explicitly made to a pre-release
 version, e.g. $= \text{2.1.3-beta5}$ or $\geq \text{2.1.3-beta2}$.
 
@@ -138,6 +197,8 @@ Conjunctions can be combined into a disjunction via the $||$ characters, e.g.
 $\geq 2.0.0, < 3.0.0 || \geq 4.0.0$ would match any version within major version
 $2$ and from major version $4$ onwards, but no version within major version $3$.
 
+
+\clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Using Packages}
@@ -149,12 +210,12 @@ In the following we describe both possibilities of using packages.
 \subsection{Creating New Packages}
 
 Creating a new Curry package is easy.
-To use a Curry package in your project, create a
-\code{package.json} file in the root, fill it with the minimum amount of
+To use a Curry package in your project, create a 
+\code{package.json} file in the root, fill it with the minimum amount of 
 information discussed in the previous session, and move your Curry code to a
 \code{src} directory inside your project's directory. Alternatively, if you are
-starting a new project, use the \code{cpm new <project-name>} command, which
-creates a new project directory with a
+starting a new project, use the \code{cypm new <project-name>} command, which 
+creates a new project directory with a 
 \code{package.json} file for you.\footnote{The \code{new} command
 also creates some other useful template files. Look into the
 output of this command.}
@@ -169,41 +230,33 @@ Declare a dependency inside the new \code{package.json} file, e.g.:
 }
 \end{lstlisting}
 %
-Then run \code{cpm install} to install all dependencies of the current package
-and start your interactive Curry environment with \code{cpm curry}. You will be
+Then run \code{cypm install} to install all dependencies of the current package
+and start your interactive Curry environment with \code{cypm curry}. You will be
 able to load the JSON package's modules in your Curry session.
 
 
 \subsection{Installing and Updating Dependencies}
 
-To install the current package's dependencies, run \code{cpm install}. This will
+To install the current package's dependencies, run \code{cypm install}. This will
 install the most recent version of all dependencies that are compatible to the
-package's dependency constraints. Note that a subsequent run of
-\code{cpm install} will always prefer the versions it installed on a previous
+package's dependency constraints. Note that a subsequent run of 
+\code{cypm install} will always prefer the versions it installed on a previous
 run, if they are still compatible to the package's dependencies. If you want to
-explicitly install the newest compatible version regardless of what was
-installed on previous runs of \code{cpm install}, you can use the
-\code{cpm upgrade} command to upgrade all dependencies to their newest
-compatible versions, or \code{cpm upgrade <package>} to update a specific
+explicitly install the newest compatible version regardless of what was 
+installed on previous runs of \code{cypm install}, you can use the 
+\code{cypm upgrade} command to upgrade all dependencies to their newest 
+compatible versions, or \code{cypm upgrade <package>} to update a specific 
 package and all its transitive dependencies to the newest compatible version.
-
-Note that there is also a \code{cpm update} command, which will update
-your copy of the central package index to the newest version. You can
-list all packages of the central package index via the
-\code{cpm list} command, or you can
-search the central package index via the \code{cpm search}
-command. See Section~\ref{sec:cmd-reference} for a reference of all
-commands.
 
 If the package also contains an implementation of a complete executable,
 e.g., some useful tool,
 which can be specifed in the \code{package.json} file
 (see Section~\ref{sec:reference}),
-then the command \code{cpm install} also compiles the application
+then the command \code{cypm install} also compiles the application
 and installs the executable in the \code{bin} install directory of CPM
 (see Section~\ref{sec:config} for details).
 The installation of executables can be suppressed by the
-\code{cpm install} option \code{-n} or \code{--noexec}.
+\code{cypm install} option \code{-n} or \code{--noexec}.
 
 
 \subsection{Checking out Packages}
@@ -212,7 +265,7 @@ The installation of executables can be suppressed by the
 In order to use, experiment with or modify an existing package,
 one can use the command
 \begin{lstlisting}
-cpm checkout <package>
+cypm checkout <package>
 \end{lstlisting}
 to install a local copy of a package.
 This is also useful to install some tool distributed as a package.
@@ -221,10 +274,10 @@ a property-testing tool for Curry,
 one can check out the most recent version and install the tool:
 %
 \begin{lstlisting}
-> cpm checkout currycheck
+> cypm checkout currycheck
 $\ldots$ Package 'currycheck-1.0.1' checked out into directory 'currycheck'.
 > cd currycheck
-> cpm install
+> cypm install
 $\ldots$
 INFO  Installing executable 'curry-check into '/home/joe/.cpm/bin'
 \end{lstlisting}
@@ -244,7 +297,7 @@ In order to install the executables of such applications without
 explicitly checking out the package in some local directory,
 one can use the command
 \begin{lstlisting}
-cpm install <package>
+cypm install <package>
 \end{lstlisting}
 This command checks out the package in some internal directory
 (default: \code{\$HOME/.cpm/app_packages}, see
@@ -256,7 +309,7 @@ For instance, the most recent version of the web framework Spicey
 can be installed by the following command:
 %
 \begin{lstlisting}
-> cpm install spicey
+> cypm install spicey
 $\ldots$ Package 'spicey-xxx' checked out $\ldots$
 $\ldots$
 INFO  Installing executable 'spiceup' into '/home/joe/.cpm/bin'
@@ -268,30 +321,55 @@ if \code{\$HOME/.cpm/bin} is in your path
 of this default path).
 
 
-\subsection{Executing the Curry Compiler}
+\subsection{Executing the Curry System in a Package}
 
-To use the dependencies of a package, the Curry compiler needs to be
-started via CPM so that the compiler will know where to search for the
-modules provided. You can use the command \ccode{cpm curry} to start the
-Curry compiler (which is either the compiler used to install CPM
+To use the dependencies of a package, the Curry system needs to be
+started via CPM so that it will know where to search for the
+modules provided. You can use the command \ccode{cypm curry} to start the
+Curry system (which is either the compiler used to install CPM
 or specified with the configuration option \code{CURRY_BIN},
 see Section~\ref{sec:config}).
-Any parameters given to \ccode{cpm curry} will be passed along verbatim to
-the Curry compiler.
-For example, the following will start the Curry
-compiler, print the result of evaluating the expression \code{39+3}
+Any parameters given to \ccode{cypm curry} will be passed along verbatim to
+the Curry system.
+For example, the following will start the Curry system,
+print the result of evaluating the expression \code{39+3}
 and then quit.
 
 \begin{lstlisting}
-> cpm curry :eval "39+3" :quit
+> cypm curry :eval "39+3" :quit
 \end{lstlisting}
 %
 To execute other Curry commands, such as \ccode{curry check},
 with the package's dependencies available,
-you can use the \ccode{cpm exec} command.
+you can use the \ccode{cypm exec} command.
 This command will set the \code{CURRYPATH} environment variable
 and then execute the command given after \ccode{exec}.
 
+
+\subsection{Using Packages Without a Package}
+
+In principle, packages can be used only inside another package
+by declaring dependencies.
+Thus, if you develop a Curry application which is not a package
+but you want to use some package, you have to put
+a package specification file into the source directory of
+your application where you define the required packages.
+As a shortcut for this, you can use the CPM command
+\code{cypm add --dependency} (short: \code{cypm add -d})
+to install the package specification file.
+
+For instance, to use the libraries of the JSON package
+in your application, one can use the following commands:
+%
+\begin{lstlisting}
+> cypm add -d json  # generate package specification with 'json' dependency
+> cypm install      # download and install all dependencies
+> cypm curry        # start Curry system with JSON libraries in load path
+...
+Prelude> :load JSON.Data
+JSON.Data>
+\end{lstlisting}
+%
 
 \subsection{Replacing Dependencies with Local Versions}
 \label{sec:cpm-link}
@@ -299,45 +377,48 @@ and then execute the command given after \ccode{exec}.
 During development of your applications, situations may arise in which you want
 to temporarily replace one of your package's dependencies with a local copy,
 without having to publish a copy of that dependency somewhere or increasing the
-dependency's version number. One such situation is a bug in a dependency not
+dependency's version number. One such situation is a bug in a dependency not 
 controlled by you: if your own package depends on package $A$ and $A$'s current
-version is $1.0.3$ and you encounter a bug in this version, then you might be
+version is $1.0.3$ and you encounter a bug in this version, then you might be 
 able to investigate, find and fix the bug. Since you are not the the author of
 $A$, however, you cannot release a new version with the bug fixed. So you send
 off your patch to $A$'s maintainer and wait for $1.0.4$ to be released. In the
-meantime, you want to use your local, fixed copy of version $1.0.3$ from your
-package. The \code{cpm link} command allows you to replace a dependency with
+meantime, you want to use your local, fixed copy of version $1.0.3$ from your 
+package. The \code{cypm link} command allows you to replace a dependency with
 your own local copy.
 
-\code{cpm link} takes a directory containing a copy of one of the current
+\code{cypm link} takes a directory containing a copy of one of the current 
 package's dependencies as its argument. It creates a symbolic link from that
 directory the the current package's local package cache. If you had a copy of
-\code{A-1.0.3} in the \code{~/src/A-1.0.3} directory, you could use
-\code{cpm link ~/src/A-1.0.3} to ensure that any time \code{A-1.0.3} is used
+\code{A-1.0.3} in the \code{~/src/A-1.0.3} directory, you could use 
+\code{cypm link ~/src/A-1.0.3} to ensure that any time \code{A-1.0.3} is used 
 from the current package, your local copy is used instead of the one from the
-global package cache. To remove any links, use \code{cpm upgrade} without any
-arguments, which will clear the local package cache. See
+global package cache. To remove any links, use \code{cypm upgrade} without any
+arguments, which will clear the local package cache. See 
 Section~\ref{sec:internals} for more information on the global and local package
 caches.
 
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Authoring Packages}
 
-If you want to create packages for other people to use, you should consider
-filling out more metadata fields than the bare minimum. See
+If you want to create packages for other people to use, you should consider 
+filling out more metadata fields than the bare minimum. See 
 Section~\ref{sec:reference} for a reference of all available fields.
 
 \subsection{Semantic Versioning}
 \label{sec:semantic-versioning}
 
-The versions of published packages should adhere to the semantic versioning
+The versions of published packages should adhere to the semantic versioning 
 standard, which lays out rules for which components of a version number must
-change if the public API of a package changes. Recall that a semantic versioning
-version number consists of a major, minor and patch version as well as an
-optional pre-release specifier. In short, semantic versioning defines the
+change if the public API of a package changes. Recall that a semantic versioning 
+version number consists of a major, minor and patch version as well as an 
+optional pre-release specifier. In short, semantic versioning defines the 
 following rules:
 
 \begin{itemize}
-\item If the type of any public API is changed or removed or the expected
+\item If the type of any public API is changed or removed or the expected 
 behavior of a public API is changed, you must increase the major version number
 and reset the minor and patch version numbers to $0$.
 
@@ -354,26 +435,26 @@ it is sufficient to increase the patch version number.
 
 \item If the major version number is $0$, the package is still considered under
 development and thus unstable. In this case, the rules do not apply, although
-following them as much as possible as still encouraged. Release $1.0.0$ is
+following them as much as possible as still encouraged. Release $1.0.0$ is 
 considered to be the first stable version.
 \end{itemize}
 %
 To aid you in following these rules, CPM provides the \code{diff} command.
 \code{diff} can be used to compare the types and behavior of a package's public
 API between two versions of that package. If it finds any differences, it checks
-whether they are acceptable under semantic versioning for the difference in
+whether they are acceptable under semantic versioning for the difference in 
 version numbers between the two package versions. To use \code{diff}, you need
 to be in the directory of one of the versions, i.e., your copy for development,
 and have the other version installed in CPM's global package cache (see the
-\code{cpm install} command). For example, if you are developing version $1.3.0$
+\code{cypm install} command). For example, if you are developing version $1.3.0$
 of the JSON package and want to make sure you have not introduced any breaking
-changes when compared to the previous version $1.2.6$, you can use the
-\code{cpm diff 1.2.6} command while in the directory of version $1.3.0$.
+changes when compared to the previous version $1.2.6$, you can use the 
+\code{cypm diff 1.2.6} command while in the directory of version $1.3.0$. 
 
 CPM will then check the types of all public functions and data types in all
 exported modules of both versions (see the \code{exportedModules} field of the
-package specification) and report any differences and whether they violate
-semantic versioning. It will also generate a CurryCheck program that will
+package specification) and report any differences and whether they violate 
+semantic versioning. It will also generate a CurryCheck program that will 
 compare the behavior of all exported functions in all exported modules whose
 types have not changed and execute that program. Note that not all functions
 can be compared via CurryCheck.
@@ -433,7 +514,7 @@ operations.
 There might be situations when operations should not be compared,
 e.g., if the previous version of the operation was buggy.
 In this case, one can mark those functions with the compiler pragma
-\verb|{-# NOCOMPARE -#}|
+\verb|{-# NOCOMPARE -#}| 
 so that CPM will not generate tests for them.
 
 
@@ -443,10 +524,10 @@ so that CPM will not generate tests for them.
 When you have your package ready and want to use it in other packages,
 it must be added to the central package index so that CPM can find it
 when searching for packages. For this purpose, you can use the
-\ccode{cpm add} command:
+\ccode{cypm add} command:
 %
 \begin{lstlisting}
-> cpm add mypackage
+> cypm add --package mypackage
 \end{lstlisting}
 %
 In this case, \code{mypackage} is the name of the directory containing
@@ -470,7 +551,7 @@ There are three things that need to be done to publish a package: make the
 package accessible somewhere, add the location to the package specification, and
 add the package specification to the central package index.
 
-CPM supports ZIP files accessible over HTTP as well as Git repositories as
+CPM supports ZIP files accessible over HTTP as well as Git repositories as 
 package sources. You are free to choose one of those, but a publicly accessible
 Git repository is preferred. To add the location to the package specification,
 use the \code{source} key. For a HTTP source, use:
@@ -484,7 +565,7 @@ use the \code{source} key. For a HTTP source, use:
 }
 \end{lstlisting}
 %
-For a Git source, you have to specify both the repository as well as the
+For a Git source, you have to specify both the repository as well as the 
 revision that represents the version:
 %
 \begin{lstlisting}
@@ -512,7 +593,7 @@ to the tag \ccode{v\$version\$}.
 
 After you have published the files for your new package version, you
 have to add the corresponding package specification to the central
-package index. This can be done with the \ccode{cpm add} command
+package index. This can be done with the \ccode{cypm add} command
 (see Section~\ref{sec:adding-a-package}).
 If you have access to the Git
 repository containing the central package index, then you can push
@@ -522,10 +603,12 @@ specification file to \url{packages@curry-language.org} in order to
 publish it.
 
 
+\clearpage
+
 \section{Configuration}
 \label{sec:config}
 
-CPM can be configured via the \code{\$HOME/.cpmrc} configuration file. The
+CPM can be configured via the \code{\$HOME/.cpmrc} configuration file. The 
 following list shows all configuration options and their default values.
 
 \begin{description}
@@ -564,9 +647,11 @@ For instance, to install the binary
 of the package \code{spicey} in the directory \code{\$HOME/bin},
 one can execute the command
 \begin{lstlisting}
-> cpm --define bin_install_path=$\$$HOME/bin install spicey
+> cypm --define bin_install_path=$\$$HOME/bin install spicey
 \end{lstlisting}
 
+
+\clearpage
 
 \section{Some CPM Internals}
 \label{sec:internals}
@@ -581,25 +666,28 @@ This index contains a directory for each package, which contain subdirectories
 for all versions of that package which in turn contain the package
 specification files. So the specification for version $1.0.5$ of the
 \code{json} package would be located in
-\code{json/1.0.5/package.json}.
+\code{json/1.0.5/package.json}.  
 
 When a package is installed on the system, it is stored in the
 \emph{global package cache}.
 By default, the global package cache is located in
-\code{\$HOME/.cpm/packages}. When a package \emph{foo}, stored in directory
+\code{\$HOME/.cpm/packages}. When a package \emph{foo}, stored in directory 
 \code{foo}, depends on a package \emph{bar}, a link to \emph{bar's} directory in
-the global package cache is added to \emph{foo's} local package cache when
+the global package cache is added to \emph{foo's} local package cache when 
 dependencies are resolved for \emph{foo}.
-The \emph{local package cache} is stored in
-\code{foo/.cpm/package_cache}. Whenever dependencies are resolved, package
+The \emph{local package cache} is stored in 
+\code{foo/.cpm/package_cache}. Whenever dependencies are resolved, package 
 versions already in the local package cache are preferred over those from the
-central package index or the global package cache.
+central package index or the global package cache. 
 
 When a module inside a package is compiled, packages are first copied from the
-local package cache to the \emph{run-time cache}, which is stored in
+local package cache to the \emph{run-time cache}, which is stored in 
 \code{foo/.cpm/packages}. Ultimately, the Curry compiler only sees the package
 copies in the run-time cache, and never those from the local or global package
 caches.
+
+
+\clearpage
 
 \section{Command Reference}
 \label{sec:cmd-reference}
@@ -650,7 +738,7 @@ of the central package index.
 The option \code{--csv} shows the information in CSV format.
 
 \item[\fbox{\code{search [--module|--exec] $query$}}]
-Searches the names, synopses, and exported module names of all
+Searches the names, synopses, and exported module names of all 
 packages of the central package index for occurrences of the given
 search term.
 If the option \code{--module} is set, then the search is restricted
@@ -658,7 +746,7 @@ to occurrences of an exported module. Thus, the package
 exporting the module \code{JSON.Data} can be found by the command
 %
 \begin{lstlisting}
-> cpm search --module JSON.Data
+> cypm search --module JSON.Data
 \end{lstlisting}
 %
 If the option \code{--exec} is set, then the search is restricted
@@ -666,7 +754,7 @@ to the name of the executable provided by the package.
 For instance, the command
 %
 \begin{lstlisting}
-> cpm search --exec show
+> cypm search --exec show
 \end{lstlisting}
 %
 lists all packages where the name of the executable contains the
@@ -695,7 +783,7 @@ or by the CPM option \code{--define}, see Section~\ref{sec:config}).
 \code{--$pre$} enables the installation of pre-release versions.
 
 \item[\fbox{\code{install $package$ $version$}}]
-Install the application provided by a specific version of a package.
+Installs the application provided by a specific version of a package.
 The binary of the application is installed into the directory
 \code{\$HOME/.cpm/bin}
 (this location can be changed via the \code{\$HOME/.cpmrc} configuration file
@@ -740,7 +828,7 @@ in order to test its operations or install a binary of the package..
 % (this location can be changed via the \code{\$HOME/.cpmrc} configuration file
 % or by the CPM option \code{--define}, see Section~\ref{sec:config}).
 % \code{--$pre$} enables the installation of pre-release versions.
-%
+% 
 % \item[\fbox{\code{installapp $package$ $version$}}]
 % Install the application provided by a specific version of a package.
 % The binary of the application is installed into the directory
@@ -756,7 +844,7 @@ the newest compatible version.
 current package and all its transitive dependencies to their newest compatible
 versions.
 
-\item[\fbox{\code{deps}}] Does a dependency resolution run for the current
+\item[\fbox{\code{deps}}] Does a dependency resolution run for the current 
 package and prints out the results. The result is either a list of all package
 versions chosen or a description of the conflict encountered during dependency
 resolution.
@@ -823,29 +911,38 @@ but then you have to ensure that all operations are terminating
 (or you can annotate them by pragmas,
 see Section~\ref{sec:semantic-versioning}).
 
-\item[\fbox{\code{exec $command$}}] Executes an arbitrary command with the
+\item[\fbox{\code{exec $command$}}] Executes an arbitrary command with the 
 \code{CURRYPATH} environment variable set to the paths of all dependencies of
 the current package.
 For example, it can be used to execute \ccode{curry check}
 or \ccode{curry analyze} with correct dependencies available.
 
-\item[\fbox{\code{curry $args$}}] Executes the Curry compiler with the
+\item[\fbox{\code{curry $args$}}] Executes the Curry compiler with the 
 dependencies of the current package available.
 Any arguments are passed verbatim to the compiler.
 
-\item[\fbox{\code{link $source$}}] Can be used to replace a dependency of the
+\item[\fbox{\code{link $source$}}] Can be used to replace a dependency of the 
 current package using a local copy, see Section~\ref{sec:cpm-link} for details.
 
-\item[\fbox{\code{add $source$ [--force]}}]
-Copies the package contained in $source$ into the local copy
+\item[\fbox{\code{add --package $dir$ [--force]}}]
+Copies the package contained in directory $dir$ into the local copy
 of the central package index so that it can be used by other packages
 in the local environment
 (see Section~\ref{sec:adding-a-package} for details).
 The option \ccode{--force} allows to overwrite existing copies
 in the central package index.
 
+\item[\fbox{\code{add --dependency $package$ [--force]}}]
+Adds the package $package$ as a new dependency of the current package.
+This command either modifies the package description file (\code{package.json})
+of the current package and adds a dependency to the given package
+in this file or, if there is no package description file,
+generates a new one with this dependency.
+The option \ccode{--force} allows to overwrite existing dependencies
+in the package description file.
+
 \item[\fbox{\code{clean}}] Cleans the current package from the
-generated auxiliariy files, e.g., intermediate Curry files,
+generated auxiliary files, e.g., intermediate Curry files,
 installed dependent packages, etc.
 Note that a binary installed in the CPM \code{bin} directory
 (by the \code{install} command) will not be removed.
@@ -857,37 +954,45 @@ Creates a new project package with the given name and some template files.
 \end{description}
 
 
+\clearpage
+
 \section{Package Specification Reference}
 \label{sec:reference}
 
-This section describes all metadata fields available in a CPM package
+This section describes all metadata fields available in a CPM package 
 specification. Mandatory fields are marked with a \code{*} character.
 
 \begin{description}
-\item[\fbox{\code{name*}}] The name of the package. Must only contain ASCII
+\item[\fbox{\code{name*}}] The name of the package. Must only contain ASCII 
 letters, digits, hyphens and underscores. Must start with a letter.
 
 \item[\fbox{\code{version*}}] The version of the package. Must follow the format
 for semantic versioning version numbers.
 
-\item[\fbox{\code{author*}}] The package's author. This is a free-form field,
+\item[\fbox{\code{author*}}] The package's author. This is a free-form field, 
 the suggested format is either a name or a name followed by an email address in
-angle brackets, e.g., \code{John Doe <john@doe.com>}. Multiple authors should
-be separated by commas.
+angle brackets, e.g.,
+\begin{lstlisting}
+John Doe <john@doe.com>
+\end{lstlisting}
+Multiple authors should be separated by commas.
 
-\item[\fbox{\code{maintainer}}] The current maintainers of the package, if
+\item[\fbox{\code{maintainer}}] The current maintainers of the package, if 
 different from the original authors. This field allows the current maintainers
-to indicate the best person or persons to contact about the package while
+to indicate the best person or persons to contact about the package while 
 attributing the original authors.
 
 The suggested format is a name followed by an email address in
-angle brackets, e.g., \code{John Doe <john@doe.com>}.
+angle brackets, e.g.,
+\begin{lstlisting}
+John Doe <john@doe.com>
+\end{lstlisting}
 Multiple maintainers should be separated by commas.
 
 \item[\fbox{\code{synopsis*}}] A short form summary of the package's purpose.
 It should be kept as short as possible (ideally, less than 100 characters).
 
-\item[\fbox{\code{description}}] A longer form description of what the package
+\item[\fbox{\code{description}}] A longer form description of what the package 
 does.
 
 \item[\fbox{\code{category}}]
@@ -896,9 +1001,9 @@ package can be used, e.g., \code{Data}, \code{Numeric}, \code{GUI},
 \code{Web}, etc.
 
 \item[\fbox{\code{license}}] The license under which the package is distributed.
-This is a free-form field. In case of a well-known license such as the GNU
+This is a free-form field. In case of a well-known license such as the GNU 
 General Public License\footnote{\url{https://www.gnu.org/licenses/gpl-3.0.en.html}},
-the SPDX license identifier\footnote{\url{https://spdx.org/licenses/}} should be
+the SPDX license identifier\footnote{\url{https://spdx.org/licenses/}} should be 
 specified. If a custom license is used, this field should be left blank in favor
 of the license file field.
 
@@ -920,11 +1025,11 @@ package's source code. Should be a valid URL to either a repository (e.g. a Git
 URL), or a website representing the repository.
 
 \item[\fbox{\code{dependencies*}}] The package's dependencies. This must be JSON
-object where the keys are package names and the values are version
+object where the keys are package names and the values are version 
 constraints. See Section~\ref{sec:package-basics}.
 
-\item[\fbox{\code{compilerCompatibility}}] The package's compatibility to
-different Curry compilers. Expects a JSON object where the keys are compiler
+\item[\fbox{\code{compilerCompatibility}}] The package's compatibility to 
+different Curry compilers. Expects a JSON object where the keys are compiler 
 names and the values are version constraints. Currently, the supported compiler
 names are \code{pakcs} and \code{kics2}. If this field is missing or contains
 an empty JSON object, the package is assumed to be compatible to all compilers
@@ -943,7 +1048,7 @@ Similarly, the current package is executed
 only if the current Curry compiler is compatible to this package.
 
 \item[\fbox{\code{source}}] A JSON object specifying where the version of the
-package described in the specification can be obtained. See
+package described in the specification can be obtained. See 
 Section~\ref{sec:publishing-a-package} for details.
 
 \item[\fbox{\code{sourceDirs}}] A list of directories inside this
@@ -953,10 +1058,10 @@ of the Curry load path.
 If this field is not specified, \code{src} is used as the single
 source directory.
 
-\item[\fbox{\code{exportedModules}}] A list of modules intended for use by
+\item[\fbox{\code{exportedModules}}] A list of modules intended for use by 
 consumers of the package.
-These are the modules compared by the \code{cpm diff}
-command (and tested by the \code{cpm test} command if a list of
+These are the modules compared by the \code{cypm diff}
+command (and tested by the \code{cypm test} command if a list of
 test modules is not provided).
 Note that modules not in this list are still accessible to consumers
 of the package.
@@ -995,7 +1100,7 @@ For instance, a possible specification could be as follows:
 {
   ...,
   "executable": {
-    "name": "cpm",
+    "name": "cypm",
     "main": "CPM.Main",
     "options": { "kics2" : ":set rts -T" }
    }
@@ -1003,7 +1108,7 @@ For instance, a possible specification could be as follows:
 \end{lstlisting}
 %
 If a package contains an \code{executable} specification,
-the command \code{cpm install} also compiles the main module
+the command \code{cypm install} also compiles the main module
 and installs the executable in the \code{bin} install directory of CPM
 (see Section~\ref{sec:config} for details).
 
@@ -1026,7 +1131,7 @@ For instance, a possible test suite specification could be as follows:
 \end{lstlisting}
 %
 All these modules are tested with CurryCheck
-by the command \code{cpm test}.
+by the command \code{cypm test}.
 If no test suite is defined, all (exported) modules are tested
 in the directory \code{src}.
 A test suite can also contain a field \code{options}
@@ -1088,7 +1193,7 @@ the manual and \code{manual.tex} is its main file which will be
 processed with the specified command.
 Occurrences of the string \code{OUTDIR} in the command string
 will be replaced by the actual documentation directory
-(see description of the command \code{cpm doc}).
+(see description of the command \code{cypm doc}).
 If the command is omitted, the following commands are used
 (and you have to ensure that these programs are installed):
 \begin{itemize}
@@ -1120,7 +1225,7 @@ are used:
     "author": "YOUR NAME <YOUR EMAIL ADDRESS>",
     "maintainer": "ANOTHER NAME <ANOTHER EMAIL ADDRESS>",
     "synopsis": "A ONE-LINE SUMMARY ABOUT THE PACKAGE",
-    "synopsis": "A MORE DEATILED SUMMARY ABOUT THE PACKAGE",
+    "description": "A MORE DETAILED SUMMARY ABOUT THE PACKAGE",
     "category": [ "Category1", "Category2" ],
     "license": "BSD-3-Clause",
     "licenseFile": "LICENSE",
@@ -1171,6 +1276,8 @@ are used:
 \end{lstlisting}
 
 
+\clearpage
+
 \section{Error Recovery}
 \label{sec:recovery}
 
@@ -1183,11 +1290,11 @@ that something is wrong.
 In such cases, it might be a good idea to clean up your package file system.
 Here are some suggestions how to do this:
 \begin{description}
-\item[\code{cpm clean}]~\\
+\item[\code{cypm clean}]~\\
 This command cleans the current package from
 generated auxiliary files (see Section~\ref{sec:cmd-reference}).
 Then you can re-install the package and packages on which it depends
-by the command \code{cpm install}.
+by the command \code{cypm install}.
 \item[\code{rm -rf \$HOME/.cpm/packages}] ~\\
 This cleans all packages which have been previously installed
 in the global package cache (see Section~\ref{sec:internals}).
@@ -1198,8 +1305,10 @@ are downloaded again when they are needed.
 This removes the central package index of CPM
 (see Section~\ref{sec:internals}).
 You can simply re-install the newest version of this index
-by the command \code{cpm update}.
+by the command \code{cypm update}.
 \end{description}
 
 
 \end{document}
+
+%  LocalWords:  CPM versioning
