@@ -19,6 +19,8 @@ export PATH
 # The directory where CPM installs the binaries:
 CPMBIN="$HOME/.cpm/bin"
 
+# check whether some tool is installed by CPM. If yes, execute it,
+# otherwise inform the user to install it
 check_and_call_tool() {
   TOOLPACKAGE=$1
   shift
@@ -75,6 +77,37 @@ case $1 in
   style     ) check_and_call_tool casc        curry-style    ${1+"$@"} ;;
   verify    ) check_and_call_tool verify      curry-verify   ${1+"$@"} ;;
 esac
+
+# check whether we are inside a package by searching for `package.json`
+# in some parent directory
+CURDIR=`pwd`
+PKGFOUND=no
+while [ "$CURDIR" != "/" -a $PKGFOUND = no ] ; do
+    if [ -f "$CURDIR/package.json" ] ; then
+        PKGFOUND=yes
+    else
+        CURDIR=`dirname "$CURDIR"`
+    fi
+done
+
+# check whether we do not need to call CPM:
+USECPM=yes
+if [ "$1" = "--nocypm" ] ; then
+  shift
+  USECPM=no
+fi
+for i in $* ; do
+  case $i in
+    --help | -h | -\? ) USECPM=no ;;
+    --version | -V    ) USECPM=no ;;
+    --nocypm | --numeric-version | --compiler-name ) USECPM=no ;;
+  esac
+done
+
+if [ $PKGFOUND = yes -a $USECPM = yes ] ; then
+  echo "Executing: "$0" cypm exec "$0" --nocypm ${1+"$@"}"
+  exec "$0" cypm exec "$0" --nocypm ${1+"$@"}
+fi
 
 REPL="$KICS2HOME/bin/.local/kics2i"
 if [ ! -x "$REPL" ] ; then
