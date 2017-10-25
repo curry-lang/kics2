@@ -121,10 +121,11 @@ if tty -s ; then
   fi
 fi
 
-if [ "$1" = "--noreadline" ] ; then
-  shift
-  USERLWRAP=no
-fi
+for i in $* ; do
+  if [ $i = "--noreadline" ] ; then
+    USERLWRAP=no
+  fi
+done
 
 if [ $USERLWRAP = yes ] ; then
   exec rlwrap -c -f "$KICS2HOME/tools/rlwrap" "$REPL" ${1+"$@"}

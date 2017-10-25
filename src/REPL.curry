@@ -98,8 +98,8 @@ processArgsAndStart rst []
 processArgsAndStart rst (arg:args)
   -- ignore empty arguments which can be provided by single or double quotes
   | null      arg = processArgsAndStart rst args
-  -- ignore '--nocypm' since this was already processed by kics2 script
-  | arg == "--nocypm"
+  -- ignore '--nocypm' or '--noreadline' (already processed by kics2 script)
+  | arg == "--nocypm" || arg == "--noreadline"
   = processArgsAndStart rst args
   | arg == "-V" || arg == "--version"
   = getBanner >>= putStrLn >> cleanUpAndExitRepl rst
