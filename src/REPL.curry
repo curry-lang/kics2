@@ -472,20 +472,13 @@ makeMainGoalMonomorphic' rst qty@(CQualType _ ty) goal
     return False
   | isPolyType ty = case defaultQualTypeExpr qty of
     CQualType (CContext []) defTy -> do
-      when (defTy /= ty) $ do
-        writeVerboseInfo rst 2 $
-          "Type of main expression \"" ++ showMonoQualTypeExpr False qty
-          ++ "\" defaulted to \"" ++ showMonoTypeExpr False defTy ++ "\""
-        writeVerboseInfo rst 1 $
-          "Defaulted type of main expression: " ++ showMonoTypeExpr False defTy
+      when (defTy /= ty) $ writeVerboseInfo rst 2 $
+        "Defaulted type of main expression: " ++ showMonoTypeExpr False defTy
       writeMainGoalFile rst (modsOfType defTy)
                         (Just $ showMonoTypeExpr True defTy) goal
-      when (isPolyType defTy) $ do
-        writeVerboseInfo rst 2 $
-          "Type of main expression \"" ++ showMonoTypeExpr False defTy
-          ++ "\" made monomorphic"
-        writeVerboseInfo rst 1
-          "Type variables of main expression replaced by \"()\""
+      when (isPolyType defTy) $ writeVerboseInfo rst 2 $
+        "Type of main expression \"" ++ showMonoTypeExpr False defTy
+        ++ "\" made monomorphic by replacing type variables by \"()\""
       return True
     _ -> do
       writeErrorMsg "cannot handle arbitrary overloaded top-level expressions"
