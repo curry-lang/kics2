@@ -4,10 +4,13 @@
 --- This module should be further divided if it contains too much unrelated
 --- things.
 ---
---- @author  Bjoern Peemoeller
---- @version January 2015
+--- @author  Bjoern Peemoeller, Finn Teegen
+--- @version October 2017
 --- --------------------------------------------------------------------------
-module Utils(showMonoQualTypeExpr, notNull, strip, lpad, rpad) where
+module Utils
+  ( showMonoTypeExpr, showMonoQualTypeExpr
+  , notNull, strip, lpad, rpad
+  ) where
 
 import AbstractCurry.Types
 import List                 (intercalate)
@@ -20,7 +23,7 @@ import Char                 (isSpace)
 --- are replaced by "()".
 showMonoQualTypeExpr :: Bool -> CQualTypeExpr -> String
 showMonoQualTypeExpr mono (CQualType cx ty)
-  = showContext mono cx ++ showMonoTypeExpr' mono 0 ty
+  = showContext mono cx ++ showMonoTypeExpr mono ty
 
 --- Shows an AbstractCurry context in standard Curry syntax.
 --- If the first argument is True, no context is shown.
@@ -35,13 +38,14 @@ showContext True  _             = ""
 --- Shows an AbstractCurry constraint in standard Curry syntax.
 showConstraint :: CConstraint -> String
 showConstraint ((_, name), ty) =
-  showIdentifier name ++ " " ++ showMonoTypeExpr' False 0 ty
+  showIdentifier name ++ " " ++ showMonoTypeExpr False ty
 
 --- Shows an AbstractCurry type expression in standard Curry syntax.
 --- If the first argument is True, all occurrences of type variables
 --- are replaced by "()".
---- If the second argument is True, the type expression is enclosed
---- in brackets.
+showMonoTypeExpr :: Bool -> CTypeExpr -> String
+showMonoTypeExpr mono ty = showMonoTypeExpr' mono 0 ty
+
 showMonoTypeExpr' :: Bool -> Int -> CTypeExpr -> String
 showMonoTypeExpr' mono _ (CTVar             (_,name)) =
   if mono then "()" else showIdentifier name

@@ -2,8 +2,8 @@
 --- This is the main module of the interactive system.
 --- It implements the Read-Eval-Print loop for KiCS2
 ---
---- @author Michael Hanus, Bjoern Peemoeller
---- @version February 2017
+--- @author Michael Hanus, Bjoern Peemoeller, Finn Teegen
+--- @version October 2017
 --- --------------------------------------------------------------------------
 module REPL where
 
@@ -33,7 +33,8 @@ import GhciComm             (stopGhciComm)
 import qualified Installation as Inst
 import Names               (funcInfoFile, moduleNameToPath)
 import RCFile
-import Utils               (showMonoQualTypeExpr, notNull, strip)
+import Utils               ( showMonoTypeExpr, showMonoQualTypeExpr
+                           , notNull, strip )
 
 import Linker
 
@@ -451,32 +452,74 @@ insertFreeVarsInMainGoal rst goal (Just prog) = case prog of
                      | otherwise                          = findWhere cs
 
 --- If the main goal is polymorphic, make it monomorphic by adding a type
---- declaration where type variables are replaced by type "()".
+--- declaration where type variables are replaced by type "()". Before,
+--- type variables with a numeric constraint like "Num" and "Fractional"
+--- are defaulted to the types "Int" and "Float", respectively. The type
+--- of the main goal is only allowed to contain numeric constraints.
 --- If the main goal has type "IO t" where t is monomorphic, t /= (),
 --- and t is not a function, then ">>= print" is added to the goal.
 --- The result is False if the main goal contains some error.
 makeMainGoalMonomorphic :: ReplState -> CurryProg -> String -> IO Bool
 makeMainGoalMonomorphic rst prog goal = case prog of
-  CurryProg _ _ _ _ _ _ [(CFunc _ _ _ qty@(CQualType _ ty) _)] _
-    | isFunctionalType ty
-    -> writeErrorMsg "expression is of functional type" >> return False
-    | isPolyType ty -> do
-      -- TODO: Consider modules occuring in the context of the qualified type
-      writeMainGoalFile rst (modsOfType ty) (Just $ showMonoQualTypeExpr True qty)
-                            goal
-      writeVerboseInfo rst 2 $
-        "Type of main expression \"" ++ showMonoQualTypeExpr False qty
-        ++ "\" made monomorphic"
-      writeVerboseInfo rst 1
-        "Type variables of main expression replaced by \"()\""
-      return True
-    | otherwise -> do
-      unless (newgoal ty == goal) $ writeSimpleMainGoalFile rst (newgoal ty)
-      return True
+  CurryProg _ _ _ _ _ _ [CFunc _ _ _ qty _] _ ->
+    makeMainGoalMonomorphic' rst qty goal
   _ -> error "REPL.makeMainGoalMonomorphic"
+
+makeMainGoalMonomorphic' :: ReplState -> CQualTypeExpr -> String -> IO Bool
+makeMainGoalMonomorphic' rst qty@(CQualType _ ty) goal
+  | isFunctionalType ty = do
+    writeErrorMsg "expression is of functional type"
+    return False
+  | isPolyType ty = case defaultQualTypeExpr qty of
+    CQualType (CContext []) defTy -> do
+      when (defTy /= ty) $ do
+        writeVerboseInfo rst 2 $
+          "Type of main expression \"" ++ showMonoQualTypeExpr False qty
+          ++ "\" defaulted to \"" ++ showMonoTypeExpr False defTy ++ "\""
+        writeVerboseInfo rst 1 $
+          "Defaulted type of main expression: " ++ showMonoTypeExpr False defTy
+      writeMainGoalFile rst (modsOfType defTy)
+                        (Just $ showMonoTypeExpr True defTy) goal
+      when (isPolyType defTy) $ do
+        writeVerboseInfo rst 2 $
+          "Type of main expression \"" ++ showMonoTypeExpr False defTy
+          ++ "\" made monomorphic"
+        writeVerboseInfo rst 1
+          "Type variables of main expression replaced by \"()\""
+      return True
+    _ -> do
+      writeErrorMsg "cannot handle arbitrary overloaded top-level expressions"
+      return False
+  | otherwise = do
+    unless (newgoal ty == goal) $ writeSimpleMainGoalFile rst (newgoal ty)
+    return True
  where newgoal ty = if isIOReturnType ty
                     then '(' : goal ++ ") Prelude.>>= Prelude.print"
                     else goal
+
+-- Defaults type variables with a numeric constraint like "Num" and
+-- "Fractional" to the types "Int" and "Float", respectively.
+defaultQualTypeExpr :: CQualTypeExpr -> CQualTypeExpr
+defaultQualTypeExpr (CQualType (CContext cs) ty) =
+  defaultQualTypeExpr' cs (CQualType (CContext []) ty)
+
+defaultQualTypeExpr' :: [CConstraint] -> CQualTypeExpr -> CQualTypeExpr
+defaultQualTypeExpr' [] qty = qty
+defaultQualTypeExpr' (c:cs) (CQualType cx@(CContext cs2) ty) = case c of
+  (("Prelude", "Num"), CTVar tv) -> defaultQualTypeExpr' cs
+    (CQualType cx (substTypeVar tv (CTCons ("Prelude", "Int")) ty))
+  (("Prelude", "Fractional"), CTVar tv) -> defaultQualTypeExpr' cs
+    (CQualType cx (substTypeVar tv (CTCons ("Prelude", "Float")) ty))
+  _ -> defaultQualTypeExpr' cs (CQualType (CContext (cs2 ++ [c])) ty)
+
+-- Replaces a type variable with a type expression.
+substTypeVar :: CTVarIName -> CTypeExpr -> CTypeExpr -> CTypeExpr
+substTypeVar tv def te@(CTVar      tv2) = if tv == tv2 then def else te
+substTypeVar tv def te@(CTCons       _) = te
+substTypeVar tv def (CFuncType te1 te2) =
+  CFuncType (substTypeVar tv def te1) (substTypeVar tv def te2)
+substTypeVar tv def (CTApply   te1 te2) =
+  CTApply (substTypeVar tv def te1) (substTypeVar tv def te2)
 
 -- Compile a Curry program with kics2 compiler:
 compileCurryProgram :: ReplState -> String -> IO Int
