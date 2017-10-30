@@ -491,11 +491,11 @@ makeMainGoalMonomorphic' rst qty@(CQualType _ ty) goal
       writeErrorMsg "cannot handle arbitrary overloaded top-level expressions"
       return False
   | otherwise = do
-    unless (newgoal ty == goal) $ writeSimpleMainGoalFile rst (newgoal ty)
+    unless (newgoal == goal) $ writeSimpleMainGoalFile rst newgoal
     return True
- where newgoal ty = if isIOReturnType ty
-                    then '(' : goal ++ ") Prelude.>>= Prelude.print"
-                    else goal
+ where newgoal = if isIOReturnType ty
+                 then '(' : goal ++ ") Prelude.>>= Prelude.print"
+                 else goal
 
 -- Defaults type variables with a numeric constraint like "Num" and
 -- "Fractional" to the types "Int" and "Float", respectively.
@@ -515,7 +515,7 @@ defaultQualTypeExpr' (c:cs) (CQualType cx@(CContext cs2) ty) = case c of
 -- Replaces a type variable with a type expression.
 substTypeVar :: CTVarIName -> CTypeExpr -> CTypeExpr -> CTypeExpr
 substTypeVar tv def te@(CTVar      tv2) = if tv == tv2 then def else te
-substTypeVar tv def te@(CTCons       _) = te
+substTypeVar _  _   te@(CTCons       _) = te
 substTypeVar tv def (CFuncType te1 te2) =
   CFuncType (substTypeVar tv def te1) (substTypeVar tv def te2)
 substTypeVar tv def (CTApply   te1 te2) =
