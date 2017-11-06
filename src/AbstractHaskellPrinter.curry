@@ -236,7 +236,7 @@ ppLocalDecls opts ds
   | otherwise = text "where" $$ ppBlock opts ds
 
 ppBlock :: Options -> [LocalDecl] -> Doc
-ppBlock opts ds = align (vsep (map (ppLocalDecl opts) ds))
+ppBlock opts ds = align ((compose (<$!$>)) (map (ppLocalDecl opts) ds))
 
 ppLocalDecl :: Options -> LocalDecl -> Doc
 ppLocalDecl opts (LocalFunc     f) = ppFuncDecl opts f
