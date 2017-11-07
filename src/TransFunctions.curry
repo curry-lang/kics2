@@ -816,7 +816,7 @@ cvLit (Charc  c) = AH.Charc  c
 
 cvLitExpr :: Literal -> AH.Expr
 cvLitExpr (Intc   i) = funcCall curryInt   [constant (prelude, show i ++ "#")]
-cvLitExpr (Floatc f) = funcCall curryFloat [constant (prelude, show f ++ "#")]
+cvLitExpr (Floatc f) = funcCall curryFloat [constant (prelude, show f ++ "##")]
 cvLitExpr (Charc  c) = funcCall curryChar  [constant (prelude, show c ++ "#")]
 
 topSupplyVar :: AH.Expr
