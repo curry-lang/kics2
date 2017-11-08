@@ -1,7 +1,7 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 2.0.0 (October 11, 2017)
+Release notes for KiCS2 Version 2.0.0 (November 8, 2017)
 --------------------------------------------------------
 
 This version has almost the same functionality as Version 0.6.0
@@ -17,6 +17,7 @@ this version contains the following changes:
       - `CSV` (now available as `Text.CSV` in package `csv`)
       - `Parser` (now available in package `fl-parser`)
       - `RegExp` (now available in package `regexp`)
+      - `UnsafeSearchTree` (now available in package `searchtree`)
 
 
 Release notes for KiCS2 Version 0.6.0
