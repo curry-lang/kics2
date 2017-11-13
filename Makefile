@@ -454,7 +454,7 @@ endif
 	echo "import System.IO.Unsafe (unsafePerformIO)" >> $@
 	echo "" >> $@
 	echo 'compilerName :: String' >> $@
-	echo 'compilerName = "KiCS2 Curry -> Haskell Compiler"' >> $@
+	echo 'compilerName = "kics2"' >> $@
 	echo "" >> $@
 	echo 'installDir :: String' >> $@
 	echo 'installDir = if null pkgInstallDir then buildDir else if unsafePerformIO (doesDirectoryExist pkgInstallDir) then pkgInstallDir else buildDir' >> $@

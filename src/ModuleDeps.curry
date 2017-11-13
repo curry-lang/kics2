@@ -33,7 +33,7 @@ import Names        (moduleNameToPath)
 import System       (system)
 
 import CompilerOpts
-import Installation (majorVersion, minorVersion)
+import Installation (compilerName, majorVersion, minorVersion)
 import RCFile       (rcValue)
 import SCC          (scc)
 
@@ -116,13 +116,14 @@ readCurrySourceRaw opts mn fn
        readTypedFlatCurryFileRaw fn
   | otherwise
   = do tfcyname <- parseCurryWithOptions opts (stripCurrySuffix mn)
-                   $ setDefinitions [("__KICS2__", version)]
+                   $ setDefinitions [(compiler, version)]
                    $ setFullPath    importPaths
                    $ setQuiet       (optVerbosity opts == VerbQuiet)
                    $ setSpecials    (optParser opts)
                    defaultParams
        readTypedFlatCurryFileRaw tfcyname
   where importPaths = "." : optImportPaths opts
+        compiler    = "__" ++ map toUpper compilerName ++ "__"
         version     = majorVersion * 100 + minorVersion
 
 
