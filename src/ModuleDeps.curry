@@ -4,14 +4,14 @@
 --- This module implements the functions to compute the dependency
 --- information between Curry modules.
 ---
---- @author  Björn Peemöller, Fabian Skrlac
---- @version May 2014
+--- @author  Björn Peemöller, Fabian Skrlac, Finn Teegen, Jan Tikovsky
+--- @version November 2017
 --- --------------------------------------------------------------------------
 module ModuleDeps (ModuleIdent, Source, Errors, deps) where
 
 import Directory    (doesFileExist, getModificationTime)
-import Distribution (defaultParams, setFullPath, setQuiet, setSpecials
-                    , stripCurrySuffix, inCurrySubdirModule
+import Distribution (defaultParams, setDefinitions, setFullPath, setQuiet
+                    , setSpecials, stripCurrySuffix, inCurrySubdirModule
                     , FrontendTarget(..), FrontendParams, callFrontendWithParams
                     , installDir
                     )
@@ -24,6 +24,7 @@ import FlatCurry.Annotated.Types
 import FlatCurry.Annotated.Files ( readTypedFlatCurryFileRaw
                                  , typedFlatCurryFileName
                                  )
+import Char         (toUpper)
 import Function     (second)
 import List         (intercalate, partition)
 import Maybe        (fromJust, isJust, isNothing)
@@ -32,6 +33,7 @@ import Names        (moduleNameToPath)
 import System       (system)
 
 import CompilerOpts
+import Installation (majorVersion, minorVersion)
 import RCFile       (rcValue)
 import SCC          (scc)
 
@@ -114,12 +116,15 @@ readCurrySourceRaw opts mn fn
        readTypedFlatCurryFileRaw fn
   | otherwise
   = do tfcyname <- parseCurryWithOptions opts (stripCurrySuffix mn)
-                   $ setFullPath importPaths
-                   $ setQuiet    (optVerbosity opts == VerbQuiet)
-                   $ setSpecials (optParser opts)
+                   $ setDefinitions [("KICS2", version)]
+                   $ setFullPath    importPaths
+                   $ setQuiet       (optVerbosity opts == VerbQuiet)
+                   $ setSpecials    (optParser opts)
                    defaultParams
        readTypedFlatCurryFileRaw tfcyname
   where importPaths = "." : optImportPaths opts
+        version     = majorVersion * 100 + minorVersion
+
 
 -- Parse a Curry program with the front end and return the typed FlatCurry
 -- file name.
