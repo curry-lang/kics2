@@ -116,7 +116,7 @@ readCurrySourceRaw opts mn fn
        readTypedFlatCurryFileRaw fn
   | otherwise
   = do tfcyname <- parseCurryWithOptions opts (stripCurrySuffix mn)
-                   $ setDefinitions [("KICS2", version)]
+                   $ setDefinitions [("__KICS2__", version)]
                    $ setFullPath    importPaths
                    $ setQuiet       (optVerbosity opts == VerbQuiet)
                    $ setSpecials    (optParser opts)
