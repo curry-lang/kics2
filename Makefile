@@ -34,6 +34,9 @@ export KICS2INSTALLDIR =
 PROFILING       = yes
 
 ########################################################################
+# The name of the Curry system, needed for installation of currytools
+export CURRYSYSTEM = kics2
+
 # The major version number
 MAJORVERSION    = 2
 # The minor version number
@@ -41,7 +44,7 @@ MINORVERSION    = 0
 # The revision version number
 REVISIONVERSION = 0
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION    = 7
+BUILDVERSION    = 8
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -52,8 +55,11 @@ COMPILERDATE := $(shell git log -1 --format="%ci" | cut -c-10)
 endif
 # The installation date, set to the current date
 INSTALLDATE    := $(shell date)
-# The name of the Curry system, needed for installation of currytools
-export CURRYSYSTEM = kics2
+
+# The version number of the base libraries:
+BASEVERSION=1.0.0
+
+
 # Windows operating system?
 ifneq (,$(findstring MINGW, $(shell uname)))
 export WINDOWS    = 1
@@ -491,6 +497,9 @@ endif
 	echo "" >> $@
 	echo 'runtimeMinor :: Int' >> $@
 	echo 'runtimeMinor = $(GHC_MINOR)' >> $@
+	echo "" >> $@
+	echo 'baseVersion :: String' >> $@
+	echo 'baseVersion = "$(BASEVERSION)"' >> $@
 	echo "" >> $@
 	echo 'ghcExec :: String' >> $@
 	echo 'ghcExec = "\"$(GHC)\""' >> $@
