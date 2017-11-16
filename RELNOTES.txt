@@ -1,7 +1,7 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 2.0.0 (November 13, 2017)
+Release notes for KiCS2 Version 2.0.0 (November 16, 2017)
 ---------------------------------------------------------
 
 This version has almost the same functionality as Version 0.6.0
@@ -22,6 +22,8 @@ this version contains the following changes:
       - `Parser` (now available in package `fl-parser`)
       - `RegExp` (now available in package `regexp`)
       - `UnsafeSearchTree` (now available in package `searchtree`)
+  * Arbitrary precision integers and double-precision floating point numbers
+    are now used for the implementation of Int and Float, respectively.
 
 
 Release notes for KiCS2 Version 0.6.0
