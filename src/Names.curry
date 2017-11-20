@@ -29,7 +29,7 @@ renameFile trace
   | otherwise = renameModule -- until hierarchical module names are supported
 
 externalFile :: String -> String
-externalFile = withComponents id ("External_" ++) (const "hs")
+externalFile = withComponents id id (const "kics2")
 
 destFile :: Bool -> String -> String -> String -> String
 destFile trace subdir mid fn =
