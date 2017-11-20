@@ -24,8 +24,9 @@ import FlatCurry.Annotated.Types
 import FlatCurry.Annotated.Files ( readTypedFlatCurryFileRaw
                                  , typedFlatCurryFileName
                                  )
-import Char         (toUpper)
+import Char         (isSpace, toUpper)
 import Function     (second)
+import IO           (Handle, IOMode (ReadMode), hClose, hGetChar, hIsEOF, openFile)
 import List         (intercalate, partition)
 import Maybe        (fromJust, isJust, isNothing)
 import Message      (showStatus,showAnalysis)
@@ -40,7 +41,7 @@ import SCC          (scc)
 type ModuleIdent = String
 type Errors      = [String]
 
-type Source      = (FilePath, [ModuleIdent], String) -- file name, imports, raw code
+type Source      = (FilePath, [ModuleIdent], FilePath) -- file name, imports, TFCY file name
 type SourceEnv   = FM ModuleIdent (Maybe Source)
 
 
@@ -96,24 +97,52 @@ lookupModule opts m = lookupFileInPath (moduleNameToPath m)
 
 sourceDeps :: Options -> ModuleIdent -> String -> SourceEnv -> IO SourceEnv
 sourceDeps opts mn fn mEnv = do
-  rawTfcy <- readCurrySourceRaw opts mn fn
-  let (m, is) = readModuleNameAndImports rawTfcy
-  foldIO (moduleDeps opts) (addToFM mEnv m (Just (fn, is, rawTfcy))) is
+  tfcyName <- getTfcyFileName opts mn fn
+  rawTfcyHeader <- readTfcyModuleHeader tfcyName
+  let (m, is) = readModuleNameAndImports rawTfcyHeader
+  foldIO (moduleDeps opts) (addToFM mEnv m (Just (fn, is, tfcyName))) is
 
 -- Reads only module name and imports from a typed FlatCurry representation.
 readModuleNameAndImports :: String -> (ModuleIdent, [ModuleIdent])
 readModuleNameAndImports s = (m, is)
-  where ((m , s'):_) = reads (drop 6 s) -- drops leading "AProg"
+  where ((m , s'):_) = reads s
         ((is, _ ):_) = reads s'
 
--- Reads a typed FlatCurry file or parses a Curry module.
+-- Reads chars using the given handler until the given predicate satisfies on a
+-- read char. The handler is immediately closed if eof is reached.
+-- Attention: This function consumes (and returns) the last character, that
+-- satisfies the predicate, i.e. it consumes at least one character!
+hReadUntil  :: Handle -> (Char -> Bool) -> IO String
+hReadUntil h isBreakChar = do
+  eof <- hIsEOF h
+  if eof then hClose h >> return ""
+         else do c <- hGetChar h
+                 if isBreakChar c then return [c]
+                                  else do cs <- hReadUntil h isBreakChar
+                                          return (c:cs)
+
+-- Get module name and imports from the given typed FlatCurry file.
+readTfcyModuleHeader :: FilePath -> IO String
+readTfcyModuleHeader tfcyFile = do
+  h <- openFile tfcyFile ReadMode
+  hReadUntil h $ not . isSpace -- leading spaces
+  hReadUntil h isSpace          -- AProg
+  hReadUntil h $ not . isSpace -- spaces
+  modId  <- hReadUntil h $ isSpace
+  hReadUntil h (== '[')          -- spaces
+  modIds <- hReadUntil h (== ']')
+  hClose h
+  return $ '"' : modId ++ "[" ++ modIds
+
+-- Get a typed FlatCurry file name. Parses a Curry module and creates the
+-- typed FlatCurry file if it does not exist.
 -- TODO: This should better return `Either Errors Prog` so that compilation
 -- errors can be recognized.
-readCurrySourceRaw :: Options -> ModuleIdent -> FilePath -> IO String
-readCurrySourceRaw opts mn fn
+getTfcyFileName :: Options -> ModuleIdent -> FilePath -> IO FilePath
+getTfcyFileName opts mn fn
   | isTypedFlatCurryFile fn
   = do showStatus opts $ "Reading directly from typed FlatCurry file '"++fn++"'"
-       readTypedFlatCurryFileRaw fn
+       return fn
   | otherwise
   = do tfcyname <- parseCurryWithOptions opts (stripCurrySuffix mn)
                    $ setDefinitions [(compiler, version)]
@@ -121,11 +150,10 @@ readCurrySourceRaw opts mn fn
                    $ setQuiet       (optVerbosity opts == VerbQuiet)
                    $ setSpecials    (optParser opts)
                    defaultParams
-       readTypedFlatCurryFileRaw tfcyname
+       return tfcyname
   where importPaths = "." : optImportPaths opts
         compiler    = "__" ++ map toUpper compilerName ++ "__"
         version     = majorVersion * 100 + minorVersion
-
 
 -- Parse a Curry program with the front end and return the typed FlatCurry
 -- file name.

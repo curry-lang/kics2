@@ -20,6 +20,7 @@ import Directory            (doesFileExist, getModificationTime)
 import Distribution
 import FileGoodies          (getFileInPath, lookupFileInPath)
 import FilePath             (takeFileName, (</>), (<.>))
+import IOExts               (readCompleteFile)
 import Maybe                (isNothing)
 import ReadShowTerm
 
@@ -92,7 +93,7 @@ tryParse fn = do
   if not exists
     then cancel $ "AbstractCurry file '" ++ fn ++ "' does not exist"
     else do
-      src <- readFile fn
+      src <- readCompleteFile fn
       let (line1, lines) = break (=='\n') src
       if line1 /= "{- "++version++" -}"
         then cancel $ "Could not parse AbstractCurry file '" ++ fn
@@ -215,7 +216,7 @@ tryReadACYFile fn = do
         else cancel
  where
   tryRead file = do
-    src <- readFile file
+    src <- readCompleteFile file
     let (line1,lines) = break (=='\n') src
     if line1 /= "{- "++version++" -}"
       then error $ "AbstractCurry: incompatible file found: "++fn

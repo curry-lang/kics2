@@ -181,7 +181,7 @@ printHelpOnTools = putStrLn $ unlines
 --- Retrieve the KiCS2 banner
 getBanner :: IO String
 getBanner = do
-  logo <- readFile $ Inst.installDir </> "include" </> "logo" <.> "txt"
+  logo <- readCompleteFile $ Inst.installDir </> "include" </> "logo" <.> "txt"
   return (logo ++ version)
  where
   version =

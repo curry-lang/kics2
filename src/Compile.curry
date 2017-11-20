@@ -18,6 +18,7 @@ import FlatCurry.Goodies (updQNamesInProg)
 import FlatCurry.Annotated.Types
 import FlatCurry.Annotated.Files   (typedFlatCurryFileName)
 import FlatCurry.Annotated.Goodies (unAnnProg)
+import IOExts            (readCompleteFile)
 import ReadShowTerm      (readQTermFile)
 import System            (getArgs)
 
@@ -138,7 +139,8 @@ loadAnalysis total state ((mid, (fn, _, _)), current) = do
       opts = compOptions state
 
 compileModule :: Int -> State -> ((ModuleIdent, Source), Int) -> IO State
-compileModule total state ((mid, (fn, _, rawTfcy)), current) = do
+compileModule total state ((mid, (fn, _, tfcyFileName)), current) = do
+  rawTfcy <- readCompleteFile tfcyFileName
   showStatus opts $ compMessage (current, total) "Compiling" mid (fn, dest)
 
   let tfcy = filterPrelude opts (read rawTfcy)
@@ -277,7 +279,7 @@ lookupExternals :: Options -> FilePath -> IO String
 lookupExternals opts fn = do
   exists <- doesFileExist extName
   if exists
-    then showDetail opts    "External file found" >> readFile extName
+    then showDetail opts    "External file found" >> readCompleteFile extName
     else showDetail opts "No external file found" >> return ""
     where extName = externalFile fn
 
