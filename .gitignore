@@ -30,6 +30,7 @@ Curry_Main_Goal.curry
 stage[1,2,3]
 *.bak
 Installation.hs
+src/Installation.curry
 *.log
 .kics2sc
 lib

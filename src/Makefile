@@ -30,10 +30,7 @@ REPL_DEPS = Files GhciComm Linker Names RCFile Utils
 .PHONY: all
 all: CompileBoot updateInstallInfo REPLBoot
 
-.PHONY: bootstrap
-bootstrap:
-	$(MAKE) clean
-
+bootstrap-start: clean
 	# Create kics2 via PAKCS or other KiCS2 (stage 1)
 	@echo "Compiling stage 1"
 	$(MAKE) CompileInitial
@@ -52,34 +49,22 @@ else
 	$(MAKE) CompileBoot
 endif
 	cp $(COMP) $(LOCALBIN)/stage2
-	$(CLEANCURRY) -r
 
+bootstrap-stage3: bootstrap-start
 	# Create kics2 via kics2 (stage 3)
 	@echo "Compiling stage 3"
 	$(MAKE) CompileBoot
 	cp $(COMP) $(LOCALBIN)/stage3
 
-	@echo "Compiling REPL"
-	$(MAKE) REPLBoot
+bootstrap: | bootstrap-stage3 cleancurry REPLBoot
 
 # faster bootstrap where stage 3 is omitted
 .PHONY: fastbootstrap
-fastbootstrap:
-	if [ ! -x "$(KICS2)" ] ; then echo "KICS2 is required for fastbootstrap!" && exit 1 ; fi
+fastbootstrap: | bootstrap-start cleancurry REPLBoot
 
-	$(MAKE) clean
-
-	# Create kics2 via KiCS2 (stage 1)
-	@echo "Compiling stage 1"
-	$(MAKE) CompileInitial
+.PHONY: cleancurry
+cleancurry:
 	$(CLEANCURRY) -r
-
-	# Create kics2 via kics2 (stage 2)
-	@echo "Compiling stage 2"
-	$(MAKE) CompileBoot
-
-	@echo "Compiling REPL"
-	$(MAKE) REPLBoot
 
 # clean all intermediate files of the compiler bootstrapping
 .PHONY: clean
@@ -95,24 +80,21 @@ cleanall: clean
 # Compile
 ########################################################################
 
+$(INSTALLCURRY): $(INSTALLHS)
+	cat $< | \
+	  sed "s|^import System.Directory|import Directory|" | \
+	  sed "s|^import System.IO.Unsafe|import Unsafe|" > $@
+
 # generate executable for Curry->Haskell compiler via PAKCS or other KiCS2
 .PHONY: CompileInitial
-CompileInitial: Compile.curry
+CompileInitial: Compile.curry $(INSTALLCURRY)
 	mkdir -p $(LOCALBIN)
 ifeq ($(shell test -x "$(KICS2)" ; echo $$?),0)
-	# to support bootstrapping with a simple KiCS2 bootstrap compiler,
-	# we already use in this phase our own (runtime) libraries:
-	$(KICS2) $(CURRY_OPTS) :set +local :set ghc "$(GHC_INCL)" :set path $(LIBDIR) :set parser -Wall :set v2 :load Compile :save :quit
-	mv Compile $(COMP)
+	$(KICS2) $(CURRY_OPTS) :set parser -Wall :set v2 :load Compile :save :quit
 else
-	mv $(INSTALLCURRY) $(INSTALLCURRY).bak
-	cat $(INSTALLHS) | \
-	  sed "s|^import System.Directory|import Directory|" | \
-	  sed "s|^import System.IO.Unsafe|import Unsafe|" > $(INSTALLCURRY)
-	pakcs $(CURRY_OPTS) :load Compile :save :quit || (mv $(INSTALLCURRY).bak $(INSTALLCURRY) ; exit 1)
-	mv $(INSTALLCURRY).bak $(INSTALLCURRY)
-	mv Compile $(COMP)
+	pakcs $(CURRY_OPTS) :load Compile :save :quit || (exit 1)
 endif
+	mv Compile $(COMP)
 
 # generate executable for Curry -> Haskell compiler kics2c
 .PHONY: CompileBoot
@@ -137,6 +119,7 @@ updateInstallInfo: $(SUBDIR)/Curry_Installation.hs
 # generate executable for Curry -> Haskell REPL kics2i
 .PHONY: REPLBoot
 REPLBoot: REPLBoot.hs $(SUBDIR)/Curry_REPL.hs
+	@echo "Compiling REPL"
 	mkdir -p $(LOCALBIN)
 	$(GHC_CALL) -o $(REPL) $<
 
