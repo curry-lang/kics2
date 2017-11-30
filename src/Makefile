@@ -98,7 +98,7 @@ endif
 
 # generate executable for Curry -> Haskell compiler kics2c
 .PHONY: CompileBoot
-CompileBoot: CompileBoot.hs $(SUBDIR)/Curry_Compile.hs
+CompileBoot: CompileBoot.hs | $(INSTALLCURRY) $(SUBDIR)/Curry_Compile.hs
 	mkdir -p $(LOCALBIN)
 	$(GHC_CALL) -o $(COMP) $<
 
