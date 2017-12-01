@@ -44,7 +44,7 @@ MINORVERSION    = 0
 # The revision version number
 REVISIONVERSION = 0
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION    = 8
+BUILDVERSION    = 9
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:
@@ -55,10 +55,6 @@ COMPILERDATE := $(shell git log -1 --format="%ci" | cut -c-10)
 endif
 # The installation date, set to the current date
 INSTALLDATE    := $(shell date)
-
-# The version number of the base libraries:
-BASEVERSION=1.0.0
-
 
 # Windows operating system?
 ifneq (,$(findstring MINGW, $(shell uname)))
@@ -71,6 +67,9 @@ endif
 # Paths used in this installation
 # -------------------------------
 
+# the root directory of the installation
+export ROOT=$(CURDIR)
+
 # Directories of the sources of the standard libraries and tools
 ifeq ($(DISTPKGINSTALL),yes)
 export CURRYLIBSDIR  = $(error "CURRYLIBSDIR is undefined!")
@@ -80,8 +79,6 @@ export CURRYLIBSDIR  = $(ROOT)/lib-trunk
 export CURRYTOOLSDIR = # not used
 endif
 
-# root directory of the installation
-export ROOT          = $(CURDIR)
 # binary directory and executables
 export BINDIR        = $(ROOT)/bin
 # Directory where the front end is located
@@ -90,7 +87,7 @@ export FRONTENDDIR   = $(ROOT)/frontend
 export LIBSRCDIR     = $(ROOT)/lib-trunk
 # Directory where the libraries are located
 export LIBDIR        = $(ROOT)/lib
-# Directory where the documentation is located
+# Directory where the documentation files are located
 export DOCDIR        = $(ROOT)/docs
 # Directory where local executables are stored
 export LOCALBIN      = $(BINDIR)/.local
@@ -102,6 +99,10 @@ export LOCALPKG   = $(INSTALLPREFIX)/pkg
 export PKGDB         = $(LOCALPKG)/kics2.conf.d
 # The local path (from the ROOT) to the package database
 export LOCALPKGDB    = pkg/kics2.conf.d
+
+# The version number of the base libraries:
+BASEVERSIONFILE = $(LIBDIR)/VERSION
+BASEVERSION := $(shell cat $(BASEVERSIONFILE))
 
 # Executable of CurryCheck:
 CURRYCHECK := $(shell which curry-check)
