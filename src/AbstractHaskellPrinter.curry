@@ -299,7 +299,7 @@ ppLitPattern :: Options -> Literal -> Doc
 ppLitPattern opts l = case l of
   Charc   _ -> wrapUnboxed (curryPrelude, "C_Char" )
   Floatc  _ -> wrapUnboxed (curryPrelude, "C_Float")
-  Intc    _ -> wrapUnboxed (curryPrelude, "C_Int"  )
+  Intc    _ -> parens (ppQName opts (curryPrelude, "C_Int") <+> parens (ppLiteral l))
   Stringc _ -> ppLiteral l
  where wrapUnboxed c = parens (ppQName opts c <+> ppLiteral l <> char '#')
 
