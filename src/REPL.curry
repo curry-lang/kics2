@@ -103,13 +103,13 @@ processArgsAndStart rst (arg:args)
   | arg == "--nocypm" || arg == "--noreadline"
   = processArgsAndStart rst args
   | arg == "-V" || arg == "--version"
-  = getBanner >>= putStrLn >> cleanUpAndExitRepl rst
+  = getBanner >>= putStrLn  >> processArgsAndStart rst { quit = True} args
   | arg == "--compiler-name"
-  = putStrLn "kics2" >> cleanUpAndExitRepl rst
+  = putStrLn "kics2"        >> processArgsAndStart rst { quit = True} args
   | arg == "--numeric-version"
-  = putStrLn numericVersion >> cleanUpAndExitRepl rst
+  = putStrLn numericVersion >> processArgsAndStart rst { quit = True} args
   | arg == "--base-version"
-  = putStrLn baseVersion >> cleanUpAndExitRepl rst
+  = putStrLn baseVersion    >> processArgsAndStart rst { quit = True} args
   | arg == "-h" || arg == "--help" || arg == "-?"
   = printHelp >> cleanUpAndExitRepl rst
   | isCommand arg = do
