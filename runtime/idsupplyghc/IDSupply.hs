@@ -7,13 +7,14 @@ module IDSupply
   , getDecisionRaw, setDecisionRaw, unsetDecisionRaw
   ) where
 
-import Control.Monad (liftM)
-import Data.IORef (IORef, newIORef, readIORef, modifyIORef)
-import qualified Data.Map as Map (Map, empty, delete, findWithDefault, insert)
+import Control.Monad    (liftM)
+import Data.IORef       (IORef, newIORef, readIORef, modifyIORef)
+import Data.Maybe       (fromMaybe)
 import System.IO.Unsafe (unsafePerformIO)
-import UniqSupply
-  (UniqSupply, mkSplitUniqSupply, splitUniqSupply, uniqFromSupply)
-import Unique (Unique, getKey)
+import UniqDFM          (UniqDFM, emptyUDFM, delFromUDFM, lookupUDFM, addToUDFM)
+import UniqSupply       (UniqSupply, mkSplitUniqSupply, splitUniqSupply,
+                         uniqFromSupply)
+import Unique           (Unique, getKey)
 
 -- SOURCE pragma to allow mutually recursive dependency
 import {-# SOURCE #-} ID (Decision, defaultDecision, isDefaultDecision)
@@ -48,18 +49,18 @@ unique :: IDSupply -> Unique
 unique = uniqFromSupply . uniqSupply
 
 -- |Internal store for 'Decision's
-store :: IORef (Map.Map Unique Decision)
-store = unsafePerformIO (newIORef Map.empty)
+store :: IORef (UniqDFM Decision)
+store = unsafePerformIO (newIORef emptyUDFM)
 {-# NOINLINE store #-}
 
 getDecisionRaw :: Unique -> IO Decision
-getDecisionRaw u = Map.findWithDefault defaultDecision u
+getDecisionRaw u = (fromMaybe defaultDecision . flip lookupUDFM u)
                    `liftM` readIORef store
 
 setDecisionRaw :: Unique -> Decision -> IO ()
 setDecisionRaw u c
-  | isDefaultDecision c = modifyIORef store $ Map.delete u -- collect garbage
-  | otherwise           = modifyIORef store $ Map.insert u c
+  | isDefaultDecision c = modifyIORef store $ flip delFromUDFM u -- collect garbage
+  | otherwise           = modifyIORef store $ \ m -> addToUDFM m u c
 
 unsetDecisionRaw :: Unique -> IO ()
-unsetDecisionRaw = modifyIORef store . Map.delete
+unsetDecisionRaw = modifyIORef store . flip delFromUDFM
