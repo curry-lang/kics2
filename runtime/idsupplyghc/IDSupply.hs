@@ -61,6 +61,7 @@ store = unsafePerformIO (newIORef Map.empty)
 
 getDecisionRaw :: Unique -> IO Decision
 getDecisionRaw u = Map.findWithDefault defaultDecision u
+                   `liftM` readIORef store
 
 setDecisionRaw :: Unique -> Decision -> IO ()
 setDecisionRaw u c
