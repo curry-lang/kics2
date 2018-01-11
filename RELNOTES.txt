@@ -1,8 +1,8 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 2.0.0 (December 21, 2017)
----------------------------------------------------------
+Release notes for KiCS2 Version 2.0.0 (January 11, 2018)
+--------------------------------------------------------
 
 This version has almost the same functionality as Version 0.6.0
 but adds type classes similar to Haskell 98.
@@ -14,7 +14,7 @@ this version contains the following changes:
     Curry programs by the operation `Distribution.baseVersion`.
     The versioning of base libraries is intended to be used by CPM.
   * Some libraries removed since they are available as packages
-    which can easily be installed via `cpm`:
+    which can easily be installed via `cypm`:
 
       - `Assertion`
         (no longer used since `currytest` has been replaced by `currycheck`)
