@@ -268,7 +268,14 @@ integrateExternals opts (AH.Prog m is td fd od) fn = do
   defaultPragmas = [ "{-# LANGUAGE MagicHash #-}"
                    , "{-# LANGUAGE ScopedTypeVariables #-}"
                    , "{-# LANGUAGE Rank2Types #-}"
+                   , "{-# LANGUAGE CPP #-}"
                    , "{-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}"
+                   , "{-# OPTIONS_GHC -fno-warn-missing-methods #-}"
+                   , "#if __GLASGOW_HASKELL__ >= 800"
+                   , "{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}"
+                   , "#else"
+                   , "{-# OPTIONS_GHC -fno-warn-duplicate-constraints #-}"
+                   , "#endif"
                    ]
   ppOpts = AHP.defaultOptions { AHP.traceFailure  = optTraceFailure opts
                               , AHP.currentModule = m }
