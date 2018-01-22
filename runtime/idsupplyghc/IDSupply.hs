@@ -1,6 +1,8 @@
 -- ---------------------------------------------------------------------------
 -- | IDSupply implementation using GHC's UniqSupply
 -- ---------------------------------------------------------------------------
+{-# LANGUAGE CPP #-}
+
 module IDSupply
   ( IDSupply, initSupply, leftSupply, rightSupply, unique
   , Unique, mkInteger, showUnique
