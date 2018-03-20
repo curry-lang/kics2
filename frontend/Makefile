@@ -17,7 +17,9 @@ $(CYMAKE): $(DEPS)
 	cd curry-base     && $(CABAL_INSTALL)
 	$(MAKE) transformers # see below
 	# install curry-frontend binary into BINDIR:
-	cd curry-frontend && $(CABAL_INSTALL)
+	# Option --force-reinstalls necessary due to problems with package
+	# HTTP-*
+	cd curry-frontend && $(CABAL_INSTALL) --force-reinstalls
 
 # Temporary workaround for https://github.com/haskell/cabal/issues/1855
 # see also http://www.haskell.org/pipermail/cabal-devel/2014-May/009795.html
