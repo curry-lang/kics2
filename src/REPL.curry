@@ -1058,15 +1058,23 @@ printAllLoadPathPrograms :: ReplState -> IO ()
 printAllLoadPathPrograms rst = mapIO_ printDirPrograms (loadPaths rst)
  where
   printDirPrograms dir = do
-    putStrLn $ "Curry programs in directory " ++ dir ++ ":"
-    files <- getDirectoryContents dir
-    putStrLn $ unwords $ mergeSort $
+    putStrLn $ "Curry programs in directory '" ++ dir ++ "':"
+    progs <- getDirPrograms "" dir
+    putStrLn $ unwords $ mergeSort $ progs
+    putStrLn ""
+
+  getDirPrograms prefix dir = do
+    exdir <- doesDirectoryExist dir
+    files <- if exdir then getDirectoryContents dir else return []
+    subprogs <- mapIO (\d -> getDirPrograms (prefix ++ d ++ ".") (dir </> d))
+                      (filter (\f -> let c = head f in c>='A' && c<='Z') files)
+    return $ concat subprogs ++
       concatMap (\f -> let (base, sfx) = splitExtension f
                         in if sfx `elem` [".curry", ".lcurry"] && notNull base
-                             then [base]
+                             then [prefix ++ base]
                              else [])
                 files
-    putStrLn ""
+
 
 -- Showing source code of functions via SourcProgGUI tool.
 -- If necessary, open a new connection and remember it in the repl state.
