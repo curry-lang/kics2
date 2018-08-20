@@ -446,9 +446,9 @@ insertFreeVarsInMainGoal rst goal (Just prog) = case prog of
 
 --- If the main goal is polymorphic, make it monomorphic by adding a type
 --- declaration where type variables are replaced by type "()". Before,
---- type variables with a numeric constraint like "Num" and "Fractional"
---- are defaulted to the types "Int" and "Float", respectively. The type
---- of the main goal is only allowed to contain numeric constraints.
+--- type variables with a numeric constraint like "Num"/"Integral" or
+--- "Fractional" are defaulted to the types "Int" or "Float", respectively.
+--- The type of the main goal is only allowed to contain numeric constraints.
 --- If the main goal has type "IO t" where t is monomorphic, t /= (),
 --- and t is not a function, then ">>= print" is added to the goal.
 --- The result is False if the main goal contains some error.
@@ -483,8 +483,8 @@ makeMainGoalMonomorphic' rst qty@(CQualType _ ty) goal
                  then '(' : goal ++ ") Prelude.>>= Prelude.print"
                  else goal
 
--- Defaults type variables with a numeric constraint like "Num" and
--- "Fractional" to the types "Int" and "Float", respectively. Moreover,
+-- Defaults type variables with a numeric constraint like "Num"/"Integeral" or
+-- "Fractional" to the types "Int" or "Float", respectively. Moreover,
 -- existing "Eq", "Ord", "Read", and "Show" constraints for the same
 -- type variable are removed.
 defaultQualTypeExpr :: CQualTypeExpr -> CQualTypeExpr
@@ -494,14 +494,14 @@ defaultQualTypeExpr (CQualType (CContext cs) ty) =
 defaultQualTypeExpr' :: [CConstraint] -> CQualTypeExpr -> CQualTypeExpr
 defaultQualTypeExpr' [] qty = qty
 defaultQualTypeExpr' (c:cs) (CQualType (CContext cs2) ty) = case c of
-  (("Prelude", "Num"), CTVar tv) -> defaultQualTypeExpr'
-    (removeConstraints tv cs)
-    (CQualType (CContext (removeConstraints tv cs2))
-      (substTypeVar tv (CTCons ("Prelude", "Int")) ty))
-  (("Prelude", "Fractional"), CTVar tv) -> defaultQualTypeExpr'
-    (removeConstraints tv cs)
-    (CQualType (CContext (removeConstraints tv cs2))
-      (substTypeVar tv (CTCons ("Prelude", "Float")) ty))
+  (("Prelude", ptype), CTVar tv) ->
+    if ptype `elem` ["Num","Integral","Fractional"]
+      then let defptype = if ptype == "Fractional" then "Float" else "Int"
+           in defaultQualTypeExpr'
+                (removeConstraints tv cs)
+                (CQualType (CContext (removeConstraints tv cs2))
+                   (substTypeVar tv (CTCons ("Prelude", defptype)) ty))
+      else defaultQualTypeExpr' cs (CQualType (CContext (cs2 ++ [c])) ty)
   _ -> defaultQualTypeExpr' cs (CQualType (CContext (cs2 ++ [c])) ty)
  where
   removeConstraints _  []       = []
