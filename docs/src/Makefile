@@ -33,8 +33,6 @@ cleanall: clean
 	rm -f lib version.tex
 
 $(MANUAL): manual.pdf
-	thumbpdf manual
-	pdflatex manual
 	rm -f $@
 	cp $< $@
 
