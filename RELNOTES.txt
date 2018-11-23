@@ -1,8 +1,8 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 2.0.0 (August 20, 2018)
--------------------------------------------------------
+Release notes for KiCS2 Version 2.0.0 (November 23, 2018)
+---------------------------------------------------------
 
 This version has almost the same functionality as Version 0.6.0
 but adds type classes similar to Haskell 98.
@@ -13,6 +13,7 @@ this version contains the following changes:
     libraries can be queried by `kics2 --base-version` or inside
     Curry programs by the operation `Distribution.baseVersion`.
     The versioning of base libraries is intended to be used by CPM.
+  * Library `Findall`: `oneValue` added
   * Library `SetFunctions`: `minValueBy` and `maxValueBy` added, `minValue`
     and `maxValue` depend on `Ord` context.
   * Some libraries removed since they are available as packages
