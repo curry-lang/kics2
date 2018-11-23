@@ -1,6 +1,18 @@
 Release Notes for KiCS2
 =======================
 
+Release notes for KiCS2 Version 2.0.3 (November 23, 2018)
+---------------------------------------------------------
+
+Changes to version 2.0.0:
+
+  * Library `Array` removed (available in package `array` as `Data.Array`)
+  * Library `Distribtion`: `curryCompilerRevisionVersion` added
+  * Library `SCC` removed (available in package `scc` as `Data.SCC`)
+  * Front end updated in order to generate ASTs with source code
+    position information (see package `curry-ast`).
+
+
 Release notes for KiCS2 Version 2.0.0 (November 23, 2018)
 ---------------------------------------------------------
 
