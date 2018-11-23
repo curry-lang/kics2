@@ -239,10 +239,16 @@ data Literal
  deriving (Eq, Ord, Read, Show)
 
 -----------------------------------------------------------------------
---- Translates a given qualified type name into external name relative to
---- a module. Thus, names not defined in this module (except for names
+--- Shows a qualified type name as a name relative to a module
+--- (first argument). Thus, names not defined in this module (except for names
 --- defined in the prelude) are prefixed with their module name.
 showQNameInModule :: String -> QName -> String
-showQNameInModule mod (qmod, name)
+showQNameInModule mod qn@(qmod, name)
   | qmod == mod || qmod == "Prelude" = name
-  | otherwise                        = qmod ++ '.' : name
+  | otherwise                        = showQName qn
+
+--- Shows a qualified name.
+showQName :: QName -> String
+showQName (qmod, name) = qmod ++ '.' : name
+
+-----------------------------------------------------------------------

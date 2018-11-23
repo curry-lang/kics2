@@ -6,23 +6,24 @@
 --- Assumption: an abstract Curry program is stored in file with
 --- extension `.acy` in the subdirectory `.curry`
 ---
---- @author Michael Hanus, Bjoern Peemoeller
---- @version October 2016
---- @category meta
+--- @author Michael Hanus, Bjoern Peemoeller, Jan Tikovsky, Finn Teegen
+--- @version November 2018
 -- ---------------------------------------------------------------------------
 
 module AbstractCurry.Files where
 
-import AbstractCurry.Select (imports)
-import AbstractCurry.Types
-import Char                 (isSpace)
-import Directory            (doesFileExist, getModificationTime)
-import Distribution
-import FileGoodies          (getFileInPath, lookupFileInPath)
-import FilePath             (takeFileName, (</>), (<.>))
-import IOExts               (readCompleteFile)
-import Maybe                (isNothing)
+import Char                 ( isSpace )
+import Directory            ( doesFileExist, getModificationTime )
+import Distribution         ( getLoadPathForModule, inCurrySubdir
+                            , lookupModuleSourceInLoadPath, stripCurrySuffix )
+import FileGoodies          ( getFileInPath, lookupFileInPath )
+import FilePath             ( takeFileName, (</>), (<.>) )
 import ReadShowTerm
+
+import System.FrontendExec
+
+import AbstractCurry.Select ( imports )
+import AbstractCurry.Types
 
 -- ---------------------------------------------------------------------------
 --- I/O action which parses a Curry program and returns the corresponding
@@ -93,7 +94,7 @@ tryParse fn = do
   if not exists
     then cancel $ "AbstractCurry file '" ++ fn ++ "' does not exist"
     else do
-      src <- readCompleteFile fn
+      src <- readFile fn
       let (line1, lines) = break (=='\n') src
       if line1 /= "{- "++version++" -}"
         then cancel $ "Could not parse AbstractCurry file '" ++ fn
@@ -216,7 +217,7 @@ tryReadACYFile fn = do
         else cancel
  where
   tryRead file = do
-    src <- readCompleteFile file
+    src <- readFile file
     let (line1,lines) = break (=='\n') src
     if line1 /= "{- "++version++" -}"
       then error $ "AbstractCurry: incompatible file found: "++fn

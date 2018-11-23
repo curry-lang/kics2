@@ -3,24 +3,25 @@
 --- Curry programs in Curry. This library defines I/O actions
 --- to read Curry programs and transform them into this representation.
 ---
---- @author Michael Hanus
---- @version October 2015
---- @category meta
+--- @author Michael Hanus, Finn Teegen
+--- @version November 2018
 ------------------------------------------------------------------------------
 
 module FlatCurry.Files where
 
 import Directory       (doesFileExist)
-import Distribution    ( FrontendParams, FrontendTarget (..), defaultParams
-                       , setQuiet, inCurrySubdir, stripCurrySuffix
-                       , callFrontend, callFrontendWithParams
+import Distribution    ( inCurrySubdir, stripCurrySuffix
                        , lookupModuleSourceInLoadPath, getLoadPathForModule
                        )
 import FileGoodies     (getFileInPath, lookupFileInPath)
 import FilePath        (takeFileName, (</>), (<.>))
-import FlatCurry.Types
-import Maybe           (isNothing)
 import ReadShowTerm    (readUnqualifiedTerm, showTerm)
+
+import System.FrontendExec ( FrontendParams, FrontendTarget (..), defaultParams
+                           , setQuiet, callFrontendWithParams
+                           )
+
+import FlatCurry.Types
 
 --- I/O action which parses a Curry program and returns the corresponding
 --- FlatCurry program.

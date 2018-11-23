@@ -20,23 +20,24 @@ import FilePath     ( FilePath, dropExtension, takeExtension, takeBaseName
                     )
 import Files        (lookupFileInPath, getFileInPath)
 import FiniteMap    (FM, emptyFM, addToFM, fmToList, lookupFM)
-import FlatCurry.Annotated.Types
-import FlatCurry.Annotated.Files ( readTypedFlatCurryFileRaw
-                                 , typedFlatCurryFileName
-                                 )
 import Char         (isSpace, toUpper)
 import Function     (second)
 import IO           (Handle, IOMode (ReadMode), hClose, hGetChar, hIsEOF, openFile)
 import List         (intercalate, partition)
 import Maybe        (fromJust, isJust, isNothing)
-import Message      (showStatus,showAnalysis)
-import Names        (moduleNameToPath)
 import System       (system)
+
+import Data.SCC     (scc)
+import FlatCurry.Annotated.Types
+import FlatCurry.Annotated.Files ( readTypedFlatCurryFileRaw
+                                 , typedFlatCurryFileName
+                                 )
 
 import CompilerOpts
 import Installation (compilerName, majorVersion, minorVersion)
+import Message      (showStatus,showAnalysis)
+import Names        (moduleNameToPath)
 import RCFile       (rcValue)
-import SCC          (scc)
 
 type ModuleIdent = String
 type Errors      = [String]

@@ -12,7 +12,7 @@ module AbstractHaskellPrinter
   , ppDecls
   ) where
 
-import Pretty
+import Text.Pretty
 
 import AbstractHaskell
 import AbstractHaskellGoodies (tyVarsOf)
@@ -22,9 +22,6 @@ data Options = Options { currentModule :: String, traceFailure :: Bool }
 
 defaultOptions :: Options
 defaultOptions = Options { currentModule = "", traceFailure = False }
-
-pPrint :: Doc -> String
-pPrint = pretty 80
 
 -- ---------------------------------------------------------------------------
 -- Functions to print an AbstractHaskell program in standard Curry syntax

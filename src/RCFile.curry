@@ -15,8 +15,9 @@ import FilePath     (FilePath, (</>), (<.>))
 import Function     (first)
 import Installation (installDir)
 import List         (partition)
-import PropertyFile
 import Sort         (mergeSort)
+
+import Data.PropertyFile
 
 import Utils        (strip)
 

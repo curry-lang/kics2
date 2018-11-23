@@ -9,7 +9,7 @@
 --- --------------------------------------------------------------------------
 module FlatCurry.Annotated.Pretty where
 
-import Pretty
+import Text.Pretty
 
 import FlatCurry.Annotated.Types
 
@@ -107,6 +107,15 @@ ppTypeExpr p (TCons     qn tys)
   | isTupleId qn                   = tupled   (map ppTypeExp tys)
   | otherwise                      = parensIf (p > 1 && not (null tys)) $ sep
                                       (ppPrefixOp qn : map (ppTypeExpr 2) tys)
+ppTypeExpr p (ForallType vs ty)
+  | null vs   = ppTypeExpr p ty
+  | otherwise = parensIf (p > 0) $ ppQuantifiedVars vs <+> ppTypeExpr 0 ty
+
+--- pretty-print explicitly quantified type variables
+ppQuantifiedVars :: [TVarIndex] -> Doc
+ppQuantifiedVars vs
+  | null vs = empty
+  | otherwise = text "forall" <+> hsep (map ppTVarIndex vs) <+> char '.'
 
 --- pretty-print a type variable
 ppTVarIndex :: TVarIndex -> Doc

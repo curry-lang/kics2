@@ -42,9 +42,9 @@ MAJORVERSION    = 2
 # The minor version number
 MINORVERSION    = 0
 # The revision version number
-REVISIONVERSION = 0
+REVISIONVERSION = 3
 # The build version number (if >0, then it is a pre-release)
-BUILDVERSION    = 0
+BUILDVERSION    = 1
 # Complete version
 export VERSION  = $(MAJORVERSION).$(MINORVERSION).$(REVISIONVERSION)
 # The version date:

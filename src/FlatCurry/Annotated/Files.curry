@@ -1,26 +1,25 @@
 ------------------------------------------------------------------------------
 --- This library supports meta-programming, i.e., the manipulation of
 --- Curry programs in Curry. This library defines I/O actions
---.  to read Curry programs and transform them into this representation.
+--- to read Curry programs and transform them into this representation.
 ---
 --- @author Michael Hanus
---- @version October 2015
---- @category meta
+--- @version November 2018
 ------------------------------------------------------------------------------
 
 module FlatCurry.Annotated.Files where
 
-import Directory       (doesFileExist)
-import Distribution    ( FrontendParams, FrontendTarget (..), defaultParams
-                       , setQuiet, inCurrySubdir, stripCurrySuffix
-                       , callFrontend, callFrontendWithParams
+import Directory       ( doesFileExist )
+import Distribution    ( inCurrySubdir, stripCurrySuffix
                        , lookupModuleSourceInLoadPath, getLoadPathForModule
                        )
-import FileGoodies     (getFileInPath, lookupFileInPath)
-import FilePath        (takeFileName, (</>), (<.>))
+import FileGoodies     ( getFileInPath)
+import FilePath        ( takeFileName, (</>), (<.>) )
+
+import System.FrontendExec ( FrontendParams, FrontendTarget (..)
+                           , defaultParams, setQuiet, callFrontendWithParams )
+
 import FlatCurry.Annotated.Types
-import Maybe           (isNothing)
-import ReadShowTerm    (readUnqualifiedTerm, showTerm)
 
 readTypedFlatCurry :: String -> IO (AProg TypeExpr)
 readTypedFlatCurry progname =
