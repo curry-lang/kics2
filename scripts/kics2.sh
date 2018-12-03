@@ -79,7 +79,9 @@ case $1 in
 esac
 
 # check whether we should call CPM to compute the correct load path:
-if [ -x $KICS2HOME/bin/cypm ] ; then
+if [ ! -d "$HOME" ] ; then
+  USECPM=no   # do not use CPM without a home directory
+elif [ -x $KICS2HOME/bin/cypm ] ; then
   CYPMBIN=$KICS2HOME/bin/cypm
   USECPM=yes
 elif [ -x $CPMBIN/cypm ] ; then
