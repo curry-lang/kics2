@@ -18,12 +18,11 @@
 --- so that the declarations can be used as set elements.
 ---
 --- @author Wolfgang Lux
---- @category algorithm
 --- ----------------------------------------------------------------------------
 
 module Data.SCC (scc) where
 
-import SetRBT (emptySetRBT, elemRBT, insertRBT)
+import Data.Set.RBTree (empty, member, insert)
 
 data Node a b = Node Int [b] [b] a
  deriving Eq
@@ -61,23 +60,23 @@ scc bvs' fvs' = map (map node) . tsort' . tsort . zipWith wrap [0 ..]
   where wrap i n = Node i (bvs' n) (fvs' n) n
 
 tsort :: (Eq a, Eq b) => [Node a b] -> [Node a b]
-tsort xs = snd (dfs xs (emptySetRBT cmpNode) [])
+tsort xs = snd (dfs xs (empty cmpNode) [])
   where
   dfs []        marks stack = (marks, stack)
   dfs (x : xs') marks stack
-    | x `elemRBT` marks = dfs xs' marks stack
+    | x `member` marks = dfs xs' marks stack
     | otherwise         = dfs xs' marks' (x : stack')
     where
-    (marks', stack') = dfs (defs x) (x `insertRBT` marks) stack
+    (marks', stack') = dfs (defs x) (x `insert` marks) stack
     defs x1          = filter (any (`elem` fvs x1) . bvs) xs
 
 tsort' :: (Eq a, Eq b) => [Node a b] -> [[Node a b]]
-tsort' xs = snd (dfs xs (emptySetRBT cmpNode) [])
+tsort' xs = snd (dfs xs (empty cmpNode) [])
   where
   dfs []        marks stack = (marks, stack)
   dfs (x : xs') marks stack
-    | x `elemRBT` marks = dfs xs' marks stack
+    | x `member` marks = dfs xs' marks stack
     | otherwise         = dfs xs' marks' ((x : concat stack') : stack)
     where
-    (marks', stack') = dfs (uses x) (x `insertRBT` marks) []
+    (marks', stack') = dfs (uses x) (x `insert` marks) []
     uses x1          = filter (any (`elem` bvs x1) . fvs) xs

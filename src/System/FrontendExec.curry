@@ -3,7 +3,7 @@
 --- Curry system.
 ---
 --- @author Bernd Brassel, Michael Hanus, Bjoern Peemoeller, Finn Teegen
---- @version November 2018
+--- @version December 2018
 ------------------------------------------------------------------------------
 
 module System.FrontendExec
@@ -17,15 +17,15 @@ module System.FrontendExec
   , callFrontend, callFrontendWithParams
   ) where
 
-import Char         ( toLower, toUpper )
+import Char         ( toUpper )
 import Distribution ( curryCompiler, curryCompilerMajorVersion
-                    , curryCompilerMinorVersion, getLoadPathForModule
-                    , installDir, rcFileName )
+                    , curryCompilerMinorVersion, installDir, rcFileName )
 import List         ( intercalate, nub )
 import FilePath     ( FilePath, (</>), takeDirectory, takeFileName )
 import System       ( system )
 
-import Data.PropertyFile ( readPropertyFile )
+import Data.PropertyFile ( getPropertiesFromFile )
+import System.CurryPath  ( getLoadPathForModule )
 
 -------------------------------------------------------------------
 -- calling the front end
@@ -86,7 +86,9 @@ defaultParams =
 --- specific resource configuration file.
 rcParams :: IO FrontendParams
 rcParams = do
-  [mbExtended,mbOverlapWarn] <- getRcVars ["curryextensions","warnoverlapping"]
+  rcfile <- rcFileName
+  [mbExtended,mbOverlapWarn] <- getPropertiesFromFile rcfile
+                                  ["curryextensions","warnoverlapping"]
   return $ setExtended    (mbExtended    /= Just "no")
          $ setOverlapWarn (mbOverlapWarn /= Just "no")
          $ defaultParams
@@ -261,16 +263,5 @@ callFrontendWithParams target params modpath = do
    cppParams = intercalate " " $ map showDefinition (definitions params)
 
    showDefinition (s, v) = "-D" ++ s ++ "=" ++ show v
-
-------------------------------------------------------------------------------
--- Axuilieries:
-
---- Look up configuration variables as specified by user in his rc file.
---- Uppercase/lowercase is ignored for the variable names.
-getRcVars :: [String] -> IO [Maybe String]
-getRcVars vars = do
-  rcs <- rcFileName >>= readPropertyFile
-  return (map (flip lookup (map (\ (a, b) -> (map toLower a, b)) rcs))
-              (map (map toLower) vars))
 
 ------------------------------------------------------------------------------

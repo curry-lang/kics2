@@ -4,18 +4,18 @@
 --- to read Curry programs and transform them into this representation.
 ---
 --- @author Michael Hanus
---- @version November 2018
+--- @version December 2018
 ------------------------------------------------------------------------------
 
 module FlatCurry.Annotated.Files where
 
 import Directory       ( doesFileExist )
-import Distribution    ( inCurrySubdir, stripCurrySuffix
-                       , lookupModuleSourceInLoadPath, getLoadPathForModule
-                       )
 import FileGoodies     ( getFileInPath)
 import FilePath        ( takeFileName, (</>), (<.>) )
 
+import System.CurryPath    ( inCurrySubdir, stripCurrySuffix
+                           , lookupModuleSourceInLoadPath, getLoadPathForModule
+                           )
 import System.FrontendExec ( FrontendParams, FrontendTarget (..)
                            , defaultParams, setQuiet, callFrontendWithParams )
 

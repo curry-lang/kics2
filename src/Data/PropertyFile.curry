@@ -11,13 +11,16 @@
 ------------------------------------------------------------------------------
 
 module Data.PropertyFile
-  ( readPropertyFile, updatePropertyFile )
+  ( readPropertyFile, updatePropertyFile
+  , getPropertyFromFile, getPropertiesFromFile
+  )
  where
 
 import Char
 import Directory
 import IOExts
 
+------------------------------------------------------------------------------
 --- Reads a property file and returns the list of properties.
 --- Returns empty list if the property file does not exist.
 readPropertyFile :: String -> IO [(String,String)]
@@ -57,3 +60,21 @@ changePropertyInFile file pname pval = do
                      then l
                      else if s1==pname then s1++"="++pval else l
 
+------------------------------------------------------------------------------
+--- Looks up the value of a property stored in a property file.
+--- Uppercase/lowercase is ignored for the property names.
+getPropertyFromFile :: String -> String -> IO (Maybe String)
+getPropertyFromFile propfile propname = do
+  props <- readPropertyFile propfile
+  return $ lookup (map toLower propname)
+                  (map (\ (a, b) -> (map toLower a, b)) props)
+
+--- Looks up the values of properties stored in a property file.
+--- Uppercase/lowercase is ignored for the variable names.
+getPropertiesFromFile :: String -> [String] -> IO [Maybe String]
+getPropertiesFromFile propfile propnames = do
+  props <- readPropertyFile propfile
+  return (map (flip lookup (map (\ (a, b) -> (map toLower a, b)) props))
+              (map (map toLower) propnames))
+
+------------------------------------------------------------------------------

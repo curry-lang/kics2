@@ -5,16 +5,12 @@
 --- information between Curry modules.
 ---
 --- @author  Björn Peemöller, Fabian Skrlac, Finn Teegen, Jan Tikovsky
---- @version November 2017
+--- @version December 2018
 --- --------------------------------------------------------------------------
 module ModuleDeps (ModuleIdent, Source, Errors, deps) where
 
-import Directory    (doesFileExist, getModificationTime)
-import Distribution (defaultParams, setDefinitions, setFullPath, setQuiet
-                    , setSpecials, stripCurrySuffix, inCurrySubdirModule
-                    , FrontendTarget(..), FrontendParams, callFrontendWithParams
-                    , installDir
-                    )
+import Directory    ( doesFileExist, getModificationTime )
+import Distribution ( installDir )
 import FilePath     ( FilePath, dropExtension, takeExtension, takeBaseName
                     , dropTrailingPathSeparator, (</>), (<.>), normalise
                     )
@@ -32,6 +28,10 @@ import FlatCurry.Annotated.Types
 import FlatCurry.Annotated.Files ( readTypedFlatCurryFileRaw
                                  , typedFlatCurryFileName
                                  )
+import System.CurryPath    ( inCurrySubdirModule, stripCurrySuffix )
+import System.FrontendExec ( defaultParams, setDefinitions, setFullPath, setQuiet
+                           , setSpecials, callFrontendWithParams
+                           , FrontendTarget(..), FrontendParams )
 
 import CompilerOpts
 import Installation (compilerName, majorVersion, minorVersion)

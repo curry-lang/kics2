@@ -3,7 +3,7 @@
 --- It implements the Read-Eval-Print loop for KiCS2
 ---
 --- @author Michael Hanus, Bjoern Peemoeller, Finn Teegen
---- @version October 2017
+--- @version December 2018
 --- --------------------------------------------------------------------------
 module REPL where
 
@@ -12,7 +12,7 @@ import AbstractCurry.Files
 import AbstractCurry.Select
 import Char              (isAlpha, isAlphaNum, isDigit, isSpace, toLower)
 import Directory
-import Distribution
+import Distribution      ( baseVersion, installDir )
 import FilePath          ( (</>), (<.>)
                          , splitSearchPath, splitFileName, splitExtension
                          , searchPathSeparator)
@@ -35,6 +35,10 @@ import Names               (funcInfoFile, moduleNameToPath)
 import RCFile
 import Utils               ( showMonoTypeExpr, showMonoQualTypeExpr
                            , notNull, strip )
+
+import System.CurryPath    ( inCurrySubdir, lookupModuleSource, stripCurrySuffix
+                           , sysLibPath )
+import System.FrontendExec
 
 import Linker
 

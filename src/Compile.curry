@@ -2,7 +2,7 @@
 --- The main module for KiCS2c Curry to Haskell compiler
 ---
 --- @author  Bernd Brassel, Michael Hanus, Bjoern Peemoeller, Fabian Reck
---- @version April 2015
+--- @version December 2018
 --- --------------------------------------------------------------------------
 module Compile where
 
@@ -10,7 +10,6 @@ import Char              (isSpace)
 import Maybe             (fromJust)
 import List              (intercalate, isPrefixOf)
 import Directory         (doesFileExist)
-import Distribution
 import FilePath          (FilePath, (</>), dropExtension, normalise)
 import FiniteMap
 import FlatCurry.Types
@@ -21,6 +20,9 @@ import FlatCurry.Annotated.Goodies (unAnnProg)
 import IOExts            (readCompleteFile)
 import ReadShowTerm      (readQTermFile)
 import System            (getArgs)
+
+import System.CurryPath ( getLoadPathForModule, lookupModuleSourceInLoadPath
+                        , stripCurrySuffix )
 
 import qualified AbstractHaskell        as AH
 import qualified AbstractHaskellGoodies as AHG (funcName, renameSymbolInProg, typeOf)
