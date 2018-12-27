@@ -8,16 +8,16 @@
 --- during case lifting, an invalid type signature would be generated.
 ---
 --- @author Björn Peemöller
---- @version August 2013
+--- @version December 2018
 --- ----------------------------------------------------------------------------
 
 module MissingImports (fixMissingImports) where
 
-import SetRBT
+import State
 
 import FlatCurry.Annotated.Types
 import FlatCurry.Annotated.Goodies
-import State
+import Data.Set.RBTree ( SetRBT, delete, empty, insert, toList)
 
 type ModuleName = String
 
@@ -28,11 +28,11 @@ type MM a = State (SetRBT ModuleName) a
 --- of which types are used in type signatures of the program
 fixMissingImports :: AProg TypeExpr -> AProg TypeExpr
 fixMissingImports p@(AProg m _ ts fs os)
-  = let allModules = execState (vsProg p) (emptySetRBT (<))
-    in  AProg m (setRBT2list $ deleteRBT m allModules) ts fs os
+  = let allModules = execState (vsProg p) (empty (<))
+    in  AProg m (toList $ delete m allModules) ts fs os
 
 addModule :: ModuleName -> MM ()
-addModule m = modifyS $ \ s -> insertRBT m s
+addModule m = modifyS $ \ s -> insert m s
 
 vsProg :: AProg TypeExpr -> MM ()
 vsProg (AProg _ is _ fs _) = mapS_ addModule is `bindS_` mapS_ vsFuncDecl fs

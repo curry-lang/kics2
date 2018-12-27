@@ -3,7 +3,7 @@
 ---- for (non)determinism and first order/higher order.
 ---
 --- @author  Michael Hanus, Björn Peemöller, Fabian Skrlac
---- @version May 2014
+--- @version December 2018
 --- ----------------------------------------------------------------------------
 module Analysis
   ( AnalysisResult, showAnalysisResult, readAnalysisResult
@@ -22,7 +22,8 @@ import FlatCurry.Types
 import FlatCurry.Goodies
 import Maybe            (fromJust, fromMaybe)
 import List             (partition)
-import SetRBT
+
+import Data.Set.RBTree  ( SetRBT, empty, insert, toList, union )
 
 import Classification
 import Names
@@ -142,14 +143,14 @@ funcCalls (Func _ _ _ _ (External _)) = []
 --- Gets the set of all functions (including partially applied functions)
 --- directly called in an expression.
 funcsInExp :: Expr -> SetRBT QName
-funcsInExp (Var        _) = empty
-funcsInExp (Lit        _) = empty
+funcsInExp (Var        _) = emptySet
+funcsInExp (Lit        _) = emptySet
 funcsInExp (Comb ct f es)
-  | isFuncCall ct = f `insertRBT` unionMap funcsInExp es
+  | isFuncCall ct = f `insert` unionMap funcsInExp es
   | otherwise     =               unionMap funcsInExp es
 funcsInExp (Free     _ e) = funcsInExp e
 funcsInExp (Let     bs e) = unionMap funcsInExp (e : map snd bs)
-funcsInExp (Or     e1 e2) = funcsInExp e1 `unionRBT` funcsInExp e2
+funcsInExp (Or     e1 e2) = funcsInExp e1 `union` funcsInExp e2
 funcsInExp (Case  _ e bs) = unionMap funcsInExp (e : map branchExpr bs)
 funcsInExp (Typed    e _) = funcsInExp e
 
@@ -212,9 +213,9 @@ usedTypes (Type    _ _ _ cs) = toList $ unionMap  typeCons
 usedTypes (TypeSyn _ _ _ ty) = toList $ typeCons  ty
 
 typeCons :: TypeExpr -> SetRBT QName
-typeCons (TVar       _) = empty
-typeCons (FuncType a b) = typeCons a `unionRBT` typeCons b
-typeCons (TCons qn tys) = qn `insertRBT` unionMap typeCons tys
+typeCons (TVar       _) = emptySet
+typeCons (FuncType a b) = typeCons a `union` typeCons b
+typeCons (TCons qn tys) = qn `insert` unionMap typeCons tys
 typeCons (ForallType _ ty) = typeCons ty
 
 -- -----------------------------------------------------------------------------
@@ -344,11 +345,9 @@ ioType = renameQName (prelude, "IO")
 
 -- Small interface to Sets
 
-empty :: Ord a => SetRBT a
-empty = emptySetRBT (<=)
+emptySet :: Ord a => SetRBT a
+emptySet = empty (<=)
 
 unionMap :: Ord b => (a -> SetRBT b) -> [a] -> SetRBT b
-unionMap f = foldr unionRBT empty . map f
+unionMap f = foldr union emptySet . map f
 
-toList :: SetRBT a -> [a]
-toList = setRBT2list
