@@ -9,7 +9,7 @@
 import Benchmarks
 import BenchmarkGoodies
 import Directory
-import Format
+import Data.Format
 import List(transpose)
 import System
 
