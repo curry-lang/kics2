@@ -3,13 +3,12 @@
 ---  by Olaf Chitil.
 ---
 --- @author Sebastian Fischer, Bjoern Peemoeller, Jan Tikovsky
---- @version October 2017
---- @category general
+--- @version December 2018
 ------------------------------------------------------------------------------
 
 module Text.PrettyImpl where
 
-import qualified Dequeue as Q (Queue, cons, empty, matchHead, matchLast)
+import qualified Data.Queue as Q (Queue, cons, empty, matchHead, matchLast)
 
 -- The abstract data type Doc represents pretty documents.
 data Doc = Doc (Tokens -> Tokens)
