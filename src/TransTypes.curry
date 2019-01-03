@@ -13,7 +13,7 @@ import qualified FlatCurry.Types as FC
 import FlatCurry.Goodies
 import AbstractHaskell
 import AbstractHaskellGoodies
-import FiniteMap
+import Data.FiniteMap
 import List (intercalate, intersperse, nub)
 import Names
   ( mkChoiceName, mkChoicesName, mkFailName, mkGuardName, mkFoConsName

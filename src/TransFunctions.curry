@@ -7,7 +7,6 @@
 --- --------------------------------------------------------------------------
 module TransFunctions ( State (..), defaultState, trProg, runIOES ) where
 
-import FiniteMap (lookupFM, plusFM, delListFromFM)
 import Function  (first)
 import List      (nub)
 
@@ -15,6 +14,7 @@ import qualified AbstractHaskell        as AH
 import qualified AbstractHaskellGoodies as AHG
 import           Analysis
 import           CompilerOpts  (Options (..), defaultOptions, OptimLevel (..))
+import           Data.FiniteMap (lookupFM, plusFM, delListFromFM)
 import           FlatCurry.Types
 import           LiftCase      (isCaseAuxFuncName)
 import           Message       (showAnalysis)

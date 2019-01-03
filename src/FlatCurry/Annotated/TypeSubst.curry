@@ -7,7 +7,7 @@
 --- ----------------------------------------------------------------------------
 module FlatCurry.Annotated.TypeSubst where
 
-import FiniteMap
+import Data.FiniteMap
 import FlatCurry.Annotated.Types
 
 --- The (abstract) data type for substitutions on TypeExpr.

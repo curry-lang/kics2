@@ -27,9 +27,9 @@
 
 module DefaultPolymorphic (defaultPolymorphic) where
 
-import FiniteMap
 import List ((\\), nub)
 
+import Data.FiniteMap
 import FlatCurry.Annotated.Types
 import FlatCurry.Annotated.Goodies
 import FlatCurry.Annotated.TypeSubst

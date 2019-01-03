@@ -11,7 +11,7 @@ import Maybe             (fromJust)
 import List              (intercalate, isPrefixOf)
 import Directory         (doesFileExist)
 import FilePath          (FilePath, (</>), dropExtension, normalise)
-import FiniteMap
+import Data.FiniteMap
 import FlatCurry.Types
 import FlatCurry.Goodies (updQNamesInProg)
 import FlatCurry.Annotated.Types

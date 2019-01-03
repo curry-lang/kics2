@@ -23,7 +23,7 @@ module LiftCase (isCaseAuxFuncName, liftCases) where
 import FlatCurry.Annotated.Types
 import FlatCurry.Annotated.Goodies
 import List                      (isPrefixOf, partition, delete, nub, sortBy)
-import FiniteMap
+import Data.FiniteMap
 
 isCaseAuxFuncName :: String -> Bool
 isCaseAuxFuncName n = take 6 n == "_case_"

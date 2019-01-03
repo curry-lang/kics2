@@ -17,7 +17,7 @@ module Analysis
   , getPrivateType, getPrivateFunc, getPrivateCons
   ) where
 
-import FiniteMap
+import Data.FiniteMap
 import FlatCurry.Types
 import FlatCurry.Goodies
 import Maybe            (fromJust, fromMaybe)
