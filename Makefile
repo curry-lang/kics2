@@ -102,7 +102,6 @@ export LOCALPKGDB    = pkg/kics2.conf.d
 
 # The version number of the base libraries:
 BASEVERSIONFILE = $(LIBDIR)/VERSION
-BASEVERSION := $(shell cat $(BASEVERSIONFILE))
 
 # Executable of CurryCheck:
 CURRYCHECK := $(shell which curry-check)
@@ -500,7 +499,7 @@ endif
 	echo 'runtimeMinor = $(GHC_MINOR)' >> $@
 	echo "" >> $@
 	echo 'baseVersion :: String' >> $@
-	echo 'baseVersion = "$(BASEVERSION)"' >> $@
+	echo 'baseVersion = "$(shell cat $(BASEVERSIONFILE))"' >> $@
 	echo "" >> $@
 	echo 'ghcExec :: String' >> $@
 	echo 'ghcExec = "\"$(GHC)\""' >> $@
