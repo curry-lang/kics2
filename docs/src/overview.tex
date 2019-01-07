@@ -136,15 +136,15 @@ non-determinism is encapsulated. Since this might
 result in dependencies on the evaluation strategy
 (see \cite{BrasselHanusHuch04JFLP} for a detailed discussion),
 this kind of encapsulation is only available as I/O operations.
-For instance, the library \code{AllSolutions}\pindex{AllSolutions}
-(Section~\ref{Library:AllSolutions})
+For instance, the library \code{Control.AllSolutions}\pindex{AllSolutions}
+(available in package \code{searchtree})
 defines the operation
 \begin{curry}
 getAllValues :: a -> IO [a]
 \end{curry}
 to compute all values of a given argument expression.
-There is also the library \code{SearchTree}\pindex{SearchTree}
-(Section~\ref{Library:SearchTree})
+There is also the library \code{Control.SearchTree}\pindex{SearchTree}
+(also available in package \code{searchtree})
 which supports user-programmable search strategies
 and contains some predefined strategies
 like depth-first, breadth-first, iterative deepening search.
@@ -156,7 +156,7 @@ Conceptually, these operators are offered as
 which compute the set of all results but do not encapsulate
 non-determinism in the actual arguments.
 See the library \code{SetFunctions}
-(Section~\ref{Library:SetFunctions}) for more details.
+(available in package \code{setfunctions}) for more details.
 \end{description}
 \item
 Concurrent computations\index{concurrency}
