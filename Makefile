@@ -227,7 +227,14 @@ export RUNTIMEDEPS = base containers ghc mtl parallel-tree-search tree-monad \
 	             directory
 # Dependencies for the kics2 libraries
 export LIBDEPS     = base directory network old-time parallel-tree-search \
-                     process time
+	              process time
+
+# Depend on network-bsd package for ghc >= 7.8
+# (network-bsd depends on base >= 4.7 which translates to ghc >= 7.8)
+ifeq ($(shell test $(GHC_MAJOR) -gt 7 -o \( $(GHC_MAJOR) -eq 7 -a $(GHC_MINOR) -ge 8 \) ; echo $$?),0)
+	LIBDEPS += network-bsd
+endif
+
 # Dependency to system library
 ifdef WINDOWS
 export SYSTEMDEPS  = Win32
