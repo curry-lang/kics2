@@ -502,18 +502,20 @@ defaultQualTypeExpr' (c:cs) (CQualType (CContext cs2) ty) = case c of
     if ptype `elem` ["Num","Integral","Fractional"]
       then let defptype = if ptype == "Fractional" then "Float" else "Int"
            in defaultQualTypeExpr'
-                (removeConstraints tv cs)
-                (CQualType (CContext (removeConstraints tv cs2))
+                (removeConstraints tv defptype cs)
+                (CQualType (CContext (removeConstraints tv defptype cs2))
                    (substTypeVar tv (CTCons ("Prelude", defptype)) ty))
       else defaultQualTypeExpr' cs (CQualType (CContext (cs2 ++ [c])) ty)
   _ -> defaultQualTypeExpr' cs (CQualType (CContext (cs2 ++ [c])) ty)
  where
-  removeConstraints _  []       = []
-  removeConstraints tv (c3:cs3) = case c3 of
+  removeConstraints _  _        []       = []
+  removeConstraints tv dflttype (c3:cs3) = case c3 of
     (("Prelude", cls), CTVar tv2)
-      | tv == tv2 && cls `elem` ["Eq", "Ord", "Read", "Show"] ->
-      removeConstraints tv cs3
-    _ -> c3 : removeConstraints tv cs3
+      | tv == tv2 && cls `elem` ["Eq", "Ord", "Read", "Show"]
+      -> removeConstraints tv dflttype cs3
+      | tv == tv2 && dflttype == "Int" && cls == "Enum"
+      -> removeConstraints tv dflttype cs3
+    _ -> c3 : removeConstraints tv dflttype cs3
 
 -- Replaces a type variable with a type expression.
 substTypeVar :: CTVarIName -> CTypeExpr -> CTypeExpr -> CTypeExpr
