@@ -3,7 +3,7 @@
 --- It implements the Read-Eval-Print loop for KiCS2
 ---
 --- @author Michael Hanus, Bjoern Peemoeller, Finn Teegen
---- @version December 2018
+--- @version August 2019
 --- --------------------------------------------------------------------------
 module REPL where
 
@@ -17,8 +17,6 @@ import FilePath          ( (</>), (<.>)
                          , splitSearchPath, splitFileName, splitExtension
                          , searchPathSeparator)
 import Files             (lookupFileInPath)
-import FlatCurry.Files   (flatCurryFileName, readFlatCurryFile)
-import FlatCurry.Goodies (progImports)
 import IO
 import IOExts
 import List              (intercalate, intersperse, isPrefixOf, nub)
@@ -247,11 +245,11 @@ importUnsafeModule rst =
   if "Unsafe" `elem` (addMods rst)
   then return True
   else do
-    let fcyMainModFile = flatCurryFileName (mainMod rst)
+    let acyMainModFile = abstractCurryFileName (mainMod rst)
         frontendParams = currentFrontendParams rst
-    catch (callFrontendWithParams FCY frontendParams (mainMod rst) >>
-           readFlatCurryFile fcyMainModFile >>= \p ->
-           return ("Unsafe" `elem` progImports p))
+    catch (callFrontendWithParams ACY frontendParams (mainMod rst) >>
+           readAbstractCurryFile acyMainModFile >>= \p ->
+           return ("Unsafe" `elem` imports p))
           (\_ -> return (mainMod rst /= "Prelude")) -- just to be safe
 
 -- Compute the front-end parameters for the current state:
@@ -361,7 +359,7 @@ compileProgramWithGoal rst createExecutable goal =
   compileProgGoal = do
     let infoFile = funcInfoFile (outputSubdir rst) mainModuleIdent mainGoalFile
     removeFileIfExists infoFile
-    removeFileIfExists $ flatCurryFileName mainGoalFile
+    removeFileIfExists $ abstractCurryFileName mainGoalFile
     writeSimpleMainGoalFile rst goal
     goalstate <- getAcyOfMainGoal rst >>= insertFreeVarsInMainGoal rst goal
     if goalstate == GoalError
