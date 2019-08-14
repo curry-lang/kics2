@@ -1,11 +1,12 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 2.1.0 (April 3, 2019)
----------------------------------------------------------
+Release notes for KiCS2 Version 2.1.0 (August 14, 2019)
+-------------------------------------------------------
 
 Changes to version 2.0.2:
 
+  * Prelude: `chr` defined as total operation
   * Libraries `AllSolutions`, `Findall`, `SearchTree`, `SearchTreeGenerators`,
     `SearchTreeTraversal`, `ValueSequence removed
     (available in package `searchtree` as `Control...`)
@@ -51,6 +52,7 @@ Changes to version 2.0.2:
     (available as `curry-cpnsd` in package `cpns`)
   * Registry for dynamic web pages removed from `currytools`
     (available as `curry-cgi` in package `html-cgi`)
+  * CPM updated (e.g., faster `update` operation)
 
 
 Release notes for KiCS2 Version 2.0.0 (November 23, 2018)

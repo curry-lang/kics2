@@ -2,7 +2,7 @@ KiCS2: The Kiel Curry System (Version 2)
 ========================================
 
 KiCS2 is an implementation of the multi-paradigm declarative language
-[Curry](http://www.curry-language.org) developed by the
+[Curry](http://www.curry-lang.org) developed by the
 [Programming Languages and Compiler Construction](http://www.informatik.uni-kiel.de/en/prog/)
 group at the [University of Kiel](http://www.uni-kiel.de/).
 KiCS2 compiles Curry programs into [Haskell programs](http://www.haskell.org/)
@@ -64,14 +64,6 @@ This directory contains:
   This directory contains some templates for scripts used by KiCS2.
 
 `testsuite`:
-  This directory contains a collection of Curry programs
-  implementing unit tests to check the functionality of the system using
-  the currytest tool. All tests can be executed by the shell script
-  `doTest` in this directory. Since these test suite is based on
-  a test tool which is no longer supported, one should use the new
-  tests contained in `testsuite2`.
-
-`testsuite2`:
   This directory contains a collection of Curry programs
   implementing unit and property tests to check the functionality
   of the system using CurryCheck. All tests can be executed by the

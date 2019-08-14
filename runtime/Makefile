@@ -46,7 +46,7 @@ endif
 	echo "Description:    The runtime environment for KiCS2" >> $@
 	echo "License:        OtherLicense"                      >> $@
 	echo "Author:         The KiCS2 Team"                    >> $@
-	echo "Maintainer:     kics2@curry-language.org"          >> $@
+	echo "Maintainer:     kics2@curry-lang.org"              >> $@
 	echo "Build-Type:     Simple"                            >> $@
 	echo "Cabal-Version:  >= 1.9.2"                          >> $@
 	echo ""                                                  >> $@

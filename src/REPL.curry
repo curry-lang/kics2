@@ -96,7 +96,7 @@ processArgsAndStart rst []
   | otherwise = do
       getBanner >>= writeVerboseInfo rst 1
       writeVerboseInfo rst 1
-        "Type \":h\" for help  (contact: kics2@curry-language.org)"
+        "Type \":h\" for help  (contact: kics2@curry-lang.org)"
       repl rst
 processArgsAndStart rst (arg:args)
   -- ignore empty arguments which can be provided by single or double quotes

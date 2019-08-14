@@ -33,18 +33,19 @@ import System.CurryPath  ( getLoadPathForModule )
 
 --- Data type for representing the different target files that can be produced
 --- by the front end of the Curry compiler.
---- @cons FCY  - FlatCurry file ending with .fcy
---- @cons TFCY - Typed FlatCurry file ending with .tfcy
---- @cons FINT - FlatCurry interface file ending with .fint
---- @cons ACY  - AbstractCurry file ending with .acy
---- @cons UACY - Untyped (without type checking) AbstractCurry file ending with .uacy
---- @cons HTML - colored HTML representation of source program
---- @cons CY   - source representation employed by the frontend
---- @cons TOKS - token stream of source program
---- @cons AST  - abstract syntax tree ending with .sast
---- @cons SAST - shortened abstract syntax tree ending with .sast
+--- @cons FCY   - FlatCurry file ending with .fcy
+--- @cons TFCY  - Typed FlatCurry file ending with .tfcy
+--- @cons FINT  - FlatCurry interface file ending with .fint
+--- @cons ACY   - AbstractCurry file ending with .acy
+--- @cons UACY  - Untyped (without type checking) AbstractCurry file ending with .uacy
+--- @cons HTML  - colored HTML representation of source program
+--- @cons CY    - source representation employed by the frontend
+--- @cons TOKS  - token stream of source program
+--- @cons AST   - abstract syntax tree ending with .sast
+--- @cons SAST  - shortened abstract syntax tree ending with .sast
+--- @cons COMMS - comments stream ending with .cycom
 data FrontendTarget = FCY | TFCY | FINT | ACY | UACY | HTML | CY | TOKS | TAFCY
-                    | AST | SAST
+                    | AST | SAST | COMMS
   deriving Eq
 
 --- Abstract data type for representing parameters supported by the front end
@@ -248,6 +249,7 @@ callFrontendWithParams target params modpath = do
    showFrontendTarget TOKS  = "--tokens"
    showFrontendTarget AST   = "--ast"
    showFrontendTarget SAST  = "--short-ast"
+   showFrontendTarget COMMS = "--comments"
 
    showFrontendParams = unwords
     [ if quiet       params then runQuiet     else ""

@@ -12,6 +12,7 @@ module FlatCurry.Annotated.Files where
 import Directory       ( doesFileExist )
 import FileGoodies     ( getFileInPath)
 import FilePath        ( takeFileName, (</>), (<.>) )
+import ReadShowTerm    ( readUnqualifiedTerm ) -- for faster reading
 
 import System.CurryPath    ( inCurrySubdir, stripCurrySuffix
                            , lookupModuleSourceInLoadPath, getLoadPathForModule
@@ -44,7 +45,12 @@ typedFlatCurryFileName prog = inCurrySubdir (stripCurrySuffix prog) <.> "tfcy"
 readTypedFlatCurryFile :: String -> IO (AProg TypeExpr)
 readTypedFlatCurryFile filename = do
   filecontents <- readTypedFlatCurryFileRaw filename
-  return (read filecontents)
+  -- ...with generated Read class instances (slow!):
+  --return (read filecontents)
+  -- ...with built-in generic read operation (faster):
+  return (readUnqualifiedTerm ["FlatCurry.Annotated.Types", "FlatCurry.Types",
+                               "Prelude"]
+                              filecontents)
 
 readTypedFlatCurryFileRaw :: String -> IO String
 readTypedFlatCurryFileRaw filename = do
