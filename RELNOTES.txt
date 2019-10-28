@@ -1,8 +1,8 @@
 Release Notes for KiCS2
 =======================
 
-Release notes for KiCS2 Version 2.1.0 (August 14, 2019)
--------------------------------------------------------
+Release notes for KiCS2 Version 2.1.0 (October 28, 2019)
+--------------------------------------------------------
 
 Changes to version 2.0.2:
 
