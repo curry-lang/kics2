@@ -322,6 +322,8 @@ kernellibs: $(PKGDB)
 	cd runtime && $(MAKE) unregister
 	cd runtime && $(MAKE)
 	cd lib     && $(MAKE)
+	# compile all libraries:
+	scripts/compile-all-libs.sh
 
 $(BINCURRY): $(BINDIR)/$(CURRYSYSTEM)
 	rm -f $@
